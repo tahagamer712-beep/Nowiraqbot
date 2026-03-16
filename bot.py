@@ -959,51 +959,135 @@ PREMIUM_UPGRADE_MSG = {
 
 # ======== الاهتمامات والكلمات المفتاحية ========
 INTERESTS = {
-    "العربية 🇮🇶": ["⚽ رياضة", "💰 اقتصاد", "💻 تقنية", "🏛 سياسة", "🏥 صحة"],
-    "English 🇬🇧": ["⚽ Sports", "💰 Economy", "💻 Technology", "🏛 Politics", "🏥 Health"],
-    "Русский 🇷🇺": ["⚽ Спорт", "💰 Экономика", "💻 Технологии", "🏛 Политика", "🏥 Здоровье"],
-    "فارسی 🇮🇷": ["⚽ ورزش", "💰 اقتصاد", "💻 فناوری", "🏛 سیاست", "🏥 سلامت"],
-    "हिन्दी 🇮🇳": ["⚽ खेल", "💰 अर्थव्यवस्था", "💻 प्रौद्योगिकी", "🏛 राजनीति", "🏥 स्वास्थ्य"],
-    "Português 🇧🇷": ["⚽ Esporte", "💰 Economia", "💻 Tecnologia", "🏛 Política", "🏥 Saúde"],
-    "Türkçe 🇹🇷": ["⚽ Spor", "💰 Ekonomi", "💻 Teknoloji", "🏛 Siyaset", "🏥 Sağlık"],
-    "اردو 🇵🇰": ["⚽ کھیل", "💰 معیشت", "💻 ٹیکنالوجی", "🏛 سیاست", "🏥 صحت"],
-    "Deutsch 🇩🇪": ["⚽ Sport", "💰 Wirtschaft", "💻 Technologie", "🏛 Politik", "🏥 Gesundheit"],
-    "Українська 🇺🇦": ["⚽ Спорт", "💰 Економіка", "💻 Технології", "🏛 Політика", "🏥 Здоров'я"],
-    "Italiano 🇮🇹": ["⚽ Sport", "💰 Economia", "💻 Tecnologia", "🏛 Politica", "🏥 Salute"],
-    "Español 🇲🇽": ["⚽ Deporte", "💰 Economía", "💻 Tecnología", "🏛 Política", "🏥 Salud"],
+    "العربية 🇮🇶": [
+        "📰 سياسة", "💰 اقتصاد", "⚽ رياضة", "💻 تكنولوجيا",
+        "🌍 أخبار العالم", "🚗 سيارات", "🏥 صحة",
+        "🎬 فن وثقافة", "✈️ سفر وسياحة", "🔬 علوم", "🎲 منوعات"
+    ],
+    "English 🇬🇧": [
+        "📰 Politics", "💰 Economy", "⚽ Sports", "💻 Technology",
+        "🌍 World News", "🚗 Automotive", "🏥 Health",
+        "🎬 Arts & Culture", "✈️ Travel", "🔬 Science", "🎲 Entertainment"
+    ],
+    "Русский 🇷🇺": [
+        "📰 Политика", "💰 Экономика", "⚽ Спорт", "💻 Технологии",
+        "🌍 Мировые новости", "🚗 Авто", "🏥 Здоровье",
+        "🎬 Культура", "✈️ Путешествия", "🔬 Наука", "🎲 Развлечения"
+    ],
+    "فارسی 🇮🇷": [
+        "📰 سیاست", "💰 اقتصاد", "⚽ ورزش", "💻 فناوری",
+        "🌍 اخبار جهان", "🚗 خودرو", "🏥 سلامت",
+        "🎬 هنر و فرهنگ", "✈️ سفر", "🔬 علوم", "🎲 سرگرمی"
+    ],
+    "हिन्दी 🇮🇳": [
+        "📰 राजनीति", "💰 अर्थव्यवस्था", "⚽ खेल", "💻 प्रौद्योगिकी",
+        "🌍 विश्व समाचार", "🚗 ऑटो", "🏥 स्वास्थ्य",
+        "🎬 कला और संस्कृति", "✈️ यात्रा", "🔬 विज्ञान", "🎲 मनोरंजन"
+    ],
+    "Português 🇧🇷": [
+        "📰 Política", "💰 Economia", "⚽ Esporte", "💻 Tecnologia",
+        "🌍 Mundo", "🚗 Automóveis", "🏥 Saúde",
+        "🎬 Arte e Cultura", "✈️ Viagem", "🔬 Ciência", "🎲 Entretenimento"
+    ],
+    "Türkçe 🇹🇷": [
+        "📰 Siyaset", "💰 Ekonomi", "⚽ Spor", "💻 Teknoloji",
+        "🌍 Dünya", "🚗 Otomotiv", "🏥 Sağlık",
+        "🎬 Sanat ve Kültür", "✈️ Seyahat", "🔬 Bilim", "🎲 Eğlence"
+    ],
+    "اردو 🇵🇰": [
+        "📰 سیاست", "💰 معیشت", "⚽ کھیل", "💻 ٹیکنالوجی",
+        "🌍 عالمی خبریں", "🚗 آٹو", "🏥 صحت",
+        "🎬 فن و ثقافت", "✈️ سفر", "🔬 سائنس", "🎲 تفریح"
+    ],
+    "Deutsch 🇩🇪": [
+        "📰 Politik", "💰 Wirtschaft", "⚽ Sport", "💻 Technologie",
+        "🌍 Welt", "🚗 Auto", "🏥 Gesundheit",
+        "🎬 Kunst & Kultur", "✈️ Reisen", "🔬 Wissenschaft", "🎲 Unterhaltung"
+    ],
+    "Українська 🇺🇦": [
+        "📰 Політика", "💰 Економіка", "⚽ Спорт", "💻 Технології",
+        "🌍 Світ", "🚗 Авто", "🏥 Здоров'я",
+        "🎬 Культура", "✈️ Подорожі", "🔬 Наука", "🎲 Розваги"
+    ],
+    "Italiano 🇮🇹": [
+        "📰 Politica", "💰 Economia", "⚽ Sport", "💻 Tecnologia",
+        "🌍 Mondo", "🚗 Auto", "🏥 Salute",
+        "🎬 Arte e Cultura", "✈️ Viaggi", "🔬 Scienza", "🎲 Intrattenimento"
+    ],
+    "Español 🇲🇽": [
+        "📰 Política", "💰 Economía", "⚽ Deporte", "💻 Tecnología",
+        "🌍 Mundo", "🚗 Automóviles", "🏥 Salud",
+        "🎬 Arte y Cultura", "✈️ Viajes", "🔬 Ciencia", "🎲 Entretenimiento"
+    ],
 }
 
 INTEREST_KEYWORDS = {
-    "رياضة": ["رياضة", "كرة", "مباراة", "بطولة", "لاعب", "فريق", "هدف", "ملعب"],
-    "اقتصاد": ["اقتصاد", "نفط", "دولار", "تجارة", "بنك", "مال", "بورصة", "سوق"],
-    "تقنية": ["تقنية", "ذكاء اصطناعي", "تكنولوجيا", "هاتف", "إنترنت", "تطبيق", "برنامج"],
-    "سياسة": ["سياسة", "حكومة", "رئيس", "وزير", "برلمان", "انتخاب", "حزب"],
-    "صحة": ["صحة", "مستشفى", "طبيب", "علاج", "مرض", "لقاح", "وباء"],
-    "sports": ["sport", "football", "match", "tournament", "player", "team", "goal"],
-    "economy": ["economy", "oil", "dollar", "trade", "bank", "finance", "market", "stock"],
-    "technology": ["tech", "ai", "internet", "app", "software", "phone", "digital"],
-    "politics": ["politics", "government", "president", "minister", "parliament", "election"],
-    "health": ["health", "hospital", "doctor", "treatment", "disease", "vaccine", "epidemic"],
-    "спорт": ["спорт", "футбол", "матч", "турнир", "игрок", "команда", "гол"],
-    "экономика": ["экономика", "нефть", "доллар", "торговля", "банк", "рынок"],
-    "технологии": ["технологии", "ии", "интернет", "приложение", "программа"],
-    "политика": ["политика", "правительство", "президент", "министр", "парламент"],
+    "سياسة": ["سياسة", "حكومة", "رئيس", "وزير", "برلمان", "انتخاب", "حزب", "قرار", "مجلس"],
+    "اقتصاد": ["اقتصاد", "نفط", "دولار", "تجارة", "بنك", "مال", "بورصة", "سوق", "ميزانية", "استثمار"],
+    "رياضة": ["رياضة", "كرة", "مباراة", "بطولة", "لاعب", "فريق", "هدف", "ملعب", "منتخب", "دوري"],
+    "تكنولوجيا": ["تقنية", "تكنولوجيا", "ذكاء اصطناعي", "هاتف", "إنترنت", "تطبيق", "برنامج", "شركة تقنية"],
+    "أخبار العالم": ["عالم", "دولي", "أمريكا", "أوروبا", "آسيا", "أفريقيا", "خارجية", "ناتو", "أمم متحدة"],
+    "سيارات": ["سيارة", "سيارات", "مركبة", "سباق", "محرك", "كهربائية", "وقود", "أوتوماتيك"],
+    "صحة": ["صحة", "مستشفى", "طبيب", "علاج", "مرض", "لقاح", "وباء", "دواء", "جراحة"],
+    "فن وثقافة": ["فن", "ثقافة", "فيلم", "مسلسل", "موسيقى", "مهرجان", "معرض", "روائي", "شاعر", "فنان"],
+    "سفر وسياحة": ["سفر", "سياحة", "رحلة", "فندق", "مطار", "وجهة", "سياحي", "جواز", "تأشيرة"],
+    "علوم": ["علوم", "بحث", "اكتشاف", "فضاء", "ناسا", "كواكب", "تجربة", "دراسة", "باحثون"],
+    "منوعات": ["منوعات", "طريف", "غريب", "عجيب", "حيوان", "طبيعة", "بيئة", "مناخ"],
+    "politics": ["politics", "government", "president", "minister", "parliament", "election", "policy"],
+    "economy": ["economy", "oil", "dollar", "trade", "bank", "finance", "market", "stock", "budget"],
+    "sports": ["sport", "football", "match", "tournament", "player", "team", "goal", "league"],
+    "technology": ["tech", "ai", "artificial intelligence", "internet", "app", "software", "phone", "digital"],
+    "world news": ["world", "international", "global", "united nations", "nato", "foreign", "crisis"],
+    "automotive": ["car", "vehicle", "automotive", "electric vehicle", "motor", "race", "fuel"],
+    "health": ["health", "hospital", "doctor", "treatment", "disease", "vaccine", "medicine", "surgery"],
+    "arts & culture": ["art", "culture", "film", "movie", "music", "festival", "exhibition", "artist"],
+    "travel": ["travel", "tourism", "trip", "hotel", "airport", "destination", "visa", "flight"],
+    "science": ["science", "research", "discovery", "space", "nasa", "planet", "experiment", "study"],
+    "entertainment": ["entertainment", "celebrity", "viral", "funny", "trend", "social media"],
+    "спорт": ["спорт", "футбол", "матч", "турнир", "игрок", "команда", "гол", "лига"],
+    "экономика": ["экономика", "нефть", "доллар", "торговля", "банк", "рынок", "бюджет"],
+    "технологии": ["технологии", "ии", "интернет", "приложение", "программа", "цифровой"],
+    "политика": ["политика", "правительство", "президент", "министр", "парламент", "выборы"],
+    "мировые новости": ["мир", "международный", "глобальный", "нато", "оон"],
+    "авто": ["автомобиль", "машина", "гонки", "двигатель", "электромобиль"],
     "здоровье": ["здоровье", "больница", "врач", "лечение", "болезнь", "вакцина"],
-    "ورزش": ["ورزش", "فوتبال", "مسابقه", "تیم", "بازیکن"],
+    "культура": ["культура", "искусство", "фильм", "музыка", "фестиваль"],
+    "путешествия": ["путешествие", "туризм", "отель", "аэропорт", "виза"],
+    "наука": ["наука", "исследование", "открытие", "космос", "эксперимент"],
+    "развлечения": ["развлечение", "знаменитость", "вирусный", "юмор"],
+    "ورزش": ["ورزش", "فوتبال", "مسابقه", "تیم", "بازیکن", "لیگ"],
     "اقتصاد_fa": ["اقتصاد", "نفت", "دلار", "تجارت", "بانک", "بازار"],
-    "فناوری": ["فناوری", "هوش مصنوعی", "اینترنت", "نرم‌افزار"],
-    "سیاست": ["سیاست", "دولت", "رئیس جمهور", "وزیر", "مجلس"],
-    "سلامت": ["سلامت", "بیمارستان", "پزشک", "درمان", "بیماری"],
-    "spor": ["spor", "futbol", "maç", "turnuva", "oyuncu", "takım", "gol"],
-    "ekonomi": ["ekonomi", "petrol", "dolar", "ticaret", "banka", "piyasa"],
+    "فناوری": ["فناوری", "هوش مصنوعی", "اینترنت", "نرم‌افزار", "دیجیتال"],
+    "سیاست": ["سیاست", "دولت", "رئیس جمهور", "وزیر", "مجلس", "انتخابات"],
+    "اخبار جهان": ["جهان", "بین‌الملل", "ناتو", "سازمان ملل"],
+    "خودرو": ["خودرو", "ماشین", "برقی", "موتور", "مسابقه"],
+    "سلامت": ["سلامت", "بیمارستان", "پزشک", "درمان", "بیماری", "واکسن"],
+    "هنر و فرهنگ": ["هنر", "فرهنگ", "فیلم", "موسیقی", "جشنواره"],
+    "سفر": ["سفر", "گردشگری", "هتل", "فرودگاه", "ویزا"],
+    "علوم": ["علوم", "تحقیق", "کشف", "فضا", "آزمایش"],
+    "سرگرمی": ["سرگرمی", "مشهور", "ویروسی", "طنز"],
+    "spor": ["spor", "futbol", "maç", "turnuva", "oyuncu", "takım", "gol", "lig"],
+    "ekonomi": ["ekonomi", "petrol", "dolar", "ticaret", "banka", "piyasa", "bütçe"],
     "teknoloji": ["teknoloji", "yapay zeka", "internet", "uygulama", "yazılım"],
     "siyaset": ["siyaset", "hükümet", "cumhurbaşkanı", "bakan", "meclis", "seçim"],
+    "dünya": ["dünya", "uluslararası", "nato", "bm", "küresel"],
+    "otomotiv": ["araba", "otomobil", "elektrikli", "motor", "yarış"],
     "sağlık": ["sağlık", "hastane", "doktor", "tedavi", "hastalık", "aşı"],
-    "sport_de": ["sport", "fußball", "spiel", "turnier", "spieler", "mannschaft"],
-    "wirtschaft": ["wirtschaft", "öl", "dollar", "handel", "bank", "markt"],
-    "technologie": ["technologie", "ki", "internet", "app", "software"],
+    "sanat ve kültür": ["sanat", "kültür", "film", "müzik", "festival"],
+    "seyahat": ["seyahat", "turizm", "otel", "havalimanı", "vize"],
+    "bilim": ["bilim", "araştırma", "keşif", "uzay", "deney"],
+    "eğlence": ["eğlence", "ünlü", "viral", "komedi"],
+    "sport_de": ["sport", "fußball", "spiel", "turnier", "spieler", "mannschaft", "liga"],
+    "wirtschaft": ["wirtschaft", "öl", "dollar", "handel", "bank", "markt", "budget"],
+    "technologie": ["technologie", "ki", "internet", "app", "software", "digital"],
     "politik": ["politik", "regierung", "präsident", "minister", "parlament", "wahl"],
-    "gesundheit": ["gesundheit", "krankenhaus", "arzt", "behandlung", "krankheit"],
+    "welt": ["welt", "international", "global", "nato", "un"],
+    "auto": ["auto", "fahrzeug", "elektroauto", "motor", "rennen"],
+    "gesundheit": ["gesundheit", "krankenhaus", "arzt", "behandlung", "krankheit", "impfstoff"],
+    "kunst & kultur": ["kunst", "kultur", "film", "musik", "festival"],
+    "reisen": ["reisen", "tourismus", "hotel", "flughafen", "visum"],
+    "wissenschaft": ["wissenschaft", "forschung", "entdeckung", "weltraum", "experiment"],
+    "unterhaltung": ["unterhaltung", "promi", "viral", "humor"],
 }
 
 # ======== العملات حسب اللغة ========
@@ -1281,7 +1365,7 @@ def premium_callbacks(call):
             bot.send_message(uid, "✅ لا توجد اهتمامات محددة — ستصلك جميع الأخبار.")
 
 
-@bot.callback_query_handler(func=lambda c: c.data.startswith("admin_") or c.data.startswith("broadcast_") or c.data.startswith("rss_"))
+@bot.callback_query_handler(func=lambda c: c.data.startswith("admin_") or c.data.startswith("broadcast_") or c.data.startswith("rss_") or c.data.startswith("quick_") or c.data == "noop")
 def admin_callbacks(call):
     if not is_admin(call.from_user.id):
         return
@@ -1328,6 +1412,7 @@ def admin_callbacks(call):
     elif data == "admin_users":
         markup = types.InlineKeyboardMarkup(row_width=2)
         markup.add(
+            types.InlineKeyboardButton("📋 قائمة جميع المستخدمين", callback_data="admin_users_list_0"),
             types.InlineKeyboardButton("🔍 معلومات مستخدم", callback_data="admin_user_info"),
             types.InlineKeyboardButton("🚫 حظر مستخدم", callback_data="admin_ban"),
             types.InlineKeyboardButton("✅ رفع حظر", callback_data="admin_unban"),
@@ -1335,7 +1420,42 @@ def admin_callbacks(call):
             types.InlineKeyboardButton("⭐ ترقية لمميز", callback_data="admin_premium"),
             types.InlineKeyboardButton("❌ إلغاء اشتراك مميز", callback_data="admin_unpremium"),
         )
-        bot.send_message(uid, "👥 *إدارة المستخدمين:*", parse_mode="Markdown", reply_markup=markup)
+        bot.send_message(uid, "👥 *إدارة المستخدمين:*\n\nإجمالي المستخدمين: `{}`".format(len(users)), parse_mode="Markdown", reply_markup=markup)
+
+    elif data.startswith("admin_users_list_"):
+        page = int(data.split("_")[-1])
+        per_page = 10
+        all_uids = list(users.keys())
+        total = len(all_uids)
+        total_pages = max(1, (total + per_page - 1) // per_page)
+        start = page * per_page
+        end = start + per_page
+        page_uids = all_uids[start:end]
+        premium_list = stats.get("premium_users", [])
+        lines = [f"👥 *قائمة المستخدمين* — صفحة {page+1}/{total_pages}\n━━━━━━━━━━━━━━"]
+        for i, u_id in enumerate(page_uids, start + 1):
+            u = users[u_id]
+            name = u.get("name", "—")[:20]
+            country = u.get("country", "—")[:15]
+            lang = u.get("lang", "")[:4]
+            is_prem = "⭐" if int(u_id) in premium_list else ""
+            is_ban = "🚫" if int(u_id) in banned else ""
+            lines.append(f"{i}. {is_prem}{is_ban} *{name}*\n    🆔 `{u_id}` | 🌍 {country} | 🗣 {lang}")
+        msg = "\n".join(lines)
+        nav_markup = types.InlineKeyboardMarkup(row_width=3)
+        nav_btns = []
+        if page > 0:
+            nav_btns.append(types.InlineKeyboardButton("◀️ السابق", callback_data=f"admin_users_list_{page-1}"))
+        nav_btns.append(types.InlineKeyboardButton(f"📄 {page+1}/{total_pages}", callback_data="noop"))
+        if end < total:
+            nav_btns.append(types.InlineKeyboardButton("التالي ▶️", callback_data=f"admin_users_list_{page+1}"))
+        if nav_btns:
+            nav_markup.add(*nav_btns)
+        nav_markup.add(types.InlineKeyboardButton("🔙 رجوع", callback_data="admin_users"))
+        try:
+            bot.edit_message_text(msg, uid, call.message.message_id, parse_mode="Markdown", reply_markup=nav_markup)
+        except:
+            bot.send_message(uid, msg, parse_mode="Markdown", reply_markup=nav_markup)
 
     elif data == "admin_user_info":
         msg = bot.send_message(uid, "أرسل ID المستخدم:")
@@ -1486,6 +1606,83 @@ def admin_callbacks(call):
                 parse_mode="Markdown"
             )
 
+    elif data == "noop":
+        bot.answer_callback_query(call.id)
+
+    elif data.startswith("admin_view_"):
+        target_id = data.split("admin_view_")[-1]
+        user = users.get(target_id)
+        if not user:
+            bot.answer_callback_query(call.id, "❌ المستخدم غير موجود")
+            return
+        is_banned_user = int(target_id) in banned
+        is_premium_user = int(target_id) in stats.get("premium_users", [])
+        referrals = user.get("referrals", [])
+        referred_by = user.get("referred_by", None)
+        join_date = user.get("join_date", "غير معروف")
+        interests = user.get("interests", [])
+        notif = "✅" if user.get("notifications", True) else "❌"
+        track_data = tracked_assets.get(target_id, {})
+        tracked = track_data.get("assets", [])
+        msg = (
+            f"👤 *ملف المستخدم*\n"
+            f"━━━━━━━━━━━━━━\n"
+            f"🆔 ID: `{target_id}`\n"
+            f"👤 الاسم: *{user.get('name', '—')}*\n"
+            f"🗣 اللغة: {user.get('lang', '-')}\n"
+            f"🌍 الدولة: {user.get('country', '-')}\n"
+            f"📍 المحافظة: {user.get('province', '-')}\n"
+            f"📅 الانضمام: `{join_date}`\n"
+            f"━━━━━━━━━━━━━━\n"
+            f"🚫 محظور: {'نعم' if is_banned_user else 'لا'} | "
+            f"⭐ مميز: {'نعم' if is_premium_user else 'لا'}\n"
+            f"🔔 إشعارات: {notif} | 🎁 دعوات: `{len(referrals)}`\n"
+            f"👈 جاء عبر: `{referred_by if referred_by else 'مباشر'}`\n"
+            f"📌 يتتبع: `{', '.join(tracked) if tracked else '—'}`\n"
+            f"📰 اهتمامات: `{', '.join(interests) if interests else '—'}`\n"
+        )
+        view_markup = types.InlineKeyboardMarkup(row_width=2)
+        view_markup.add(
+            types.InlineKeyboardButton("🚫 حظر", callback_data=f"quick_ban_{target_id}"),
+            types.InlineKeyboardButton("⭐ ترقية مميز", callback_data=f"quick_premium_{target_id}"),
+            types.InlineKeyboardButton("📢 راسله", url=f"tg://user?id={target_id}"),
+        )
+        bot.send_message(uid, msg, parse_mode="Markdown", reply_markup=view_markup)
+
+    elif data.startswith("quick_ban_"):
+        target_id_str = data.split("quick_ban_")[-1]
+        try:
+            target_id_int = int(target_id_str)
+            if target_id_int not in banned:
+                banned.append(target_id_int)
+                save_json(BANNED_FILE, banned)
+                bot.answer_callback_query(call.id, f"✅ تم حظر المستخدم {target_id_str}")
+                bot.send_message(uid, f"🚫 تم حظر المستخدم `{target_id_str}` بنجاح.", parse_mode="Markdown")
+            else:
+                bot.answer_callback_query(call.id, "⚠️ هذا المستخدم محظور مسبقاً")
+        except Exception as e:
+            bot.answer_callback_query(call.id, f"❌ خطأ: {e}")
+
+    elif data.startswith("quick_premium_"):
+        target_id_str = data.split("quick_premium_")[-1]
+        try:
+            target_id_int = int(target_id_str)
+            premium_list = stats.get("premium_users", [])
+            if target_id_int not in premium_list:
+                premium_list.append(target_id_int)
+                stats["premium_users"] = premium_list
+                save_json(STATS_FILE, stats)
+                bot.answer_callback_query(call.id, f"✅ تمت الترقية لـ ⭐ مميز")
+                bot.send_message(uid, f"⭐ تم ترقية المستخدم `{target_id_str}` للمميز.", parse_mode="Markdown")
+                try:
+                    bot.send_message(target_id_int, "🎉 تهانينا! تمت ترقيتك للاشتراك المميز ⭐\nاستمتع بجميع الميزات الحصرية!")
+                except:
+                    pass
+            else:
+                bot.answer_callback_query(call.id, "⚠️ هذا المستخدم مميز مسبقاً")
+        except Exception as e:
+            bot.answer_callback_query(call.id, f"❌ خطأ: {e}")
+
 # ======== خطوات إدارة الأدمن ========
 def add_admin_step(message):
     if message.from_user.id != ADMIN_ID:
@@ -1539,18 +1736,40 @@ def get_user_info(message):
         is_banned_user = int(target_id) in banned
         is_premium_user = int(target_id) in stats.get("premium_users", [])
         is_admin_user = is_admin(int(target_id))
+        referrals = user.get("referrals", [])
+        referred_by = user.get("referred_by", None)
+        join_date = user.get("join_date", "غير معروف")
+        interests = user.get("interests", [])
+        notif = "✅ مفعّل" if user.get("notifications", True) else "❌ موقوف"
+        track_data = tracked_assets.get(target_id, {})
+        tracked = track_data.get("assets", [])
         msg = (
-            f"👤 *معلومات المستخدم*\n\n"
+            f"👤 *ملف المستخدم الكامل*\n"
+            f"━━━━━━━━━━━━━━\n"
             f"🆔 ID: `{target_id}`\n"
-            f"👤 الاسم: {user.get('name', 'غير معروف')}\n"
+            f"👤 الاسم: *{user.get('name', 'غير معروف')}*\n"
             f"🗣 اللغة: {user.get('lang', '-')}\n"
             f"🌍 الدولة: {user.get('country', '-')}\n"
             f"📍 المحافظة: {user.get('province', '-')}\n"
-            f"🚫 محظور: {'نعم' if is_banned_user else 'لا'}\n"
-            f"⭐ مميز: {'نعم' if is_premium_user else 'لا'}\n"
-            f"👑 أدمن: {'نعم' if is_admin_user else 'لا'}\n"
+            f"📅 تاريخ الانضمام: `{join_date}`\n"
+            f"━━━━━━━━━━━━━━\n"
+            f"🚫 محظور: {'✅ نعم' if is_banned_user else '❌ لا'}\n"
+            f"⭐ مميز: {'✅ نعم' if is_premium_user else '❌ لا'}\n"
+            f"👑 أدمن: {'✅ نعم' if is_admin_user else '❌ لا'}\n"
+            f"🔔 الإشعارات: {notif}\n"
+            f"━━━━━━━━━━━━━━\n"
+            f"🎁 دعواته: `{len(referrals)}` شخص\n"
+            f"👈 جاء عبر: `{referred_by if referred_by else 'مباشر'}`\n"
+            f"📌 أصوله المتتبعة: `{', '.join(tracked) if tracked else 'لا يوجد'}`\n"
+            f"📰 اهتماماته: `{', '.join(interests) if interests else 'لم يختر'}`\n"
         )
-        bot.send_message(message.from_user.id, msg, parse_mode="Markdown")
+        markup = types.InlineKeyboardMarkup(row_width=2)
+        markup.add(
+            types.InlineKeyboardButton("🚫 حظر", callback_data=f"quick_ban_{target_id}"),
+            types.InlineKeyboardButton("⭐ ترقية مميز", callback_data=f"quick_premium_{target_id}"),
+            types.InlineKeyboardButton("📢 راسله", url=f"tg://user?id={target_id}"),
+        )
+        bot.send_message(message.from_user.id, msg, parse_mode="Markdown", reply_markup=markup)
     except Exception as e:
         bot.send_message(message.from_user.id, f"❌ خطأ: {e}")
 
@@ -1788,10 +2007,9 @@ def send_main_menu(uid):
     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     markup.add(
         btn["weather"], btn.get("forecast", "📅 توقعات 3 أيام"),
-        btn["news"], btn.get("trending", "🔥 الأكثر تداولاً"),
-        btn.get("sports", "⚽ رياضة"), btn["mena_politics"],
+        btn["news"], btn.get("sports", "⚽ رياضة"),
+        btn["mena_politics"], btn["news_cats"],
         btn["daily_summary"], btn.get("weekly_summary", "📆 ملخص أسبوعي"),
-        btn["news_cats"],
         btn["currency"], btn.get("dollar_parallel", "💵 دولار السوق"),
         btn.get("convert", "🔄 محوّل العملات"),
         btn.get("crypto", "💎 كريبتو"), btn.get("track_asset", "📌 تتبع عملة/سهم"),
@@ -2334,9 +2552,30 @@ def start(message):
         save_json(USERS_FILE, users)
         update_stats("new_user", uid=uid)
         all_admins = [ADMIN_ID] + extra_admins
+        referrer_name = None
+        if referrer_id and str(referrer_id) in users:
+            referrer_name = users[str(referrer_id)].get("name", str(referrer_id))
+        join_time = datetime.datetime.now().strftime("%H:%M - %d/%m/%Y")
+        new_user_msg = (
+            f"🆕 *مستخدم جديد انضم!*\n"
+            f"━━━━━━━━━━━━━━\n"
+            f"👤 الاسم: *{message.from_user.first_name}*\n"
+            f"🆔 ID: `{uid}`\n"
+            f"📛 اليوزر: @{username}\n"
+            f"⏰ وقت الانضمام: `{join_time}`\n"
+            f"👈 جاء عبر: {('دعوة من *' + referrer_name + '*') if referrer_name else 'مباشر'}\n"
+            f"━━━━━━━━━━━━━━\n"
+            f"👥 إجمالي المستخدمين: `{len(users)}`"
+        )
+        quick_markup = types.InlineKeyboardMarkup(row_width=2)
+        quick_markup.add(
+            types.InlineKeyboardButton("👤 عرض ملفه", callback_data=f"admin_view_{uid}"),
+            types.InlineKeyboardButton("🚫 حظر", callback_data=f"quick_ban_{uid}"),
+            types.InlineKeyboardButton("📢 راسله", url=f"tg://user?id={uid}"),
+        )
         for admin_id in all_admins:
             try:
-                bot.send_message(admin_id, f"مستخدم جديد 👤\n\nالاسم: {message.from_user.first_name}\nاليوزر: @{username}\nID: `{uid}`", parse_mode="Markdown")
+                bot.send_message(admin_id, new_user_msg, parse_mode="Markdown", reply_markup=quick_markup)
             except:
                 pass
         send_first_time_welcome(uid, message.from_user.first_name)
