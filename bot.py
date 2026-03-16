@@ -24,6 +24,10 @@ RSS_FILE = "rss.json"
 ADMINS_FILE = "admins.json"
 KEYWORDS_FILE = "keywords.json"
 TRACK_FILE = "tracking.json"
+CHANNELS_FILE = "channels.json"
+BLACKLIST_FILE = "blacklist.json"
+READ_STATS_FILE = "read_stats.json"
+BROADCAST_SETTINGS_FILE = "broadcast_settings.json"
 
 # ======== اسم البوت ========
 BOT_USERNAME = "Iraqnowbot"
@@ -78,6 +82,34 @@ def is_admin(uid):
 
 def save_extra_admins():
     save_json(ADMINS_FILE, extra_admins)
+
+# ======== القنوات والمجموعات ========
+# كل عنصر: {"id": chat_id, "title": "اسم القناة", "type": "channel"/"group", "lang": "العربية 🇮🇶"}
+channels_groups = load_json(CHANNELS_FILE, [])
+
+def save_channels_groups():
+    save_json(CHANNELS_FILE, channels_groups)
+
+# ======== القائمة السوداء للكلمات ========
+blacklist_words = load_json(BLACKLIST_FILE, [])
+
+def save_blacklist():
+    save_json(BLACKLIST_FILE, blacklist_words)
+
+# ======== عداد القراءة ========
+read_stats = load_json(READ_STATS_FILE, {"total_opens": 0, "daily": {}})
+
+def save_read_stats():
+    save_json(READ_STATS_FILE, read_stats)
+
+# ======== إعدادات توقيت البث ========
+broadcast_settings = load_json(BROADCAST_SETTINGS_FILE, {"interval_minutes": 5})
+
+def save_broadcast_settings():
+    save_json(BROADCAST_SETTINGS_FILE, broadcast_settings)
+
+# ======== إحصائيات القنوات ========
+# يُحفظ داخل كل عنصر في channels_groups تحت مفتاح "news_sent_count"
 
 # ======== حالة البوت ========
 bot_paused = False
@@ -1218,12 +1250,21 @@ def admin_panel(uid):
     markup.add(
         types.InlineKeyboardButton("📊 الإحصائيات", callback_data="admin_stats"),
         types.InlineKeyboardButton("👥 المستخدمون", callback_data="admin_users"),
-        types.InlineKeyboardButton("📢 إرسال رسالة", callback_data="admin_broadcast"),
+        types.InlineKeyboardButton("📢 إرسال رسالة للكل", callback_data="admin_broadcast"),
+        types.InlineKeyboardButton("🚨 خبر عاجل مخصص", callback_data="admin_breaking_news"),
         types.InlineKeyboardButton("🔴 إيقاف/تشغيل البوت", callback_data="admin_pause"),
+        types.InlineKeyboardButton("⏱ توقيت البث", callback_data="admin_interval"),
         types.InlineKeyboardButton("📡 إدارة RSS", callback_data="admin_rss"),
+        types.InlineKeyboardButton("🚫 القائمة السوداء", callback_data="admin_blacklist"),
         types.InlineKeyboardButton("💰 المالية", callback_data="admin_finance"),
+        types.InlineKeyboardButton("📖 عداد القراءة", callback_data="admin_read_stats"),
         types.InlineKeyboardButton("✏️ تغيير رسالة الترحيب", callback_data="admin_welcome"),
         types.InlineKeyboardButton("👑 إدارة الأدمن", callback_data="admin_manage_admins"),
+        types.InlineKeyboardButton("📺 إدارة القنوات/المجموعات", callback_data="admin_channels"),
+        types.InlineKeyboardButton("📈 إحصائيات القنوات", callback_data="admin_channel_stats"),
+        types.InlineKeyboardButton("🔍 بحث عن مستخدم", callback_data="admin_search_user"),
+        types.InlineKeyboardButton("✉️ رسالة لمستخدم", callback_data="admin_msg_user"),
+        types.InlineKeyboardButton("📋 قائمة الأوامر", callback_data="admin_commands"),
     )
     bot.send_message(uid, "👑 *لوحة تحكم الأدمن:*", parse_mode="Markdown", reply_markup=markup)
 
@@ -1365,7 +1406,7 @@ def premium_callbacks(call):
             bot.send_message(uid, "✅ لا توجد اهتمامات محددة — ستصلك جميع الأخبار.")
 
 
-@bot.callback_query_handler(func=lambda c: c.data.startswith("admin_") or c.data.startswith("broadcast_") or c.data.startswith("rss_") or c.data.startswith("quick_") or c.data == "noop")
+@bot.callback_query_handler(func=lambda c: c.data.startswith("admin_") or c.data.startswith("broadcast_") or c.data.startswith("rss_") or c.data.startswith("quick_") or c.data.startswith("ch_") or c.data.startswith("interval_") or c.data.startswith("bl_") or c.data == "noop" or c.data == "read_open")
 def admin_callbacks(call):
     if not is_admin(call.from_user.id):
         return
@@ -1682,6 +1723,457 @@ def admin_callbacks(call):
                 bot.answer_callback_query(call.id, "⚠️ هذا المستخدم مميز مسبقاً")
         except Exception as e:
             bot.answer_callback_query(call.id, f"❌ خطأ: {e}")
+
+    elif data == "admin_channels":
+        handle_admin_channels(uid, call)
+
+    elif data == "ch_add":
+        bot.send_message(uid,
+            "➕ *إضافة قناة أو مجموعة*\n\n"
+            "أرسل المعلومات في رسالة واحدة بهذا الشكل:\n\n"
+            "`-1001234567890`\n"
+            "`العربية 🇮🇶`\n\n"
+            "📌 السطر الأول: ID القناة/المجموعة\n"
+            "📌 السطر الثاني: لغة الأخبار التي ستُرسل لها\n\n"
+            "⚠️ تأكد أن البوت أدمن في القناة/المجموعة أولاً",
+            parse_mode="Markdown"
+        )
+        bot.register_next_step_handler_by_chat_id(uid, add_channel_step)
+
+    elif data == "ch_remove":
+        if not channels_groups:
+            bot.send_message(uid, "📭 لا توجد قنوات/مجموعات مضافة حالياً.")
+            return
+        msg = "➖ *حذف قناة أو مجموعة*\n\nأرسل ID القناة/المجموعة للحذف:\n\n"
+        for ch in channels_groups:
+            msg += f"📺 *{ch['title']}* — `{ch['id']}`\n"
+        bot.send_message(uid, msg, parse_mode="Markdown")
+        bot.register_next_step_handler_by_chat_id(uid, remove_channel_step)
+
+    elif data == "ch_list":
+        if not channels_groups:
+            bot.send_message(uid, "📭 لا توجد قنوات/مجموعات مضافة حالياً.")
+            return
+        msg = "📋 *قائمة القنوات والمجموعات:*\n\n"
+        for i, ch in enumerate(channels_groups, 1):
+            emoji = "📢" if ch.get("type") == "channel" else "👥"
+            msg += (
+                f"{i}. {emoji} *{ch['title']}*\n"
+                f"   🆔 ID: `{ch['id']}`\n"
+                f"   🗣 اللغة: {ch.get('lang', 'غير محددة')}\n\n"
+            )
+        bot.send_message(uid, msg, parse_mode="Markdown")
+
+    elif data == "ch_broadcast_now":
+        bot.send_message(uid, "📡 جاري إرسال الأخبار للقنوات والمجموعات...")
+        try:
+            broadcast_to_channels()
+            bot.send_message(uid, f"✅ تم إرسال الأخبار لـ {len(channels_groups)} قناة/مجموعة.")
+        except Exception as e:
+            bot.send_message(uid, f"❌ خطأ أثناء البث: {e}")
+
+    # ======== خبر عاجل مخصص ========
+    elif data == "admin_breaking_news":
+        bot.send_message(uid,
+            "🚨 *إرسال خبر عاجل مخصص*\n\n"
+            "أرسل نص الخبر العاجل، وسيُرسَل فوراً لجميع المستخدمين والقنوات مع الأزرار.\n\n"
+            "💡 يمكنك إضافة رابط في السطر الثاني (اختياري):\n"
+            "`نص الخبر العاجل`\n"
+            "`https://رابط-الخبر (اختياري)`",
+            parse_mode="Markdown"
+        )
+        bot.register_next_step_handler_by_chat_id(uid, breaking_news_step)
+
+    # ======== توقيت البث ========
+    elif data == "admin_interval":
+        current = broadcast_settings.get("interval_minutes", 5)
+        markup_int = types.InlineKeyboardMarkup(row_width=3)
+        markup_int.add(
+            types.InlineKeyboardButton("3 دقائق", callback_data="interval_3"),
+            types.InlineKeyboardButton("5 دقائق ✅" if current == 5 else "5 دقائق", callback_data="interval_5"),
+            types.InlineKeyboardButton("10 دقائق", callback_data="interval_10"),
+            types.InlineKeyboardButton("15 دقيقة", callback_data="interval_15"),
+            types.InlineKeyboardButton("30 دقيقة", callback_data="interval_30"),
+            types.InlineKeyboardButton("60 دقيقة", callback_data="interval_60"),
+        )
+        bot.send_message(uid,
+            f"⏱ *توقيت البث الحالي:* كل `{current}` دقيقة\n\nاختر التوقيت الجديد:",
+            parse_mode="Markdown", reply_markup=markup_int
+        )
+
+    elif data.startswith("interval_"):
+        minutes = int(data.split("_")[1])
+        broadcast_settings["interval_minutes"] = minutes
+        save_broadcast_settings()
+        bot.send_message(uid,
+            f"✅ تم تغيير توقيت البث إلى كل *{minutes}* دقيقة.\n"
+            f"⚠️ سيُطبَّق التغيير بعد إعادة تشغيل البوت.",
+            parse_mode="Markdown"
+        )
+
+    # ======== القائمة السوداء ========
+    elif data == "admin_blacklist":
+        words = blacklist_words
+        count = len(words)
+        words_preview = "، ".join(words[:10]) if words else "لا توجد كلمات"
+        markup_bl = types.InlineKeyboardMarkup(row_width=2)
+        markup_bl.add(
+            types.InlineKeyboardButton("➕ إضافة كلمة", callback_data="bl_add"),
+            types.InlineKeyboardButton("➖ حذف كلمة", callback_data="bl_remove"),
+            types.InlineKeyboardButton("📋 عرض الكل", callback_data="bl_list"),
+            types.InlineKeyboardButton("🗑 مسح الكل", callback_data="bl_clear"),
+        )
+        bot.send_message(uid,
+            f"🚫 *القائمة السوداء للكلمات*\n\n"
+            f"📊 عدد الكلمات: `{count}`\n"
+            f"📝 عينة: {words_preview}\n\n"
+            f"أي خبر يحتوي كلمة من هذه القائمة لن يُرسَل.",
+            parse_mode="Markdown", reply_markup=markup_bl
+        )
+
+    elif data == "bl_add":
+        bot.send_message(uid, "➕ أرسل الكلمة أو الكلمات التي تريد حجبها (كلمة واحدة أو أكثر مفصولة بفاصلة):")
+        bot.register_next_step_handler_by_chat_id(uid, bl_add_step)
+
+    elif data == "bl_remove":
+        if not blacklist_words:
+            bot.send_message(uid, "📭 القائمة السوداء فارغة.")
+            return
+        bot.send_message(uid, f"➖ أرسل الكلمة التي تريد حذفها:\n\n{', '.join(blacklist_words)}")
+        bot.register_next_step_handler_by_chat_id(uid, bl_remove_step)
+
+    elif data == "bl_list":
+        if not blacklist_words:
+            bot.send_message(uid, "📭 القائمة السوداء فارغة.")
+            return
+        bot.send_message(uid, f"📋 *الكلمات المحجوبة:*\n\n" + "\n".join(f"• `{w}`" for w in blacklist_words), parse_mode="Markdown")
+
+    elif data == "bl_clear":
+        blacklist_words.clear()
+        save_blacklist()
+        bot.send_message(uid, "✅ تم مسح القائمة السوداء بالكامل.")
+
+    # ======== عداد القراءة ========
+    elif data == "admin_read_stats":
+        total = read_stats.get("total_opens", 0)
+        today = str(datetime.date.today())
+        today_count = read_stats.get("daily", {}).get(today, 0)
+        yesterday = str(datetime.date.today() - datetime.timedelta(days=1))
+        yesterday_count = read_stats.get("daily", {}).get(yesterday, 0)
+        bot.send_message(uid,
+            f"📖 *إحصائيات القراءة (فتح الأخبار):*\n\n"
+            f"📊 الإجمالي: `{total}` ضغطة\n"
+            f"📅 اليوم: `{today_count}` ضغطة\n"
+            f"📅 أمس: `{yesterday_count}` ضغطة",
+            parse_mode="Markdown"
+        )
+
+    # ======== إحصائيات القنوات ========
+    elif data == "admin_channel_stats":
+        if not channels_groups:
+            bot.send_message(uid, "📭 لا توجد قنوات/مجموعات مضافة.")
+            return
+        msg = "📈 *إحصائيات القنوات والمجموعات:*\n\n"
+        total_sent = 0
+        for ch in channels_groups:
+            count_ch = ch.get("news_sent_count", 0)
+            total_sent += count_ch
+            emoji = "📢" if ch.get("type") == "channel" else "👥"
+            msg += (
+                f"{emoji} *{ch['title']}*\n"
+                f"   📰 أخبار مُرسَلة: `{count_ch}`\n"
+                f"   🌐 اللغة: {ch.get('lang', '-')}\n\n"
+            )
+        msg += f"━━━━━━━━━━━━━━\n📊 *إجمالي الأخبار المُرسَلة:* `{total_sent}`"
+        bot.send_message(uid, msg, parse_mode="Markdown")
+
+    # ======== بحث عن مستخدم ========
+    elif data == "admin_search_user":
+        bot.send_message(uid, "🔍 *بحث عن مستخدم*\n\nأرسل ID المستخدم أو اسمه للبحث:", parse_mode="Markdown")
+        bot.register_next_step_handler_by_chat_id(uid, search_user_step)
+
+    # ======== رسالة لمستخدم محدد ========
+    elif data == "admin_msg_user":
+        bot.send_message(uid,
+            "✉️ *إرسال رسالة لمستخدم محدد*\n\n"
+            "أرسل في سطرين:\n"
+            "السطر 1: ID المستخدم\n"
+            "السطر 2: نص الرسالة",
+            parse_mode="Markdown"
+        )
+        bot.register_next_step_handler_by_chat_id(uid, msg_user_step)
+
+    # ======== قائمة الأوامر ========
+    elif data == "admin_commands":
+        commands_text = (
+            "📋 *قائمة جميع أوامر البوت:*\n\n"
+            "━━━━━━━━━ *للأدمن* ━━━━━━━━━\n"
+            "👑 `/admin` — لوحة تحكم الأدمن\n"
+            "📊 `/stats` — إحصائيات البوت (إن وُجد)\n\n"
+            "━━━━━━━━━ *للمستخدم* ━━━━━━━━━\n"
+            "🚀 `/start` — بدء البوت\n"
+            "❓ `/help` — المساعدة\n"
+            "🔔 `/notify` — تفعيل/إيقاف الإشعارات (إن وُجد)\n\n"
+            "━━━━━━━━━ *لأدمن القناة/المجموعة* ━━━━━━━━━\n"
+            "🌐 `/setlang اسم_اللغة` — تغيير لغة الأخبار\n"
+            "🏙 `/setcity اسم_المدينة` — تعيين المدينة\n"
+            "📡 `/setsource رابط_RSS` — إضافة مصدر أخبار\n"
+            "🗑 `/removesource رابط_RSS` — حذف مصدر أخبار\n"
+            "📋 `/listsources` — عرض مصادر الأخبار\n"
+            "⏸ `/pause` — إيقاف البث مؤقتاً\n"
+            "▶️ `/resume` — استئناف البث\n"
+            "⚙️ `/settings` — عرض الإعدادات الحالية\n\n"
+            "━━━━━━━━━ *الأزرار على كل خبر* ━━━━━━━━━\n"
+            "🔗 فتح الخبر — يفتح رابط الخبر\n"
+            "📤 شارك الخبر — يشارك الخبر\n"
+            f"🤖 شارك البوت — يشارك @{BOT_USERNAME}"
+        )
+        bot.send_message(uid, commands_text, parse_mode="Markdown")
+
+# ======== إدارة القنوات والمجموعات ========
+def handle_admin_channels(uid, call):
+    markup = types.InlineKeyboardMarkup(row_width=2)
+    markup.add(
+        types.InlineKeyboardButton("➕ إضافة قناة/مجموعة", callback_data="ch_add"),
+        types.InlineKeyboardButton("➖ حذف قناة/مجموعة", callback_data="ch_remove"),
+        types.InlineKeyboardButton("📋 قائمة القنوات", callback_data="ch_list"),
+        types.InlineKeyboardButton("📢 بث أخبار للقنوات الآن", callback_data="ch_broadcast_now"),
+    )
+    count = len(channels_groups)
+    bot.send_message(uid,
+        f"📺 *إدارة القنوات والمجموعات*\n\n"
+        f"📊 عدد القنوات/المجموعات المضافة: `{count}`\n\n"
+        f"💡 *كيفية الإضافة:*\n"
+        f"1. أضف البوت كأدمن في القناة/المجموعة\n"
+        f"2. أرسل ID القناة أو المجموعة (مثال: -1001234567890)\n"
+        f"3. حدد اللغة المناسبة لإرسال الأخبار",
+        parse_mode="Markdown", reply_markup=markup
+    )
+
+def add_channel_step(message):
+    if not is_admin(message.from_user.id):
+        return
+    uid = message.from_user.id
+    lines = message.text.strip().split("\n")
+    if len(lines) < 2:
+        bot.send_message(uid,
+            "❌ أرسل في سطرين:\n"
+            "السطر 1: ID القناة/المجموعة (مثال: -1001234567890)\n"
+            "السطر 2: اللغة (مثال: العربية 🇮🇶)"
+        )
+        return
+    try:
+        chat_id = int(lines[0].strip())
+        lang = lines[1].strip()
+        try:
+            chat_info = bot.get_chat(chat_id)
+            title = chat_info.title or str(chat_id)
+            chat_type = chat_info.type
+        except Exception as e:
+            bot.send_message(uid, f"❌ تعذّر الوصول للقناة/المجموعة: {e}\nتأكد أن البوت أدمن فيها.")
+            return
+        for ch in channels_groups:
+            if ch["id"] == chat_id:
+                bot.send_message(uid, f"⚠️ هذه القناة/المجموعة مضافة مسبقاً: *{title}*", parse_mode="Markdown")
+                return
+        channels_groups.append({"id": chat_id, "title": title, "type": chat_type, "lang": lang})
+        save_channels_groups()
+        bot.send_message(uid,
+            f"✅ تمت الإضافة بنجاح!\n"
+            f"📺 *{title}*\n"
+            f"🆔 ID: `{chat_id}`\n"
+            f"🗣 اللغة: {lang}\n"
+            f"📡 النوع: {chat_type}",
+            parse_mode="Markdown"
+        )
+    except ValueError:
+        bot.send_message(uid, "❌ ID غير صحيح. يجب أن يكون رقماً مثل: -1001234567890")
+    except Exception as e:
+        bot.send_message(uid, f"❌ خطأ: {e}")
+
+def remove_channel_step(message):
+    if not is_admin(message.from_user.id):
+        return
+    uid = message.from_user.id
+    try:
+        chat_id = int(message.text.strip())
+        removed = None
+        for i, ch in enumerate(channels_groups):
+            if ch["id"] == chat_id:
+                removed = channels_groups.pop(i)
+                break
+        if removed:
+            save_channels_groups()
+            bot.send_message(uid, f"✅ تم حذف القناة/المجموعة: *{removed['title']}*", parse_mode="Markdown")
+        else:
+            bot.send_message(uid, "⚠️ هذا ID غير موجود في القائمة.")
+    except ValueError:
+        bot.send_message(uid, "❌ أرسل ID رقمياً فقط.")
+    except Exception as e:
+        bot.send_message(uid, f"❌ خطأ: {e}")
+
+def broadcast_to_channels():
+    if not channels_groups:
+        return
+    changed = False
+    for ch in list(channels_groups):
+        if ch.get("paused"):
+            continue
+        chat_id = ch["id"]
+        lang = ch.get("lang", "العربية 🇮🇶")
+        custom_sources = ch.get("custom_sources", [])
+        feeds = custom_sources if custom_sources else RSS.get(lang, RSS.get("العربية 🇮🇶", []))
+        sent = set(ch.setdefault("sent_news", []))
+        for feed_url in feeds:
+            try:
+                feed = feedparser.parse(feed_url)
+                for item in feed.entries[:5]:
+                    if not hasattr(item, 'link') or not hasattr(item, 'title'):
+                        continue
+                    link = getattr(item, 'link', '')
+                    title = getattr(item, 'title', '')
+                    if not link or link in sent:
+                        continue
+                    if is_blacklisted(title):
+                        continue
+                    sent.add(link)
+                    ch["sent_news"] = list(sent)[-500:]
+                    ch["news_sent_count"] = ch.get("news_sent_count", 0) + 1
+                    changed = True
+                    markup = make_news_share_markup(link, title)
+                    try:
+                        bot.send_message(chat_id, format_news_item("🚨 خبر عاجل", title), parse_mode="Markdown", reply_markup=markup)
+                    except Exception as e:
+                        notify_admin_error(f"خطأ في إرسال للقناة {ch['title']} ({chat_id}): {e}")
+            except Exception as e:
+                notify_admin_error(f"خطأ في RSS للقنوات ({feed_url}): {e}")
+    if changed:
+        save_channels_groups()
+
+# ======== خطوات الميزات الجديدة ========
+def breaking_news_step(message):
+    if not is_admin(message.from_user.id):
+        return
+    uid = message.from_user.id
+    lines = message.text.strip().split("\n")
+    news_text = lines[0].strip()
+    link = lines[1].strip() if len(lines) > 1 and lines[1].startswith("http") else ""
+    markup = make_news_share_markup(link, news_text) if link else None
+    full_msg = f"🚨 *خبر عاجل*\n\n📰 {news_text}{BOT_SIGNATURE}"
+    sent_users = 0
+    failed_users = 0
+    for target_uid in list(users.keys()):
+        if int(target_uid) in banned:
+            continue
+        try:
+            bot.send_message(target_uid, full_msg, parse_mode="Markdown", reply_markup=markup)
+            sent_users += 1
+        except:
+            failed_users += 1
+    sent_ch = 0
+    for ch in list(channels_groups):
+        try:
+            bot.send_message(ch["id"], full_msg, parse_mode="Markdown", reply_markup=markup)
+            sent_ch += 1
+        except:
+            pass
+    bot.send_message(uid,
+        f"✅ *تم إرسال الخبر العاجل:*\n\n"
+        f"👤 المستخدمون: `{sent_users}` وصل، `{failed_users}` فشل\n"
+        f"📺 القنوات/المجموعات: `{sent_ch}` وصل",
+        parse_mode="Markdown"
+    )
+
+def bl_add_step(message):
+    if not is_admin(message.from_user.id):
+        return
+    uid = message.from_user.id
+    words_input = message.text.strip()
+    new_words = [w.strip() for w in words_input.replace("،", ",").split(",") if w.strip()]
+    added = []
+    for w in new_words:
+        if w not in blacklist_words:
+            blacklist_words.append(w)
+            added.append(w)
+    save_blacklist()
+    bot.send_message(uid,
+        f"✅ تم إضافة `{len(added)}` كلمة للقائمة السوداء:\n" +
+        "\n".join(f"• `{w}`" for w in added),
+        parse_mode="Markdown"
+    )
+
+def bl_remove_step(message):
+    if not is_admin(message.from_user.id):
+        return
+    uid = message.from_user.id
+    word = message.text.strip()
+    if word in blacklist_words:
+        blacklist_words.remove(word)
+        save_blacklist()
+        bot.send_message(uid, f"✅ تم حذف الكلمة `{word}` من القائمة السوداء.", parse_mode="Markdown")
+    else:
+        bot.send_message(uid, f"⚠️ الكلمة `{word}` غير موجودة في القائمة.", parse_mode="Markdown")
+
+def search_user_step(message):
+    if not is_admin(message.from_user.id):
+        return
+    uid = message.from_user.id
+    query = message.text.strip().lower()
+    results = []
+    for u_id, u_info in users.items():
+        name = u_info.get("name", "").lower()
+        if query == u_id or query in name:
+            results.append((u_id, u_info))
+    if not results:
+        bot.send_message(uid, "❌ لم يُعثَر على مستخدم بهذا ID أو الاسم.")
+        return
+    for u_id, u_info in results[:5]:
+        notif = "✅" if u_info.get("notifications", True) else "❌"
+        is_pr = int(u_id) in stats.get("premium_users", [])
+        msg = (
+            f"👤 *نتيجة البحث*\n"
+            f"━━━━━━━━━━━━━━\n"
+            f"🆔 ID: `{u_id}`\n"
+            f"👤 الاسم: *{u_info.get('name', '—')}*\n"
+            f"🗣 اللغة: {u_info.get('lang', '-')}\n"
+            f"🌍 الدولة: {u_info.get('country', '-')}\n"
+            f"📅 الانضمام: `{u_info.get('join_date', '-')}`\n"
+            f"🔔 إشعارات: {notif} | ⭐ مميز: {'نعم' if is_pr else 'لا'}"
+        )
+        view_markup = types.InlineKeyboardMarkup(row_width=2)
+        view_markup.add(
+            types.InlineKeyboardButton("🚫 حظر", callback_data=f"quick_ban_{u_id}"),
+            types.InlineKeyboardButton("⭐ ترقية", callback_data=f"quick_premium_{u_id}"),
+            types.InlineKeyboardButton("📢 راسله", url=f"tg://user?id={u_id}"),
+        )
+        bot.send_message(uid, msg, parse_mode="Markdown", reply_markup=view_markup)
+
+def msg_user_step(message):
+    if not is_admin(message.from_user.id):
+        return
+    uid = message.from_user.id
+    lines = message.text.strip().split("\n")
+    if len(lines) < 2:
+        bot.send_message(uid, "❌ أرسل في سطرين: السطر 1 ID المستخدم، السطر 2 الرسالة.")
+        return
+    try:
+        target_id = int(lines[0].strip())
+        msg_text = "\n".join(lines[1:]).strip()
+        bot.send_message(target_id, f"📩 *رسالة من الإدارة:*\n\n{msg_text}", parse_mode="Markdown")
+        bot.send_message(uid, f"✅ تم إرسال الرسالة للمستخدم `{target_id}` بنجاح.", parse_mode="Markdown")
+    except ValueError:
+        bot.send_message(uid, "❌ ID غير صحيح.")
+    except Exception as e:
+        bot.send_message(uid, f"❌ فشل الإرسال: {e}")
+
+# ======== معالج عداد القراءة (لجميع المستخدمين) ========
+@bot.callback_query_handler(func=lambda c: c.data == "read_open")
+def handle_read_open(call):
+    today = str(datetime.date.today())
+    read_stats["total_opens"] = read_stats.get("total_opens", 0) + 1
+    read_stats.setdefault("daily", {})[today] = read_stats["daily"].get(today, 0) + 1
+    save_read_stats()
+    bot.answer_callback_query(call.id)
 
 # ======== خطوات إدارة الأدمن ========
 def add_admin_step(message):
@@ -2415,6 +2907,15 @@ def news_matches_interests(title, interests):
                 return True
     return False
 
+def is_blacklisted(title):
+    if not blacklist_words:
+        return False
+    title_lower = title.lower()
+    for word in blacklist_words:
+        if word.lower() in title_lower:
+            return True
+    return False
+
 def broadcast_premium_instant_news():
     for uid, info in list(users.items()):
         if not is_premium(uid):
@@ -2436,7 +2937,10 @@ def broadcast_premium_instant_news():
                     if not news_matches_interests(item.title, interests):
                         continue
                     sent.add(item.link)
-                    bot.send_message(uid, f"⚡ *خبر عاجل فوري*\n\n📰 {item.title}", parse_mode="Markdown")
+                    link = getattr(item, 'link', '')
+                    title = getattr(item, 'title', '')
+                    markup = make_news_share_markup(link, title)
+                    bot.send_message(uid, f"⚡ *خبر عاجل فوري*\n\n📰 {title}", parse_mode="Markdown", reply_markup=markup)
             except Exception as e:
                 notify_admin_error(f"خطأ في الأخبار الفورية للمميز: {e}")
     save_json(USERS_FILE, users)
@@ -2793,16 +3297,23 @@ def format_news_item(prefix, title):
     return f"{prefix}\n\n📰 {title}{BOT_SIGNATURE}"
 
 def make_news_share_markup(link, title=""):
-    markup = types.InlineKeyboardMarkup()
-    share_text = f"📰 {title[:80]}\n\nعبر @{BOT_USERNAME}" if title else f"عبر @{BOT_USERNAME}"
-    share_url = f"https://t.me/share/url?url={link}&text={share_text}"
-    bot_share_url = f"https://t.me/share/url?url=https://t.me/{BOT_USERNAME}&text=اشترك+في+بوت+الأخبار+%40{BOT_USERNAME}+لأحدث+الأخبار+والطقس+والعملات"
+    import urllib.parse
+    markup = types.InlineKeyboardMarkup(row_width=2)
+    share_text = f"📰 {title[:100]}\n\n🔗 {link}\n\nعبر @{BOT_USERNAME}" if title else f"🔗 {link}\n\nعبر @{BOT_USERNAME}"
+    share_url = f"https://t.me/share/url?url={urllib.parse.quote(link, safe='')}&text={urllib.parse.quote(share_text, safe='')}"
+    bot_link = f"https://t.me/{BOT_USERNAME}"
+    bot_share_url = f"https://t.me/share/url?url={urllib.parse.quote(bot_link, safe='')}&text={urllib.parse.quote(f'📰 بوت الأخبار والطقس @{BOT_USERNAME}\nآخر أخبار العالم والطقس والعملات على مدار الساعة!', safe='')}"
+    if link:
+        markup.add(
+            types.InlineKeyboardButton("🔗 فتح الخبر", url=link),
+            types.InlineKeyboardButton("📤 شارك الخبر", url=share_url)
+        )
+    else:
+        markup.add(
+            types.InlineKeyboardButton("📤 شارك الخبر", url=share_url)
+        )
     markup.add(
-        types.InlineKeyboardButton("🔗 فتح الخبر", url=link),
-        types.InlineKeyboardButton("📤 مشاركة الخبر", url=share_url)
-    )
-    markup.add(
-        types.InlineKeyboardButton(f"🤖 انشر البوت @{BOT_USERNAME}", url=bot_share_url)
+        types.InlineKeyboardButton(f"🤖 شارك البوت @{BOT_USERNAME}", url=bot_share_url)
     )
     return markup
 
@@ -2956,8 +3467,12 @@ def broadcast_news():
                 for item in feed.entries[:5]:
                     if not hasattr(item, 'link') or item.link in sent:
                         continue
+                    title = getattr(item, 'title', '')
+                    if is_blacklisted(title):
+                        continue
                     sent.add(item.link)
-                    bot.send_message(uid, format_news_item("🚨 خبر عاجل", item.title), parse_mode="Markdown")
+                    markup = make_news_share_markup(item.link, title)
+                    bot.send_message(uid, format_news_item("🚨 خبر عاجل", title), parse_mode="Markdown", reply_markup=markup)
             except Exception as e:
                 notify_admin_error(f"خطأ في RSS ({feed_url}): {e}")
     save_json(USERS_FILE, users)
@@ -3615,8 +4130,324 @@ scheduler.add_job(check_keyword_alerts, 'interval', minutes=15)
 scheduler.add_job(auto_clean_sent_news, 'interval', hours=24)
 scheduler.add_job(check_asset_tracking, 'interval', minutes=30)
 scheduler.add_job(lambda: save_json(USERS_FILE, users), 'interval', minutes=10)
+scheduler.add_job(broadcast_to_channels, 'interval', minutes=5)
 scheduler.start()
 atexit.register(lambda: scheduler.shutdown(wait=False))
 
+# ======== رسالة الترحيب عند إضافة البوت للقناة/المجموعة ========
+CHANNEL_WELCOME_MSG = (
+    "👋 *أهلاً! تم تفعيل بوت الأخبار بنجاح في هذه القناة/المجموعة.*\n\n"
+    "━━━━━━━━━━━━━━\n"
+    "📋 *الأوامر المتاحة لأدمن القناة/المجموعة:*\n\n"
+    "🌐 *تغيير لغة الأخبار:*\n"
+    "`/setlang العربية 🇮🇶`\n"
+    "`/setlang English 🇬🇧`\n"
+    "`/setlang فارسی 🇮🇷`\n"
+    "`/setlang Türkçe 🇹🇷`\n\n"
+    "🏙 *تغيير المدينة:*\n"
+    "`/setcity بغداد`\n\n"
+    "📡 *مصادر الأخبار (RSS):*\n"
+    "`/setsource رابط_RSS` — إضافة مصدر\n"
+    "`/removesource رابط_RSS` — حذف مصدر\n"
+    "`/listsources` — عرض المصادر\n\n"
+    "⏸ *التحكم في البث:*\n"
+    "`/pause` — إيقاف البث مؤقتاً\n"
+    "`/resume` — استئناف البث\n\n"
+    "⚙️ *الإعدادات:*\n"
+    "`/settings` — عرض الإعدادات الحالية\n\n"
+    "━━━━━━━━━━━━━━\n"
+    "📰 سيبدأ إرسال الأخبار تلقائياً كل بضع دقائق.\n"
+    f"🤖 @{BOT_USERNAME}"
+)
+
+@bot.my_chat_member_handler()
+def on_bot_chat_member_update(update):
+    new_status = update.new_chat_member.status
+    old_status = update.old_chat_member.status
+    chat = update.chat
+    chat_id = chat.id
+    chat_type = chat.type
+
+    if chat_type not in ("channel", "group", "supergroup"):
+        return
+
+    if new_status in ("administrator", "member") and old_status in ("left", "kicked", "restricted"):
+        title = chat.title or str(chat_id)
+        already = any(ch["id"] == chat_id for ch in channels_groups)
+        if not already:
+            channels_groups.append({
+                "id": chat_id,
+                "title": title,
+                "type": chat_type,
+                "lang": "العربية 🇮🇶",
+                "city": "",
+                "sent_news": []
+            })
+            save_channels_groups()
+        try:
+            bot.send_message(chat_id, CHANNEL_WELCOME_MSG, parse_mode="Markdown")
+        except Exception as e:
+            notify_admin_error(f"خطأ في إرسال رسالة الترحيب للقناة {title}: {e}")
+        notify_admin_error(f"✅ تمت إضافة البوت لـ: *{title}* (`{chat_id}`) — النوع: {chat_type}")
+
+    elif new_status in ("left", "kicked") and old_status in ("administrator", "member"):
+        title = chat.title or str(chat_id)
+        for i, ch in enumerate(channels_groups):
+            if ch["id"] == chat_id:
+                channels_groups.pop(i)
+                save_channels_groups()
+                break
+        notify_admin_error(f"⚠️ تمت إزالة البوت من: *{title}* (`{chat_id}`)")
+
+
+# ======== أوامر التحكم داخل القناة/المجموعة ========
+VALID_LANGS = ["العربية 🇮🇶", "English 🇬🇧", "فارسی 🇮🇷", "Türkçe 🇹🇷"]
+
+def is_chat_admin(chat_id, user_id):
+    try:
+        member = bot.get_chat_member(chat_id, user_id)
+        return member.status in ("administrator", "creator")
+    except:
+        return False
+
+@bot.message_handler(commands=["setlang"], chat_types=["channel", "group", "supergroup"])
+def cmd_setlang(message):
+    chat_id = message.chat.id
+    user_id = message.from_user.id if message.from_user else None
+    if not user_id or not is_chat_admin(chat_id, user_id):
+        return
+    args = message.text.strip().replace("/setlang", "").strip()
+    matched_lang = None
+    for lang in VALID_LANGS:
+        if lang.lower().startswith(args.lower()) or args.lower() in lang.lower():
+            matched_lang = lang
+            break
+    if not matched_lang:
+        bot.send_message(chat_id,
+            "❌ *لغة غير صحيحة.*\n\n"
+            "اللغات المتاحة:\n"
+            "• `العربية 🇮🇶`\n"
+            "• `English 🇬🇧`\n"
+            "• `فارسی 🇮🇷`\n"
+            "• `Türkçe 🇹🇷`\n\n"
+            "مثال: `/setlang العربية 🇮🇶`",
+            parse_mode="Markdown"
+        )
+        return
+    found = False
+    for ch in channels_groups:
+        if ch["id"] == chat_id:
+            ch["lang"] = matched_lang
+            ch["sent_news"] = []
+            found = True
+            break
+    if not found:
+        channels_groups.append({
+            "id": chat_id,
+            "title": message.chat.title or str(chat_id),
+            "type": message.chat.type,
+            "lang": matched_lang,
+            "city": "",
+            "sent_news": []
+        })
+    save_channels_groups()
+    bot.send_message(chat_id,
+        f"✅ *تم تغيير لغة الأخبار إلى:* {matched_lang}\n"
+        f"📰 سيبدأ إرسال الأخبار باللغة الجديدة في البث القادم.",
+        parse_mode="Markdown"
+    )
+
+@bot.message_handler(commands=["setcity"], chat_types=["channel", "group", "supergroup"])
+def cmd_setcity(message):
+    chat_id = message.chat.id
+    user_id = message.from_user.id if message.from_user else None
+    if not user_id or not is_chat_admin(chat_id, user_id):
+        return
+    city = message.text.strip().replace("/setcity", "").strip()
+    if not city:
+        bot.send_message(chat_id,
+            "❌ *أرسل اسم المدينة.*\n\nمثال: `/setcity بغداد`",
+            parse_mode="Markdown"
+        )
+        return
+    found = False
+    for ch in channels_groups:
+        if ch["id"] == chat_id:
+            ch["city"] = city
+            found = True
+            break
+    if not found:
+        channels_groups.append({
+            "id": chat_id,
+            "title": message.chat.title or str(chat_id),
+            "type": message.chat.type,
+            "lang": "العربية 🇮🇶",
+            "city": city,
+            "sent_news": []
+        })
+    save_channels_groups()
+    bot.send_message(chat_id,
+        f"✅ *تم تعيين المدينة إلى:* {city}",
+        parse_mode="Markdown"
+    )
+
+@bot.message_handler(commands=["settings"], chat_types=["channel", "group", "supergroup"])
+def cmd_settings(message):
+    chat_id = message.chat.id
+    user_id = message.from_user.id if message.from_user else None
+    if not user_id or not is_chat_admin(chat_id, user_id):
+        return
+    ch_data = next((ch for ch in channels_groups if ch["id"] == chat_id), None)
+    if not ch_data:
+        bot.send_message(chat_id,
+            "⚠️ هذه القناة/المجموعة غير مسجلة في البوت بعد.\n"
+            "أضف البوت كأدمن وسيبدأ تلقائياً.",
+            parse_mode="Markdown"
+        )
+        return
+    lang = ch_data.get("lang", "العربية 🇮🇶")
+    city = ch_data.get("city", "") or "غير محددة"
+    chat_type = ch_data.get("type", "")
+    type_label = "📢 قناة" if chat_type == "channel" else "👥 مجموعة"
+    bot.send_message(chat_id,
+        f"⚙️ *إعدادات هذه {type_label}:*\n\n"
+        f"🌐 اللغة: *{lang}*\n"
+        f"🏙 المدينة: *{city}*\n\n"
+        f"🔧 لتغيير اللغة: `/setlang اسم اللغة`\n"
+        f"🔧 لتغيير المدينة: `/setcity اسم المدينة`",
+        parse_mode="Markdown"
+    )
+
+# ======== أوامر المصادر المخصصة لأدمن القناة/المجموعة ========
+@bot.message_handler(commands=["setsource"], chat_types=["channel", "group", "supergroup"])
+def cmd_setsource(message):
+    chat_id = message.chat.id
+    user_id = message.from_user.id if message.from_user else None
+    if not user_id or not is_chat_admin(chat_id, user_id):
+        return
+    url = message.text.strip().replace("/setsource", "").strip()
+    if not url.startswith("http"):
+        bot.send_message(chat_id, "❌ أرسل رابط RSS صحيح يبدأ بـ http\nمثال: `/setsource https://feeds.bbcarabic.com/world-arabic-rss.xml`", parse_mode="Markdown")
+        return
+    ch_data = next((ch for ch in channels_groups if ch["id"] == chat_id), None)
+    if not ch_data:
+        channels_groups.append({"id": chat_id, "title": message.chat.title or str(chat_id),
+                                 "type": message.chat.type, "lang": "العربية 🇮🇶",
+                                 "custom_sources": [url], "sent_news": []})
+    else:
+        sources = ch_data.setdefault("custom_sources", [])
+        if url in sources:
+            bot.send_message(chat_id, "⚠️ هذا المصدر مضاف مسبقاً.")
+            return
+        sources.append(url)
+    save_channels_groups()
+    bot.send_message(chat_id, f"✅ *تمت إضافة المصدر:*\n`{url}`", parse_mode="Markdown")
+
+@bot.message_handler(commands=["removesource"], chat_types=["channel", "group", "supergroup"])
+def cmd_removesource(message):
+    chat_id = message.chat.id
+    user_id = message.from_user.id if message.from_user else None
+    if not user_id or not is_chat_admin(chat_id, user_id):
+        return
+    url = message.text.strip().replace("/removesource", "").strip()
+    ch_data = next((ch for ch in channels_groups if ch["id"] == chat_id), None)
+    if not ch_data or url not in ch_data.get("custom_sources", []):
+        bot.send_message(chat_id, "⚠️ المصدر غير موجود.")
+        return
+    ch_data["custom_sources"].remove(url)
+    save_channels_groups()
+    bot.send_message(chat_id, f"✅ تم حذف المصدر:\n`{url}`", parse_mode="Markdown")
+
+@bot.message_handler(commands=["listsources"], chat_types=["channel", "group", "supergroup"])
+def cmd_listsources(message):
+    chat_id = message.chat.id
+    user_id = message.from_user.id if message.from_user else None
+    if not user_id or not is_chat_admin(chat_id, user_id):
+        return
+    ch_data = next((ch for ch in channels_groups if ch["id"] == chat_id), None)
+    sources = ch_data.get("custom_sources", []) if ch_data else []
+    if not sources:
+        bot.send_message(chat_id,
+            "📋 لا توجد مصادر مخصصة.\n"
+            "يستخدم البوت المصادر الافتراضية حسب اللغة.\n"
+            "أضف مصدراً: `/setsource رابط_RSS`",
+            parse_mode="Markdown"
+        )
+        return
+    msg = "📋 *مصادر الأخبار المخصصة:*\n\n"
+    for i, src in enumerate(sources, 1):
+        msg += f"{i}. `{src}`\n"
+    bot.send_message(chat_id, msg, parse_mode="Markdown")
+
+@bot.message_handler(commands=["pause"], chat_types=["channel", "group", "supergroup"])
+def cmd_pause(message):
+    chat_id = message.chat.id
+    user_id = message.from_user.id if message.from_user else None
+    if not user_id or not is_chat_admin(chat_id, user_id):
+        return
+    ch_data = next((ch for ch in channels_groups if ch["id"] == chat_id), None)
+    if not ch_data:
+        bot.send_message(chat_id, "⚠️ هذه القناة/المجموعة غير مسجلة.")
+        return
+    ch_data["paused"] = True
+    save_channels_groups()
+    bot.send_message(chat_id, "⏸ *تم إيقاف البث مؤقتاً.*\nاستخدم `/resume` للاستئناف.", parse_mode="Markdown")
+
+@bot.message_handler(commands=["resume"], chat_types=["channel", "group", "supergroup"])
+def cmd_resume(message):
+    chat_id = message.chat.id
+    user_id = message.from_user.id if message.from_user else None
+    if not user_id or not is_chat_admin(chat_id, user_id):
+        return
+    ch_data = next((ch for ch in channels_groups if ch["id"] == chat_id), None)
+    if not ch_data:
+        bot.send_message(chat_id, "⚠️ هذه القناة/المجموعة غير مسجلة.")
+        return
+    ch_data["paused"] = False
+    save_channels_groups()
+    bot.send_message(chat_id, "▶️ *تم استئناف البث.*\nستصلك الأخبار تلقائياً قريباً.", parse_mode="Markdown")
+
+# ======== تقرير يومي للأدمن ========
+def send_daily_report():
+    today = str(datetime.date.today())
+    yesterday = str(datetime.date.today() - datetime.timedelta(days=1))
+    total_users_count = len(users)
+    new_today = sum(1 for u in users.values() if u.get("join_date", "").startswith(today))
+    premium_count = len(stats.get("premium_users", []))
+    channels_count = len(channels_groups)
+    total_ch_news = sum(ch.get("news_sent_count", 0) for ch in channels_groups)
+    read_today = read_stats.get("daily", {}).get(today, 0)
+    read_yest = read_stats.get("daily", {}).get(yesterday, 0)
+    total_reads = read_stats.get("total_opens", 0)
+    active_users = sum(1 for u in users.values() if u.get("notifications", True))
+    report = (
+        f"📊 *التقرير اليومي — {today}*\n"
+        f"━━━━━━━━━━━━━━\n"
+        f"👥 إجمالي المستخدمين: `{total_users_count}`\n"
+        f"🆕 جدد اليوم: `{new_today}`\n"
+        f"🔔 نشطون (إشعارات مفعّلة): `{active_users}`\n"
+        f"⭐ مميزون: `{premium_count}`\n"
+        f"━━━━━━━━━━━━━━\n"
+        f"📺 القنوات/المجموعات: `{channels_count}`\n"
+        f"📰 إجمالي أخبار القنوات: `{total_ch_news}`\n"
+        f"━━━━━━━━━━━━━━\n"
+        f"📖 قراءات اليوم: `{read_today}`\n"
+        f"📖 قراءات أمس: `{read_yest}`\n"
+        f"📖 إجمالي القراءات: `{total_reads}`\n"
+        f"━━━━━━━━━━━━━━\n"
+        f"🤖 @{BOT_USERNAME}"
+    )
+    try:
+        bot.send_message(ADMIN_ID, report, parse_mode="Markdown")
+    except Exception as e:
+        pass
+    for admin_id in extra_admins:
+        try:
+            bot.send_message(admin_id, report, parse_mode="Markdown")
+        except:
+            pass
+
+scheduler.add_job(send_daily_report, 'cron', hour=8, minute=0)
+
 # ======== تشغيل البوت ========
-bot.infinity_polling()
+bot.infinity_polling(allowed_updates=["message", "callback_query", "my_chat_member"])
