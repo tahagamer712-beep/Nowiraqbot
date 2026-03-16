@@ -1,171 +1,97 @@
 import telebot
+import requests
 import schedule
 import time
-import requests
+import threading
 
-# ====== الإعدادات ======
+# ===== توكن البوت =====
 TOKEN = "8606492099:AAGAh8TFt4FexlnqNcH2IB_GP8DERvOjhJU"
-ADMIN_ID = 5149213983
 bot = telebot.TeleBot(TOKEN)
 
-# ===== المدن =====
-cities = ["Baghdad","Basra","Erbil"]
+# ===== ملفات المستخدمين =====
+USERS_FILE = "users.txt"
 
 # ===== API Keys =====
 WEATHER_KEY = "18a7801721693e772bbada4687d03e43"
 NEWS_KEY = "98b2295d1a034076913e0c0e2aa64fa4"
 AQI_KEY = "dd90e9d65caffb048e68b9d48d6b9aeab31c00d3"
 
-# ===== قاعدة بيانات المستخدمين =====
-def load_users():
+# ===== تخصيص المدن والعملات =====
+cities = ["Baghdad", "Basra", "Erbil"]
+currencies = {"USD": "دولار", "EUR": "يورو"}
+metals = ["Gold", "Silver"]
+crypto = ["Bitcoin", "Ethereum"]
+
+# ===== دالة ترسل رسالة لكل مستخدم =====
+def broadcast(text):
     try:
-        with open("users.txt","r") as f:
-            return [line.strip() for line in f.readlines()]
-    except:
-        return []
+        with open(USERS_FILE, "r") as f:
+            users = f.readlines()
+        for user in users:
+            chat_id = user.strip().split(",")[0]
+            bot.send_message(chat_id, text)
+    except Exception as e:
+        print(f"Broadcast error: {e}")
 
-def add_user(chat_id):
-    users = load_users()
-    if str(chat_id) not in users:
-        with open("users.txt","a") as f:
-            f.write(str(chat_id)+"\n")
-
-def remove_user(chat_id):
-    users = load_users()
-    users = [u for u in users if u != str(chat_id)]
-    with open("users.txt","w") as f:
-        for u in users:
-            f.write(u+"\n")
-
-def broadcast(msg):
-    users = load_users()
-    for user in users:
-        try:
-            bot.send_message(user,msg)
-        except:
-            remove_user(user)
-
-# ===== استقبال /start =====
+# ===== /start handler =====
 @bot.message_handler(commands=['start'])
-def start(message):
-    chat_id = message.chat.id
-    name = message.from_user.first_name
-    username = message.from_user.username
-
-    add_user(chat_id)
-
-    welcome = f"""
-👋 أهلاً {name}!
-
-مرحباً بك في بوت **Iraq Now** 🇮🇶
-
-راح أرسل لك كل ساعة:
-🌤 الطقس في العراق
-💰 أسعار الدولار، الذهب، الفضة، البيتكوين
-⚽ جدول مباريات الدوري العراقي والأوروبي
-📰 أهم أخبار العالم
-🌫 جودة الهواء في بغداد، البصرة وأربيل
-
-كل المعلومات من مصادر رسمية وموثوقة.
-استمتع بالتحديثات اليومية 🚀
-"""
-    bot.send_message(chat_id,welcome)
-
-    # إشعار لصاحب البوت
-    bot.send_message(
-        ADMIN_ID,
-        f"✅ مستخدم جديد سجل البوت:\nالاسم: {name}\nاليوزر: @{username}\nالايدي: {chat_id}"
-    )
+def send_welcome(message):
+    bot.send_message(message.chat.id, "أهلاً! 👋 هذا البوت يرسل لك الطقس، العملات، المباريات، الأخبار، وجودة الهواء تلقائيًا كل ساعة.")
+    # تسجيل المستخدم
+    try:
+        with open(USERS_FILE, "a") as f:
+            f.write(f"{message.chat.id},{message.from_user.username}\n")
+    except:
+        pass
 
 # ===== سكشن الطقس =====
 def send_weather():
-    messages=[]
     for city in cities:
-        url=f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={WEATHER_KEY}&units=metric"
+        url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={WEATHER_KEY}&units=metric"
         data = requests.get(url).json()
         temp = data['main']['temp']
         humidity = data['main']['humidity']
         wind = data['wind']['speed']
-        rain = data.get('rain',{}).get('1h',0)
-        msg=f"{city}: {temp}°C, رطوبة {humidity}%, مطر {rain}mm, سرعة الرياح {wind} m/s"
-        broadcast("🌤 الطقس اليوم:\n"+msg)
+        broadcast(f"☀️ الطقس في {city}: {temp}°C, رطوبة {humidity}%, سرعة الرياح {wind} m/s")
 
 # ===== سكشن الأسعار =====
 def send_prices():
-    # الدولار مقابل الدينار
-    dollar_url = "https://api.exchangerate.host/latest?base=USD&symbols=IQD"
-    dollar = requests.get(dollar_url).json()['rates']['IQD']
-
-    # الذهب والفضة العالمي
-    gold_url = "https://data-asg.goldprice.org/dbXRates/USD"
-    gold_data = requests.get(gold_url).json()
-    gold_world = gold_data['items'][0]['xauPrice']
-    silver_world = gold_data['items'][0]['xagPrice']
-
-    # العملات الرقمية
-    crypto_url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum&vs_currencies=usd"
-    crypto_data = requests.get(crypto_url).json()
-    btc_usd = crypto_data['bitcoin']['usd']
-    eth_usd = crypto_data['ethereum']['usd']
-
-    # لكل مدينة رسالة منفصلة
-    for city in cities:
-        gold_iqd = round(gold_world*dollar,2)
-        silver_iqd = round(silver_world*dollar,2)
-        btc_iqd = round(btc_usd*dollar,2)
-        eth_iqd = round(eth_usd*dollar,2)
-
-        msg=f"""
-💰 أسعار اليوم في {city}:
-
-الدينار مقابل الدولار: {dollar} IQD
-الذهب: {gold_iqd} IQD | {gold_world} USD
-الفضة: {silver_iqd} IQD | {silver_world} USD
-البيتكوين: {btc_iqd} IQD | {btc_usd} USD
-Ethereum: {eth_iqd} IQD | {eth_usd} USD
-"""
-        broadcast(msg)
-
-# ===== سكشن المباريات =====
-def send_matches():
-    msg="""
-⚽ جدول مباريات اليوم:
-
-الدوري العراقي:
-الميناء × القوة الجوية
-
-الدوري الانجليزي:
-مانشستر يونايتد × ليفربول
-
-الدوري الإسباني:
-ريال مدريد × برشلونة
-"""
-    broadcast(msg)
-
-# ===== سكشن الأخبار =====
-def send_news():
-    url=f"https://newsapi.org/v2/top-headlines?language=en&apiKey={NEWS_KEY}"
-    data=requests.get(url).json()
-    articles = data["articles"][:5]
-    messages = [f"- {a['title']}" for a in articles]
-    broadcast("📰 أهم الأخبار:\n"+ "\n".join(messages))
+    # مثال عملات، مع امكانية ربط قناة رسمية لاحقًا
+    for cur, name in currencies.items():
+        url = f"https://api.exchangerate.host/latest?base=USD&symbols={cur}"
+        data = requests.get(url).json()
+        rate = data['rates'][cur]
+        broadcast(f"💰 سعر {name} اليوم: {rate}")
 
 # ===== سكشن جودة الهواء =====
 def send_air_quality():
     for city in cities:
-        url=f"https://api.waqi.info/feed/{city}/?token={AQI_KEY}"
-        data=requests.get(url).json()
-        aqi=data['data']['aqi']
+        url = f"https://api.waqi.info/feed/{city}/?token={AQI_KEY}"
+        data = requests.get(url).json()
+        aqi = data['data']['aqi']
         broadcast(f"🌫 جودة الهواء في {city}: AQI {aqi}")
+
+# ===== سكشن الأخبار =====
+def send_news():
+    url = f"https://newsapi.org/v2/top-headlines?country=us&apiKey={NEWS_KEY}"
+    data = requests.get(url).json()
+    articles = data.get('articles', [])[:5]
+    messages = [f"- {a['title']}" for a in articles]
+    broadcast("📰 أهم الأخبار:\n" + "\n".join(messages))
 
 # ===== ضبط كل ساعة =====
 schedule.every().hour.do(send_weather)
 schedule.every().hour.do(send_prices)
-schedule.every().hour.do(send_matches)
 schedule.every().hour.do(send_news)
 schedule.every().hour.do(send_air_quality)
 
+# ===== تشغيل الجدولة في thread =====
+def run_schedule():
+    while True:
+        schedule.run_pending()
+        time.sleep(60)
+
+threading.Thread(target=run_schedule).start()
+
 # ===== تشغيل البوت =====
-while True:
-    schedule.run_pending()
-    time.sleep(60)
+bot.polling(none_stop=True)
