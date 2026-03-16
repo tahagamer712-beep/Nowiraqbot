@@ -21,6 +21,11 @@ USERS_FILE = "users.json"
 STATS_FILE = "stats.json"
 BANNED_FILE = "banned.json"
 RSS_FILE = "rss.json"
+ADMINS_FILE = "admins.json"
+KEYWORDS_FILE = "keywords.json"
+
+# ======== اسم البوت ========
+BOT_USERNAME = "Iraqnowbot"
 
 # ======== تحميل وحفظ البيانات ========
 def load_json(file, default):
@@ -51,7 +56,6 @@ def save_json(file, data):
 
 users = load_json(USERS_FILE, {})
 banned = load_json(BANNED_FILE, [])
-# تحويل banned إلى قائمة من int دائماً
 banned = [int(b) for b in banned]
 
 stats = load_json(STATS_FILE, {
@@ -63,6 +67,16 @@ stats = load_json(STATS_FILE, {
     "premium_users": [],
     "revenue": 0.0
 })
+
+# ======== قائمة الأدمن المتعددين ========
+extra_admins = load_json(ADMINS_FILE, [])
+extra_admins = [int(a) for a in extra_admins]
+
+def is_admin(uid):
+    return int(uid) == ADMIN_ID or int(uid) in extra_admins
+
+def save_extra_admins():
+    save_json(ADMINS_FILE, extra_admins)
 
 # ======== حالة البوت ========
 bot_paused = False
@@ -258,125 +272,194 @@ countries = {
     }
 }
 
-# ======== مصادر RSS (مع دعم الحفظ) ========
+# ======== مصادر RSS ========
 DEFAULT_RSS = {
     "العربية 🇮🇶": [
-        "https://www.alarabiya.net/.mrss/ar/0/0/0.xml",        # العربية
-        "https://www.bbc.com/arabic/index.xml",                # BBC عربي
-        "https://www.aljazeera.net/aljazeera/feeds/rss.xml",   # الجزيرة
-        "https://www.alsumaria.tv/rss/latest-news",            # السومرية
-        "https://www.skynewsarabia.com/rss.xml",               # سكاي نيوز عربية
-        "https://arabic.rt.com/rss/",                          # RT عربي
-        "https://feeds.feedburner.com/alkhaleejonline",        # الخليج
-        "https://www.independentarabia.com/rss.xml",           # إندبندنت عربي
+        "https://www.alarabiya.net/.mrss/ar/0/0/0.xml",
+        "https://www.bbc.com/arabic/index.xml",
+        "https://www.aljazeera.net/aljazeera/feeds/rss.xml",
+        "https://www.alsumaria.tv/rss/latest-news",
+        "https://www.skynewsarabia.com/rss.xml",
+        "https://arabic.rt.com/rss/",
+        "https://feeds.feedburner.com/alkhaleejonline",
+        "https://www.independentarabia.com/rss.xml",
     ],
     "English 🇬🇧": [
-        "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",         # NY Times
-        "http://feeds.bbci.co.uk/news/world/rss.xml",                     # BBC
-        "https://feeds.reuters.com/reuters/worldNews",                    # Reuters
-        "https://rss.cnn.com/rss/edition_world.rss",                      # CNN
-        "https://feeds.skynews.com/feeds/rss/world.xml",                  # Sky News
-        "https://www.aljazeera.com/xml/rss/all.xml",                      # Al Jazeera
-        "https://feeds.washingtonpost.com/rss/world",                     # Washington Post
-        "https://rss.dw.com/rdf/rss-en-all",                              # DW English
+        "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",
+        "http://feeds.bbci.co.uk/news/world/rss.xml",
+        "https://feeds.reuters.com/reuters/worldNews",
+        "https://rss.cnn.com/rss/edition_world.rss",
+        "https://feeds.skynews.com/feeds/rss/world.xml",
+        "https://www.aljazeera.com/xml/rss/all.xml",
+        "https://feeds.washingtonpost.com/rss/world",
+        "https://rss.dw.com/rdf/rss-en-all",
     ],
     "Русский 🇷🇺": [
-        "https://www.rbc.ru/rss/news",                                     # RBC
-        "https://tass.ru/rss/v2.xml",                                      # ТАСС
-        "https://rss.dw.com/rdf/rss-ru-all",                              # DW Русский
-        "https://www.bbc.com/russian/index.xml",                          # BBC Русский
-        "https://www.golos-ameriki.ru/api/zrqomtmopp",                    # Голос Америки
-        "https://meduza.io/rss/all",                                       # Медуза
+        "https://www.rbc.ru/rss/news",
+        "https://tass.ru/rss/v2.xml",
+        "https://rss.dw.com/rdf/rss-ru-all",
+        "https://www.bbc.com/russian/index.xml",
+        "https://www.golos-ameriki.ru/api/zrqomtmopp",
+        "https://meduza.io/rss/all",
     ],
     "فارسی 🇮🇷": [
-        "https://www.radiofarda.com/api/zrqomtmopp",                      # رادیو فردا
-        "https://ir.voanews.com/api/zrqomtmopp",                          # VOA فارسی
-        "https://www.bbc.com/persian/index.xml",                          # BBC فارسی
-        "https://rss.dw.com/rdf/rss-per-all",                             # DW فارسی
-        "https://www.dw.com/fa/rss",                                       # DW فارسی
+        "https://www.radiofarda.com/api/zrqomtmopp",
+        "https://ir.voanews.com/api/zrqomtmopp",
+        "https://www.bbc.com/persian/index.xml",
+        "https://rss.dw.com/rdf/rss-per-all",
+        "https://www.dw.com/fa/rss",
     ],
     "हिन्दी 🇮🇳": [
-        "https://feeds.bbci.co.uk/hindi/rss.xml",                         # BBC हिंदी
-        "https://www.hindustantimes.com/rss/rssfeed.xml",                 # Hindustan Times
-        "https://ndtv.com/rss/top-stories",                               # NDTV
-        "https://www.aajtak.in/rss/top-stories.xml",                      # Aaj Tak
-        "https://rss.dw.com/rdf/rss-hin-all",                             # DW हिंदी
-        "https://www.indiatoday.in/rss/home",                             # India Today
+        "https://feeds.bbci.co.uk/hindi/rss.xml",
+        "https://www.hindustantimes.com/rss/rssfeed.xml",
+        "https://ndtv.com/rss/top-stories",
+        "https://www.aajtak.in/rss/top-stories.xml",
+        "https://rss.dw.com/rdf/rss-hin-all",
+        "https://www.indiatoday.in/rss/home",
     ],
     "Português 🇧🇷": [
-        "https://feeds.bbci.co.uk/portuguese/rss.xml",                    # BBC Português
-        "https://agenciabrasil.ebc.com.br/rss/ultimasnoticias/feed.xml",  # Agência Brasil
-        "https://rss.dw.com/rdf/rss-por-all",                             # DW Português
-        "https://g1.globo.com/rss/g1/index.xml",                          # G1 Globo
-        "https://www.uol.com.br/rss.xml",                                 # UOL
-        "https://feeds.folha.uol.com.br/poder/rss091.xml",               # Folha de S.Paulo
+        "https://feeds.bbci.co.uk/portuguese/rss.xml",
+        "https://agenciabrasil.ebc.com.br/rss/ultimasnoticias/feed.xml",
+        "https://rss.dw.com/rdf/rss-por-all",
+        "https://g1.globo.com/rss/g1/index.xml",
+        "https://www.uol.com.br/rss.xml",
+        "https://feeds.folha.uol.com.br/poder/rss091.xml",
     ],
     "Türkçe 🇹🇷": [
-        "https://feeds.bbci.co.uk/turkish/rss.xml",                       # BBC Türkçe
-        "https://www.aa.com.tr/tr/rss/default",                           # Anadolu Ajansı
-        "https://rss.dw.com/rdf/rss-tur-all",                             # DW Türkçe
-        "https://www.hurriyet.com.tr/rss/anasayfa",                       # Hürriyet
-        "https://www.sabah.com.tr/rss/anasayfa.xml",                      # Sabah
-        "https://www.ntv.com.tr/son-dakika.rss",                          # NTV
+        "https://feeds.bbci.co.uk/turkish/rss.xml",
+        "https://www.aa.com.tr/tr/rss/default",
+        "https://rss.dw.com/rdf/rss-tur-all",
+        "https://www.hurriyet.com.tr/rss/anasayfa",
+        "https://www.sabah.com.tr/rss/anasayfa.xml",
+        "https://www.ntv.com.tr/son-dakika.rss",
     ],
     "اردو 🇵🇰": [
-        "https://feeds.bbci.co.uk/urdu/rss.xml",                          # BBC اردو
-        "https://www.geo.tv/rss",                                          # Geo TV
-        "https://www.jang.com.pk/rss/1",                                  # Jang
-        "https://rss.dw.com/rdf/rss-urd-all",                             # DW اردو
-        "https://www.urduvoa.com/api/zrqomtmopp",                         # VOA اردو
-        "https://www.express.pk/feed",                                    # Express News
+        "https://feeds.bbci.co.uk/urdu/rss.xml",
+        "https://www.geo.tv/rss",
+        "https://www.jang.com.pk/rss/1",
+        "https://rss.dw.com/rdf/rss-urd-all",
+        "https://www.urduvoa.com/api/zrqomtmopp",
+        "https://www.express.pk/feed",
     ],
     "Deutsch 🇩🇪": [
-        "https://www.spiegel.de/international/index.rss",                 # Spiegel
-        "https://rss.dw.com/rdf/rss-de-all",                              # DW Deutsch
-        "https://www.tagesschau.de/xml/rss2",                             # Tagesschau
-        "https://www.faz.net/rss/aktuell",                                # FAZ
-        "https://www.zeit.de/news/rss-aktuell",                           # Die Zeit
-        "https://www.bild.de/rssfeeds/rss3-20745882,dzbildplus=false,sort=1,teaserImage=true,mxheight=1000,outputType%3Drss2/rss2.bild.html", # Bild
+        "https://www.spiegel.de/international/index.rss",
+        "https://rss.dw.com/rdf/rss-de-all",
+        "https://www.tagesschau.de/xml/rss2",
+        "https://www.faz.net/rss/aktuell",
+        "https://www.zeit.de/news/rss-aktuell",
     ],
     "Українська 🇺🇦": [
-        "https://feeds.bbci.co.uk/ukrainian/rss.xml",                     # BBC Україна
-        "https://www.ukrinform.ua/rss/block-lastnews",                    # Укрінформ
-        "https://rss.dw.com/rdf/rss-ukr-all",                             # DW Українська
-        "https://www.unian.ua/rss/all_news.rss",                          # УНІАН
-        "https://www.pravda.com.ua/rss/view_news/",                       # Українська правда
-        "https://espresso.com.ua/rss",                                    # Еспресо
+        "https://feeds.bbci.co.uk/ukrainian/rss.xml",
+        "https://www.ukrinform.ua/rss/block-lastnews",
+        "https://rss.dw.com/rdf/rss-ukr-all",
+        "https://www.unian.ua/rss/all_news.rss",
+        "https://www.pravda.com.ua/rss/view_news/",
+        "https://espresso.com.ua/rss",
     ],
     "Italiano 🇮🇹": [
-        "https://www.repubblica.it/rss/homepage/rss2.0.xml",              # La Repubblica
-        "https://www.corriere.it/rss/homepage.xml",                       # Corriere della Sera
-        "https://www.ansa.it/sito/notizie/topnews/topnews_rss.xml",       # ANSA
-        "https://rss.dw.com/rdf/rss-it-all",                              # DW Italiano
-        "https://www.lastampa.it/rss.xml",                                # La Stampa
-        "https://feeds.bbci.co.uk/italian/rss.xml",                      # BBC Italiano
+        "https://www.repubblica.it/rss/homepage/rss2.0.xml",
+        "https://www.corriere.it/rss/homepage.xml",
+        "https://www.ansa.it/sito/notizie/topnews/topnews_rss.xml",
+        "https://rss.dw.com/rdf/rss-it-all",
+        "https://www.lastampa.it/rss.xml",
+        "https://feeds.bbci.co.uk/italian/rss.xml",
     ],
     "Español 🇲🇽": [
-        "https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada", # El País
-        "https://feeds.bbci.co.uk/mundo/rss.xml",                          # BBC Mundo
-        "https://rss.dw.com/rdf/rss-es-all",                               # DW Español
-        "https://feeds.reuters.com/reuters/MXdomesticNews",               # Reuters México
-        "https://www.infobae.com/feeds/rss/",                             # Infobae
-        "https://cnnespanol.cnn.com/feed/",                               # CNN Español
-        "https://eldiariony.com/feed/",                                   # El Diario NY
+        "https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada",
+        "https://feeds.bbci.co.uk/mundo/rss.xml",
+        "https://rss.dw.com/rdf/rss-es-all",
+        "https://feeds.reuters.com/reuters/MXdomesticNews",
+        "https://www.infobae.com/feeds/rss/",
+        "https://cnnespanol.cnn.com/feed/",
+        "https://eldiariony.com/feed/",
     ],
 }
 
-# تحميل RSS من الملف إن وجد، وإلا استخدام الافتراضي
 RSS = load_json(RSS_FILE, DEFAULT_RSS)
 
 def save_rss():
     save_json(RSS_FILE, RSS)
 
-# ======== الأزرار (لجميع اللغات الـ 12) ========
+# ======== مصادر أخبار الرياضة ========
+SPORTS_RSS = {
+    "العربية 🇮🇶": [
+        "https://www.skynewsarabia.com/rss/sport.xml",
+        "https://www.filgoal.com/rss",
+        "https://www.yallakora.com/rss",
+    ],
+    "English 🇬🇧": [
+        "https://feeds.bbci.co.uk/sport/rss.xml",
+        "https://www.espn.com/espn/rss/news",
+        "https://rss.skysports.com/rss/swf/latest.xml",
+        "https://feeds.feedburner.com/SkySports-Football",
+    ],
+    "Русский 🇷🇺": [
+        "https://rsport.ria.ru/export/rss2/index.xml",
+        "https://www.sports.ru/rss/main.xml",
+    ],
+    "فارسی 🇮🇷": [
+        "https://feeds.bbci.co.uk/persian/rss.xml",
+        "https://www.varzesh3.com/rss/all",
+    ],
+    "Türkçe 🇹🇷": [
+        "https://www.ntv.com.tr/spor.rss",
+        "https://www.sabah.com.tr/rss/spor.xml",
+    ],
+    "Deutsch 🇩🇪": [
+        "https://rss.dw.com/rdf/rss-de-sports",
+        "https://www.sport1.de/rss/sport1-news.rss",
+    ],
+    "Español 🇲🇽": [
+        "https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/section/deportes/portada",
+        "https://cnnespanol.cnn.com/deportes/feed/",
+    ],
+    "Português 🇧🇷": [
+        "https://globoesporte.globo.com/dynamo/esportes/futebol/rss2.xml",
+        "https://feeds.bbci.co.uk/portuguese/rss.xml",
+    ],
+    "Italiano 🇮🇹": [
+        "https://www.gazzetta.it/rss/home.xml",
+        "https://feeds.bbci.co.uk/sport/rss.xml",
+    ],
+    "हिन्दी 🇮🇳": [
+        "https://feeds.bbci.co.uk/hindi/rss.xml",
+    ],
+    "اردو 🇵🇰": [
+        "https://www.geo.tv/rss",
+    ],
+    "Українська 🇺🇦": [
+        "https://www.ukrinform.ua/rss/block-sport",
+    ],
+}
+
+# ======== الكلمات المفتاحية للمستخدمين المميزين ========
+user_keywords = load_json(KEYWORDS_FILE, {})
+
+def save_keywords():
+    save_json(KEYWORDS_FILE, user_keywords)
+
+# ======== الأزرار ========
 BUTTONS = {
     "العربية 🇮🇶": {
         "weather": "🌤 الطقس الآن",
+        "forecast": "📅 توقعات 3 أيام",
         "news": "📰 آخر الأخبار",
         "all_news": "📰 إرسال كل الأخبار",
-        "mena_politics": "📰 أخبار الشرق الأوسط السياسية",
+        "mena_politics": "📰 أخبار الشرق الأوسط",
+        "trending": "🔥 الأكثر تداولاً",
+        "sports": "⚽ أخبار الرياضة",
+        "daily_summary": "📋 ملخص أخبار اليوم",
+        "news_cats": "🗂 اختيار أنواع الأخبار",
         "currency": "💱 أسعار العملات",
+        "convert": "🔄 محوّل العملات",
+        "crypto": "💎 العملات الرقمية",
+        "prayer": "🕌 أوقات الصلاة",
         "search": "🔍 بحث في الأخبار",
+        "my_stats": "📈 إحصائياتي",
+        "referral": "🎁 دعواتي",
+        "top_referrers": "🏆 أفضل الداعين",
+        "share_bot": "📢 انشر البوت",
+        "public_stats": "📊 إحصائيات البوت",
         "notif_on": "🔔 إيقاف الإشعارات",
         "notif_off": "🔕 تفعيل الإشعارات",
         "premium": "⭐ المميز",
@@ -385,11 +468,24 @@ BUTTONS = {
     },
     "English 🇬🇧": {
         "weather": "🌤 Weather Now",
+        "forecast": "📅 3-Day Forecast",
         "news": "📰 Latest News",
         "all_news": "📰 Send All News",
-        "mena_politics": "📰 Middle East Politics News",
+        "mena_politics": "📰 Middle East News",
+        "trending": "🔥 Trending News",
+        "sports": "⚽ Sports News",
+        "daily_summary": "📋 Daily News Summary",
+        "news_cats": "🗂 News Categories",
         "currency": "💱 Currency Rates",
+        "convert": "🔄 Currency Converter",
+        "crypto": "💎 Crypto Prices",
+        "prayer": "🕌 Prayer Times",
         "search": "🔍 Search News",
+        "my_stats": "📈 My Statistics",
+        "referral": "🎁 My Referrals",
+        "top_referrers": "🏆 Top Referrers",
+        "share_bot": "📢 Share Bot",
+        "public_stats": "📊 Bot Statistics",
         "notif_on": "🔔 Disable Notifications",
         "notif_off": "🔕 Enable Notifications",
         "premium": "⭐ Premium",
@@ -398,11 +494,24 @@ BUTTONS = {
     },
     "Русский 🇷🇺": {
         "weather": "🌤 Погода сейчас",
+        "forecast": "📅 Прогноз на 3 дня",
         "news": "📰 Последние новости",
         "all_news": "📰 Все новости",
-        "mena_politics": "📰 Политика Ближнего Востока",
+        "mena_politics": "📰 Ближний Восток",
+        "trending": "🔥 В тренде",
+        "sports": "⚽ Спортивные новости",
+        "daily_summary": "📋 Сводка дня",
+        "news_cats": "🗂 Категории новостей",
         "currency": "💱 Курсы валют",
+        "convert": "🔄 Конвертер валют",
+        "crypto": "💎 Криптовалюты",
+        "prayer": "🕌 Время намаза",
         "search": "🔍 Поиск новостей",
+        "my_stats": "📈 Моя статистика",
+        "referral": "🎁 Мои приглашения",
+        "top_referrers": "🏆 Лучшие",
+        "share_bot": "📢 Поделиться ботом",
+        "public_stats": "📊 Статистика бота",
         "notif_on": "🔔 Отключить уведомления",
         "notif_off": "🔕 Включить уведомления",
         "premium": "⭐ Премиум",
@@ -411,11 +520,24 @@ BUTTONS = {
     },
     "فارسی 🇮🇷": {
         "weather": "🌤 آب‌وهوا",
+        "forecast": "📅 پیش‌بینی ۳ روزه",
         "news": "📰 آخرین اخبار",
         "all_news": "📰 ارسال همه اخبار",
-        "mena_politics": "📰 اخبار سیاسی خاورمیانه",
+        "mena_politics": "📰 اخبار خاورمیانه",
+        "trending": "🔥 پرتداول‌ترین",
+        "sports": "⚽ اخبار ورزشی",
+        "daily_summary": "📋 خلاصه اخبار امروز",
+        "news_cats": "🗂 دسته‌بندی اخبار",
         "currency": "💱 نرخ ارز",
+        "convert": "🔄 تبدیل ارز",
+        "crypto": "💎 ارز دیجیتال",
+        "prayer": "🕌 اوقات نماز",
         "search": "🔍 جستجوی اخبار",
+        "my_stats": "📈 آمار من",
+        "referral": "🎁 دعوت‌هایم",
+        "top_referrers": "🏆 برترین‌ها",
+        "share_bot": "📢 اشتراک‌گذاری ربات",
+        "public_stats": "📊 آمار ربات",
         "notif_on": "🔔 غیرفعال‌کردن اعلان‌ها",
         "notif_off": "🔕 فعال‌کردن اعلان‌ها",
         "premium": "⭐ ویژه",
@@ -424,11 +546,24 @@ BUTTONS = {
     },
     "हिन्दी 🇮🇳": {
         "weather": "🌤 मौसम अभी",
+        "forecast": "📅 3-दिन का पूर्वानुमान",
         "news": "📰 ताज़ा खबरें",
         "all_news": "📰 सभी खबरें भेजें",
-        "mena_politics": "📰 मध्य पूर्व राजनीति",
+        "mena_politics": "📰 मध्य पूर्व समाचार",
+        "trending": "🔥 ट्रेंडिंग",
+        "sports": "⚽ खेल समाचार",
+        "daily_summary": "📋 आज की खबर सारांश",
+        "news_cats": "🗂 समाचार श्रेणियाँ",
         "currency": "💱 मुद्रा दरें",
+        "convert": "🔄 मुद्रा परिवर्तक",
+        "crypto": "💎 क्रिप्टो कीमतें",
+        "prayer": "🕌 नमाज़ के वक्त",
         "search": "🔍 खबर खोजें",
+        "my_stats": "📈 मेरे आँकड़े",
+        "referral": "🎁 मेरे रेफरल",
+        "top_referrers": "🏆 शीर्ष",
+        "share_bot": "📢 बॉट शेयर करें",
+        "public_stats": "📊 बॉट आँकड़े",
         "notif_on": "🔔 सूचनाएं बंद करें",
         "notif_off": "🔕 सूचनाएं चालू करें",
         "premium": "⭐ प्रीमियम",
@@ -437,11 +572,24 @@ BUTTONS = {
     },
     "Português 🇧🇷": {
         "weather": "🌤 Clima agora",
+        "forecast": "📅 Previsão 3 dias",
         "news": "📰 Últimas notícias",
         "all_news": "📰 Enviar todas notícias",
-        "mena_politics": "📰 Política do Oriente Médio",
+        "mena_politics": "📰 Oriente Médio",
+        "trending": "🔥 Em alta",
+        "sports": "⚽ Esportes",
+        "daily_summary": "📋 Resumo do dia",
+        "news_cats": "🗂 Categorias de notícias",
         "currency": "💱 Taxas de câmbio",
+        "convert": "🔄 Conversor de moeda",
+        "crypto": "💎 Criptomoedas",
+        "prayer": "🕌 Horários de oração",
         "search": "🔍 Buscar notícias",
+        "my_stats": "📈 Minhas estatísticas",
+        "referral": "🎁 Minhas indicações",
+        "top_referrers": "🏆 Melhores",
+        "share_bot": "📢 Compartilhar bot",
+        "public_stats": "📊 Estatísticas",
         "notif_on": "🔔 Desativar notificações",
         "notif_off": "🔕 Ativar notificações",
         "premium": "⭐ Premium",
@@ -450,11 +598,24 @@ BUTTONS = {
     },
     "Türkçe 🇹🇷": {
         "weather": "🌤 Hava durumu",
+        "forecast": "📅 3 Günlük Tahmin",
         "news": "📰 Son haberler",
         "all_news": "📰 Tüm haberleri gönder",
-        "mena_politics": "📰 Orta Doğu Siyaseti",
+        "mena_politics": "📰 Orta Doğu",
+        "trending": "🔥 Trend haberler",
+        "sports": "⚽ Spor haberleri",
+        "daily_summary": "📋 Günlük özet",
+        "news_cats": "🗂 Haber kategorileri",
         "currency": "💱 Döviz kurları",
+        "convert": "🔄 Döviz çevirici",
+        "crypto": "💎 Kripto fiyatları",
+        "prayer": "🕌 Namaz vakitleri",
         "search": "🔍 Haber ara",
+        "my_stats": "📈 İstatistiklerim",
+        "referral": "🎁 Davetlerim",
+        "top_referrers": "🏆 En İyiler",
+        "share_bot": "📢 Botu paylaş",
+        "public_stats": "📊 Bot istatistikleri",
         "notif_on": "🔔 Bildirimleri kapat",
         "notif_off": "🔕 Bildirimleri aç",
         "premium": "⭐ Premium",
@@ -463,11 +624,24 @@ BUTTONS = {
     },
     "اردو 🇵🇰": {
         "weather": "🌤 موسم ابھی",
+        "forecast": "📅 3 دن کی پیشگوئی",
         "news": "📰 تازہ خبریں",
         "all_news": "📰 تمام خبریں بھیجیں",
-        "mena_politics": "📰 مشرق وسطی سیاسی خبریں",
+        "mena_politics": "📰 مشرق وسطی خبریں",
+        "trending": "🔥 ٹرینڈنگ خبریں",
+        "sports": "⚽ کھیل کی خبریں",
+        "daily_summary": "📋 آج کا خلاصہ",
+        "news_cats": "🗂 خبروں کی اقسام",
         "currency": "💱 کرنسی ریٹ",
+        "convert": "🔄 کرنسی کنورٹر",
+        "crypto": "💎 کرپٹو قیمتیں",
+        "prayer": "🕌 نماز کے اوقات",
         "search": "🔍 خبریں تلاش کریں",
+        "my_stats": "📈 میرے اعداد",
+        "referral": "🎁 میری دعوتیں",
+        "top_referrers": "🏆 بہترین",
+        "share_bot": "📢 بوٹ شیئر کریں",
+        "public_stats": "📊 بوٹ اعداد",
         "notif_on": "🔔 اطلاعات بند کریں",
         "notif_off": "🔕 اطلاعات چالو کریں",
         "premium": "⭐ پریمیم",
@@ -476,11 +650,24 @@ BUTTONS = {
     },
     "Deutsch 🇩🇪": {
         "weather": "🌤 Wetter jetzt",
+        "forecast": "📅 3-Tage-Prognose",
         "news": "📰 Neueste Nachrichten",
         "all_news": "📰 Alle Nachrichten",
-        "mena_politics": "📰 Nahost-Politik",
+        "mena_politics": "📰 Nahost-Nachrichten",
+        "trending": "🔥 Trending",
+        "sports": "⚽ Sportnachrichten",
+        "daily_summary": "📋 Tageszusammenfassung",
+        "news_cats": "🗂 Nachrichtenkategorien",
         "currency": "💱 Wechselkurse",
+        "convert": "🔄 Währungsrechner",
+        "crypto": "💎 Kryptowährungen",
+        "prayer": "🕌 Gebetszeiten",
         "search": "🔍 Nachrichten suchen",
+        "my_stats": "📈 Meine Statistiken",
+        "referral": "🎁 Meine Einladungen",
+        "top_referrers": "🏆 Beste",
+        "share_bot": "📢 Bot teilen",
+        "public_stats": "📊 Bot-Statistiken",
         "notif_on": "🔔 Benachrichtigungen aus",
         "notif_off": "🔕 Benachrichtigungen ein",
         "premium": "⭐ Premium",
@@ -489,11 +676,24 @@ BUTTONS = {
     },
     "Українська 🇺🇦": {
         "weather": "🌤 Погода зараз",
+        "forecast": "📅 Прогноз на 3 дні",
         "news": "📰 Останні новини",
         "all_news": "📰 Всі новини",
         "mena_politics": "📰 Близький Схід",
+        "trending": "🔥 Тренди",
+        "sports": "⚽ Спортивні новини",
+        "daily_summary": "📋 Зведення дня",
+        "news_cats": "🗂 Категорії новин",
         "currency": "💱 Курси валют",
+        "convert": "🔄 Конвертер валют",
+        "crypto": "💎 Криптовалюти",
+        "prayer": "🕌 Час молитви",
         "search": "🔍 Пошук новин",
+        "my_stats": "📈 Моя статистика",
+        "referral": "🎁 Мої запрошення",
+        "top_referrers": "🏆 Найкращі",
+        "share_bot": "📢 Поділитися ботом",
+        "public_stats": "📊 Статистика",
         "notif_on": "🔔 Вимкнути сповіщення",
         "notif_off": "🔕 Увімкнути сповіщення",
         "premium": "⭐ Преміум",
@@ -502,11 +702,24 @@ BUTTONS = {
     },
     "Italiano 🇮🇹": {
         "weather": "🌤 Meteo ora",
+        "forecast": "📅 Previsioni 3 giorni",
         "news": "📰 Ultime notizie",
         "all_news": "📰 Tutte le notizie",
-        "mena_politics": "📰 Politica Medio Oriente",
+        "mena_politics": "📰 Medio Oriente",
+        "trending": "🔥 Notizie di tendenza",
+        "sports": "⚽ Notizie sportive",
+        "daily_summary": "📋 Riepilogo del giorno",
+        "news_cats": "🗂 Categorie notizie",
         "currency": "💱 Tassi di cambio",
+        "convert": "🔄 Convertitore valuta",
+        "crypto": "💎 Criptovalute",
+        "prayer": "🕌 Orari di preghiera",
         "search": "🔍 Cerca notizie",
+        "my_stats": "📈 Le mie statistiche",
+        "referral": "🎁 I miei inviti",
+        "top_referrers": "🏆 I migliori",
+        "share_bot": "📢 Condividi bot",
+        "public_stats": "📊 Statistiche bot",
         "notif_on": "🔔 Disattiva notifiche",
         "notif_off": "🔕 Attiva notifiche",
         "premium": "⭐ Premium",
@@ -515,11 +728,24 @@ BUTTONS = {
     },
     "Español 🇲🇽": {
         "weather": "🌤 Clima ahora",
+        "forecast": "📅 Pronóstico 3 días",
         "news": "📰 Últimas noticias",
         "all_news": "📰 Todas las noticias",
-        "mena_politics": "📰 Política de Oriente Medio",
+        "mena_politics": "📰 Oriente Medio",
+        "trending": "🔥 Tendencias",
+        "sports": "⚽ Noticias deportivas",
+        "daily_summary": "📋 Resumen del día",
+        "news_cats": "🗂 Categorías de noticias",
         "currency": "💱 Tipos de cambio",
+        "convert": "🔄 Conversor de divisas",
+        "crypto": "💎 Criptomonedas",
+        "prayer": "🕌 Horarios de oración",
         "search": "🔍 Buscar noticias",
+        "my_stats": "📈 Mis estadísticas",
+        "referral": "🎁 Mis invitaciones",
+        "top_referrers": "🏆 Mejores",
+        "share_bot": "📢 Compartir bot",
+        "public_stats": "📊 Estadísticas",
         "notif_on": "🔔 Desactivar notificaciones",
         "notif_off": "🔕 Activar notificaciones",
         "premium": "⭐ Premium",
@@ -688,7 +914,7 @@ PREMIUM_UPGRADE_MSG = {
     ),
 }
 
-# ======== الاهتمامات والكلمات المفتاحية (لجميع اللغات) ========
+# ======== الاهتمامات والكلمات المفتاحية ========
 INTERESTS = {
     "العربية 🇮🇶": ["⚽ رياضة", "💰 اقتصاد", "💻 تقنية", "🏛 سياسة", "🏥 صحة"],
     "English 🇬🇧": ["⚽ Sports", "💰 Economy", "💻 Technology", "🏛 Politics", "🏥 Health"],
@@ -705,37 +931,31 @@ INTERESTS = {
 }
 
 INTEREST_KEYWORDS = {
-    # عربي
     "رياضة": ["رياضة", "كرة", "مباراة", "بطولة", "لاعب", "فريق", "هدف", "ملعب"],
     "اقتصاد": ["اقتصاد", "نفط", "دولار", "تجارة", "بنك", "مال", "بورصة", "سوق"],
     "تقنية": ["تقنية", "ذكاء اصطناعي", "تكنولوجيا", "هاتف", "إنترنت", "تطبيق", "برنامج"],
     "سياسة": ["سياسة", "حكومة", "رئيس", "وزير", "برلمان", "انتخاب", "حزب"],
     "صحة": ["صحة", "مستشفى", "طبيب", "علاج", "مرض", "لقاح", "وباء"],
-    # إنجليزي
     "sports": ["sport", "football", "match", "tournament", "player", "team", "goal"],
     "economy": ["economy", "oil", "dollar", "trade", "bank", "finance", "market", "stock"],
     "technology": ["tech", "ai", "internet", "app", "software", "phone", "digital"],
     "politics": ["politics", "government", "president", "minister", "parliament", "election"],
     "health": ["health", "hospital", "doctor", "treatment", "disease", "vaccine", "epidemic"],
-    # روسي
     "спорт": ["спорт", "футбол", "матч", "турнир", "игрок", "команда", "гол"],
     "экономика": ["экономика", "нефть", "доллар", "торговля", "банк", "рынок"],
     "технологии": ["технологии", "ии", "интернет", "приложение", "программа"],
     "политика": ["политика", "правительство", "президент", "министр", "парламент"],
     "здоровье": ["здоровье", "больница", "врач", "лечение", "болезнь", "вакцина"],
-    # فارسي
     "ورزش": ["ورزش", "فوتبال", "مسابقه", "تیم", "بازیکن"],
     "اقتصاد_fa": ["اقتصاد", "نفت", "دلار", "تجارت", "بانک", "بازار"],
     "فناوری": ["فناوری", "هوش مصنوعی", "اینترنت", "نرم‌افزار"],
     "سیاست": ["سیاست", "دولت", "رئیس جمهور", "وزیر", "مجلس"],
     "سلامت": ["سلامت", "بیمارستان", "پزشک", "درمان", "بیماری"],
-    # تركي
     "spor": ["spor", "futbol", "maç", "turnuva", "oyuncu", "takım", "gol"],
     "ekonomi": ["ekonomi", "petrol", "dolar", "ticaret", "banka", "piyasa"],
     "teknoloji": ["teknoloji", "yapay zeka", "internet", "uygulama", "yazılım"],
     "siyaset": ["siyaset", "hükümet", "cumhurbaşkanı", "bakan", "meclis", "seçim"],
     "sağlık": ["sağlık", "hastane", "doktor", "tedavi", "hastalık", "aşı"],
-    # ألماني
     "sport_de": ["sport", "fußball", "spiel", "turnier", "spieler", "mannschaft"],
     "wirtschaft": ["wirtschaft", "öl", "dollar", "handel", "bank", "markt"],
     "technologie": ["technologie", "ki", "internet", "app", "software"],
@@ -759,43 +979,84 @@ CURRENCY_MAP = {
     "Español 🇲🇽": ("MXN", "Peso Mexicano 🇲🇽"),
 }
 
-# ======== مصادر MENA حسب اللغة ========
+# ======== مصادر MENA ========
 MENA_RSS = {
     "العربية 🇮🇶": [
         "https://www.aljazeera.net/aljazeera/feeds/rss.xml",
-        "https://www.alarabiya.net/.mrss/ar/0/0/0.xml",
+        "https://feeds.skynewsarabia.com/web/rss/2",
+        "https://arabic.rt.com/rss/",
+        "https://www.bbc.com/arabic/index.xml",
+        "https://www.independentarabia.com/rss.xml",
+        "https://rss.almasryalyoum.com/rss.xml",
+        "https://arabi21.com/rss.xml",
+        "https://www.elnashra.com/rss",
         "https://www.alsumaria.tv/rss/latest-news",
     ],
     "English 🇬🇧": [
         "https://www.aljazeera.com/xml/rss/all.xml",
         "https://www.middleeasteye.net/rss",
+        "https://feeds.skynews.com/feeds/rss/world.xml",
+        "https://rss.cnn.com/rss/edition_world.rss",
     ],
     "Русский 🇷🇺": [
+        "https://arabic.rt.com/rss/",
         "https://www.aljazeera.com/xml/rss/all.xml",
     ],
     "Türkçe 🇹🇷": [
         "https://www.aljazeera.com.tr/feed",
+        "https://www.aa.com.tr/tr/rss/default",
     ],
     "Deutsch 🇩🇪": [
         "https://www.aljazeera.com/xml/rss/all.xml",
+        "https://rss.dw.com/rdf/rss-de-all",
     ],
     "Español 🇲🇽": [
         "https://www.aljazeera.com/xml/rss/all.xml",
+        "https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/portada",
     ],
     "Italiano 🇮🇹": [
         "https://www.aljazeera.com/xml/rss/all.xml",
+        "https://www.ansa.it/sito/notizie/topnews/topnews_rss.xml",
+    ],
+    "فارسی 🇮🇷": [
+        "https://www.radiofarda.com/api/zrqomtmopp",
+        "https://www.bbc.com/persian/index.xml",
+    ],
+    "हिन्दी 🇮🇳": [
+        "https://feeds.bbci.co.uk/hindi/rss.xml",
+    ],
+    "Português 🇧🇷": [
+        "https://feeds.bbci.co.uk/portuguese/rss.xml",
+    ],
+    "اردو 🇵🇰": [
+        "https://feeds.bbci.co.uk/urdu/rss.xml",
+        "https://www.geo.tv/rss",
+    ],
+    "Українська 🇺🇦": [
+        "https://feeds.bbci.co.uk/ukrainian/rss.xml",
     ],
 }
+
+# ======== كلمات مفتاحية للشرق الأوسط (fallback) ========
+MENA_KEYWORDS = [
+    "عراق", "سوريا", "لبنان", "فلسطين", "غزة", "إيران", "السعودية", "تركيا", "اليمن", "ليبيا",
+    "مصر", "الأردن", "الخليج", "حماس", "حزب الله", "إسرائيل", "بغداد", "دمشق", "طهران",
+    "iraq", "syria", "lebanon", "palestine", "gaza", "iran", "saudi", "turkey", "yemen", "libya",
+    "egypt", "jordan", "gulf", "hamas", "hezbollah", "israel", "baghdad", "damascus", "tehran",
+    "middle east", "الشرق الأوسط", "الخليج العربي", "القدس", "jerusalem"
+]
 
 # ======== حالة البحث ========
 user_states = {}
 
 # ======== إشعار الأدمن بالأخطاء ========
 def notify_admin_error(msg):
-    try:
-        bot.send_message(ADMIN_ID, f"⚠️ *خطأ في البوت:*\n`{msg}`", parse_mode="Markdown")
-    except:
-        pass
+    all_admins = [ADMIN_ID] + extra_admins
+    for admin_id in all_admins:
+        try:
+            bot.send_message(admin_id, f"⚠️ *خطأ في البوت:*\n`{msg}`", parse_mode="Markdown")
+        except:
+            pass
 
 # ======== تحديث الإحصائيات ========
 def update_stats(action, uid=None, country=None, lang=None, button=None):
@@ -809,10 +1070,12 @@ def update_stats(action, uid=None, country=None, lang=None, button=None):
             stats["countries_count"][country] = stats["countries_count"].get(country, 0) + 1
         total = stats["total_users"]
         if total in [100, 500, 1000, 5000, 10000]:
-            try:
-                bot.send_message(ADMIN_ID, f"🎉 وصلت {total} مستخدم!")
-            except:
-                pass
+            all_admins = [ADMIN_ID] + extra_admins
+            for admin_id in all_admins:
+                try:
+                    bot.send_message(admin_id, f"🎉 وصلت {total} مستخدم!")
+                except:
+                    pass
     elif action == "button":
         if button:
             stats["button_presses"][button] = stats["button_presses"].get(button, 0) + 1
@@ -833,12 +1096,13 @@ def admin_panel(uid):
         types.InlineKeyboardButton("📡 إدارة RSS", callback_data="admin_rss"),
         types.InlineKeyboardButton("💰 المالية", callback_data="admin_finance"),
         types.InlineKeyboardButton("✏️ تغيير رسالة الترحيب", callback_data="admin_welcome"),
+        types.InlineKeyboardButton("👑 إدارة الأدمن", callback_data="admin_manage_admins"),
     )
     bot.send_message(uid, "👑 *لوحة تحكم الأدمن:*", parse_mode="Markdown", reply_markup=markup)
 
 @bot.message_handler(commands=['admin'])
 def admin_command(message):
-    if message.from_user.id != ADMIN_ID:
+    if not is_admin(message.from_user.id):
         return
     admin_panel(message.from_user.id)
 
@@ -872,14 +1136,19 @@ def premium_callbacks(call):
         user = users.get(str(uid), {})
         name = user.get("name", "مجهول")
         lang = user.get("lang", "-")
-        bot.send_message(ADMIN_ID,
-            f"⭐ *طلب اشتراك مميز*\n\n"
-            f"👤 الاسم: {name}\n"
-            f"🆔 ID: `{requester_id}`\n"
-            f"🗣 اللغة: {lang}\n\n"
-            f"لترقيته: /admin ← المستخدمون ← ترقية لمميز",
-            parse_mode="Markdown"
-        )
+        all_admins = [ADMIN_ID] + extra_admins
+        for admin_id in all_admins:
+            try:
+                bot.send_message(admin_id,
+                    f"⭐ *طلب اشتراك مميز*\n\n"
+                    f"👤 الاسم: {name}\n"
+                    f"🆔 ID: `{requester_id}`\n"
+                    f"🗣 اللغة: {lang}\n\n"
+                    f"لترقيته: /admin ← المستخدمون ← ترقية لمميز",
+                    parse_mode="Markdown"
+                )
+            except:
+                pass
         bot.send_message(uid, "✅ تم إرسال طلبك للإدارة. سيتم التواصل معك قريباً.")
         return
 
@@ -908,6 +1177,47 @@ def premium_callbacks(call):
         msg = bot.send_message(uid, "🕐 أرسل الساعة التي تريد استلام الملخص الصباحي فيها (0-23):\n(مثال: 8 للساعة 8 صباحاً)")
         bot.register_next_step_handler(msg, set_notif_time_step)
 
+    elif data == "prem_hourly":
+        send_hourly_weather_forecast(uid)
+
+    elif data == "prem_mycities":
+        user = users.get(str(uid), {})
+        cities = [user.get("province", "")] + user.get("extra_cities", [])
+        cities = [c for c in cities if c]
+        if not cities:
+            bot.send_message(uid, "⚠️ لا توجد مدن محفوظة.")
+        else:
+            msg = "🏙 *مدنك المحفوظة:*\n\n"
+            for i, city in enumerate(cities):
+                label = "(رئيسية)" if i == 0 else ""
+                msg += f"  {i+1}. {city} {label}\n"
+            bot.send_message(uid, msg, parse_mode="Markdown")
+
+    elif data == "prem_currency_table":
+        send_full_currency_table(uid)
+
+    elif data == "prem_weekly":
+        send_weekly_news_summary(uid)
+
+    elif data == "prem_keywords":
+        kws = user_keywords.get(str(uid), [])
+        if kws:
+            kw_list = "\n".join(f"• {k}" for k in kws)
+            bot.send_message(uid,
+                f"🔑 *كلماتك المفتاحية الحالية:*\n{kw_list}\n\n"
+                "أرسل كلمة جديدة لإضافتها أو أرسل 'حذف كلمة' لحذفها:",
+                parse_mode="Markdown"
+            )
+        else:
+            bot.send_message(uid,
+                "🔑 *تنبيه الكلمات المفتاحية*\n\n"
+                "أرسل كلمات تريد تتبعها مفصولة بفاصلة:\n"
+                "مثال: رواتب, ميسي, عطلة رسمية\n\n"
+                "عند ظهور أي كلمة في خبر ستصلك تنبيه فوري! 🔔",
+                parse_mode="Markdown"
+            )
+        user_states[uid] = "adding_keyword"
+
     elif data.startswith("interest_") and data != "interest_save":
         opt = data[len("interest_"):]
         user = users.get(str(uid), {})
@@ -930,7 +1240,7 @@ def premium_callbacks(call):
 
 @bot.callback_query_handler(func=lambda c: c.data.startswith("admin_") or c.data.startswith("broadcast_") or c.data.startswith("rss_"))
 def admin_callbacks(call):
-    if call.from_user.id != ADMIN_ID:
+    if not is_admin(call.from_user.id):
         return
     uid = call.from_user.id
     data = call.data
@@ -1090,16 +1400,102 @@ def admin_callbacks(call):
         msg = bot.send_message(uid, "أرسل رسالة الترحيب الجديدة (أو 'افتراضي' للرجوع للأصلية):")
         bot.register_next_step_handler(msg, change_welcome_step)
 
+    # ======== إدارة الأدمن ========
+    elif data == "admin_manage_admins":
+        # فقط الأدمن الرئيسي يستطيع إدارة الأدمن الآخرين
+        if int(uid) != ADMIN_ID:
+            bot.send_message(uid, "⛔ هذه الصلاحية للأدمن الرئيسي فقط.")
+            return
+        markup = types.InlineKeyboardMarkup(row_width=2)
+        markup.add(
+            types.InlineKeyboardButton("➕ إضافة أدمن", callback_data="admin_addadmin"),
+            types.InlineKeyboardButton("➖ إزالة أدمن", callback_data="admin_removeadmin"),
+            types.InlineKeyboardButton("📋 قائمة الأدمن", callback_data="admin_listadmins"),
+        )
+        bot.send_message(uid, "👑 *إدارة الأدمن:*", parse_mode="Markdown", reply_markup=markup)
+
+    elif data == "admin_addadmin":
+        if int(uid) != ADMIN_ID:
+            bot.send_message(uid, "⛔ هذه الصلاحية للأدمن الرئيسي فقط.")
+            return
+        msg = bot.send_message(uid, "أرسل ID المستخدم الذي تريد تعيينه أدمن:")
+        bot.register_next_step_handler(msg, add_admin_step)
+
+    elif data == "admin_removeadmin":
+        if int(uid) != ADMIN_ID:
+            bot.send_message(uid, "⛔ هذه الصلاحية للأدمن الرئيسي فقط.")
+            return
+        msg = bot.send_message(uid, "أرسل ID الأدمن الذي تريد إزالته:")
+        bot.register_next_step_handler(msg, remove_admin_step)
+
+    elif data == "admin_listadmins":
+        if int(uid) != ADMIN_ID:
+            bot.send_message(uid, "⛔ هذه الصلاحية للأدمن الرئيسي فقط.")
+            return
+        if not extra_admins:
+            bot.send_message(uid, f"👑 *قائمة الأدمن:*\n\n🔑 الأدمن الرئيسي: `{ADMIN_ID}`\n\nلا يوجد أدمن إضافيون.", parse_mode="Markdown")
+        else:
+            admins_list = "\n".join(f"  `{a}`" for a in extra_admins)
+            bot.send_message(uid,
+                f"👑 *قائمة الأدمن:*\n\n"
+                f"🔑 الأدمن الرئيسي: `{ADMIN_ID}`\n\n"
+                f"👥 الأدمن الإضافيون:\n{admins_list}",
+                parse_mode="Markdown"
+            )
+
+# ======== خطوات إدارة الأدمن ========
+def add_admin_step(message):
+    if message.from_user.id != ADMIN_ID:
+        return
+    try:
+        new_admin_id = int(message.text.strip())
+        if new_admin_id == ADMIN_ID:
+            bot.send_message(ADMIN_ID, "⚠️ هذا هو الأدمن الرئيسي بالفعل.")
+            return
+        if new_admin_id in extra_admins:
+            bot.send_message(ADMIN_ID, "⚠️ هذا المستخدم أدمن بالفعل.")
+            return
+        extra_admins.append(new_admin_id)
+        save_extra_admins()
+        bot.send_message(ADMIN_ID, f"✅ تم تعيين المستخدم `{new_admin_id}` كأدمن.", parse_mode="Markdown")
+        try:
+            bot.send_message(new_admin_id, "👑 تم تعيينك كأدمن في البوت.\nاستخدم /admin للوصول للوحة التحكم.")
+        except:
+            pass
+    except Exception as e:
+        bot.send_message(ADMIN_ID, f"❌ خطأ: {e}")
+
+def remove_admin_step(message):
+    if message.from_user.id != ADMIN_ID:
+        return
+    try:
+        target_id = int(message.text.strip())
+        if target_id not in extra_admins:
+            bot.send_message(ADMIN_ID, "⚠️ هذا المستخدم ليس أدمن إضافياً.")
+            return
+        extra_admins.remove(target_id)
+        save_extra_admins()
+        bot.send_message(ADMIN_ID, f"✅ تم إزالة الأدمن `{target_id}`.", parse_mode="Markdown")
+        try:
+            bot.send_message(target_id, "⚠️ تم إلغاء صلاحيات الأدمن الخاصة بك.")
+        except:
+            pass
+    except Exception as e:
+        bot.send_message(ADMIN_ID, f"❌ خطأ: {e}")
+
 # ======== خطوات الأدمن ========
 def get_user_info(message):
+    if not is_admin(message.from_user.id):
+        return
     try:
         target_id = str(message.text.strip())
         user = users.get(target_id)
         if not user:
-            bot.send_message(ADMIN_ID, "❌ المستخدم غير موجود.")
+            bot.send_message(message.from_user.id, "❌ المستخدم غير موجود.")
             return
         is_banned_user = int(target_id) in banned
         is_premium_user = int(target_id) in stats.get("premium_users", [])
+        is_admin_user = is_admin(int(target_id))
         msg = (
             f"👤 *معلومات المستخدم*\n\n"
             f"🆔 ID: `{target_id}`\n"
@@ -1109,38 +1505,45 @@ def get_user_info(message):
             f"📍 المحافظة: {user.get('province', '-')}\n"
             f"🚫 محظور: {'نعم' if is_banned_user else 'لا'}\n"
             f"⭐ مميز: {'نعم' if is_premium_user else 'لا'}\n"
+            f"👑 أدمن: {'نعم' if is_admin_user else 'لا'}\n"
         )
-        bot.send_message(ADMIN_ID, msg, parse_mode="Markdown")
+        bot.send_message(message.from_user.id, msg, parse_mode="Markdown")
     except Exception as e:
-        bot.send_message(ADMIN_ID, f"❌ خطأ: {e}")
+        bot.send_message(message.from_user.id, f"❌ خطأ: {e}")
 
 def ban_user_step(message):
+    if not is_admin(message.from_user.id):
+        return
     try:
         target_id = int(message.text.strip())
         if target_id not in banned:
             banned.append(target_id)
             save_json(BANNED_FILE, banned)
-        bot.send_message(ADMIN_ID, f"✅ تم حظر المستخدم `{target_id}`", parse_mode="Markdown")
+        bot.send_message(message.from_user.id, f"✅ تم حظر المستخدم `{target_id}`", parse_mode="Markdown")
         try:
             bot.send_message(target_id, "🚫 تم حظرك من استخدام البوت.")
         except:
             pass
     except Exception as e:
-        bot.send_message(ADMIN_ID, f"❌ خطأ: {e}")
+        bot.send_message(message.from_user.id, f"❌ خطأ: {e}")
 
 def unban_user_step(message):
+    if not is_admin(message.from_user.id):
+        return
     try:
         target_id = int(message.text.strip())
         if target_id in banned:
             banned.remove(target_id)
             save_json(BANNED_FILE, banned)
-            bot.send_message(ADMIN_ID, f"✅ تم رفع حظر المستخدم `{target_id}`", parse_mode="Markdown")
+            bot.send_message(message.from_user.id, f"✅ تم رفع حظر المستخدم `{target_id}`", parse_mode="Markdown")
         else:
-            bot.send_message(ADMIN_ID, "⚠️ المستخدم غير محظور.")
+            bot.send_message(message.from_user.id, "⚠️ المستخدم غير محظور.")
     except Exception as e:
-        bot.send_message(ADMIN_ID, f"❌ خطأ: {e}")
+        bot.send_message(message.from_user.id, f"❌ خطأ: {e}")
 
 def promote_premium_step(message):
+    if not is_admin(message.from_user.id):
+        return
     try:
         target_id = int(message.text.strip())
         if "premium_users" not in stats:
@@ -1148,27 +1551,31 @@ def promote_premium_step(message):
         if target_id not in stats["premium_users"]:
             stats["premium_users"].append(target_id)
             save_json(STATS_FILE, stats)
-        bot.send_message(ADMIN_ID, f"⭐ تم ترقية المستخدم `{target_id}` للمميز.", parse_mode="Markdown")
+        bot.send_message(message.from_user.id, f"⭐ تم ترقية المستخدم `{target_id}` للمميز.", parse_mode="Markdown")
         try:
             bot.send_message(target_id, "⭐ تهانينا! تمت ترقيتك لحساب مميز.")
         except:
             pass
     except Exception as e:
-        bot.send_message(ADMIN_ID, f"❌ خطأ: {e}")
+        bot.send_message(message.from_user.id, f"❌ خطأ: {e}")
 
 def demote_premium_step(message):
+    if not is_admin(message.from_user.id):
+        return
     try:
         target_id = int(message.text.strip())
         if target_id in stats.get("premium_users", []):
             stats["premium_users"].remove(target_id)
             save_json(STATS_FILE, stats)
-            bot.send_message(ADMIN_ID, f"✅ تم إلغاء الاشتراك المميز للمستخدم `{target_id}`", parse_mode="Markdown")
+            bot.send_message(message.from_user.id, f"✅ تم إلغاء الاشتراك المميز للمستخدم `{target_id}`", parse_mode="Markdown")
         else:
-            bot.send_message(ADMIN_ID, "⚠️ المستخدم ليس مميزاً.")
+            bot.send_message(message.from_user.id, "⚠️ المستخدم ليس مميزاً.")
     except Exception as e:
-        bot.send_message(ADMIN_ID, f"❌ خطأ: {e}")
+        bot.send_message(message.from_user.id, f"❌ خطأ: {e}")
 
 def broadcast_all_step(message):
+    if not is_admin(message.from_user.id):
+        return
     text = message.text
     count, failed = 0, 0
     for uid in list(users.keys()):
@@ -1177,12 +1584,14 @@ def broadcast_all_step(message):
             count += 1
         except:
             failed += 1
-    bot.send_message(ADMIN_ID, f"📢 *تم الإرسال:*\n✅ نجح: `{count}`\n❌ فشل: `{failed}`", parse_mode="Markdown")
+    bot.send_message(message.from_user.id, f"📢 *تم الإرسال:*\n✅ نجح: `{count}`\n❌ فشل: `{failed}`", parse_mode="Markdown")
 
 def broadcast_country_step(message):
+    if not is_admin(message.from_user.id):
+        return
     lines = message.text.split("\n", 1)
     if len(lines) < 2:
-        bot.send_message(ADMIN_ID, "❌ أرسل الدولة ثم الرسالة في سطرين.")
+        bot.send_message(message.from_user.id, "❌ أرسل الدولة ثم الرسالة في سطرين.")
         return
     country, text = lines[0].strip(), lines[1].strip()
     count = 0
@@ -1193,12 +1602,14 @@ def broadcast_country_step(message):
                 count += 1
             except:
                 pass
-    bot.send_message(ADMIN_ID, f"✅ تم الإرسال لـ `{count}` مستخدم في {country}", parse_mode="Markdown")
+    bot.send_message(message.from_user.id, f"✅ تم الإرسال لـ `{count}` مستخدم في {country}", parse_mode="Markdown")
 
 def broadcast_lang_step(message):
+    if not is_admin(message.from_user.id):
+        return
     lines = message.text.split("\n", 1)
     if len(lines) < 2:
-        bot.send_message(ADMIN_ID, "❌ أرسل اللغة ثم الرسالة في سطرين.")
+        bot.send_message(message.from_user.id, "❌ أرسل اللغة ثم الرسالة في سطرين.")
         return
     lang, text = lines[0].strip(), lines[1].strip()
     count = 0
@@ -1209,9 +1620,11 @@ def broadcast_lang_step(message):
                 count += 1
             except:
                 pass
-    bot.send_message(ADMIN_ID, f"✅ تم الإرسال لـ `{count}` مستخدم يتحدث {lang}", parse_mode="Markdown")
+    bot.send_message(message.from_user.id, f"✅ تم الإرسال لـ `{count}` مستخدم يتحدث {lang}", parse_mode="Markdown")
 
 def broadcast_premium_step(message):
+    if not is_admin(message.from_user.id):
+        return
     text = message.text
     count = 0
     for uid in stats.get("premium_users", []):
@@ -1220,54 +1633,58 @@ def broadcast_premium_step(message):
             count += 1
         except:
             pass
-    bot.send_message(ADMIN_ID, f"⭐ تم الإرسال لـ `{count}` مستخدم مميز", parse_mode="Markdown")
+    bot.send_message(message.from_user.id, f"⭐ تم الإرسال لـ `{count}` مستخدم مميز", parse_mode="Markdown")
 
 def pause_bot_step(message):
     global bot_paused, pause_message
     if message.text.strip() != "افتراضي":
         pause_message = message.text.strip()
     bot_paused = True
-    bot.send_message(ADMIN_ID, "🔴 تم إيقاف البوت مؤقتاً.\nأرسل /admin ثم 'إيقاف/تشغيل البوت' لإعادة التشغيل.")
+    bot.send_message(message.from_user.id, "🔴 تم إيقاف البوت مؤقتاً.\nأرسل /admin ثم 'إيقاف/تشغيل البوت' لإعادة التشغيل.")
 
 def rss_add_step(message):
+    if not is_admin(message.from_user.id):
+        return
     lines = message.text.split("\n", 1)
     if len(lines) < 2:
-        bot.send_message(ADMIN_ID, "❌ أرسل اللغة ثم الرابط في سطرين.")
+        bot.send_message(message.from_user.id, "❌ أرسل اللغة ثم الرابط في سطرين.")
         return
     lang, url = lines[0].strip(), lines[1].strip()
     if lang not in RSS:
         RSS[lang] = []
     RSS[lang].append(url)
-    save_rss()  # حفظ التغييرات
-    bot.send_message(ADMIN_ID, f"✅ تم إضافة المصدر لـ {lang}")
+    save_rss()
+    bot.send_message(message.from_user.id, f"✅ تم إضافة المصدر لـ {lang}")
 
 def rss_remove_step(message):
+    if not is_admin(message.from_user.id):
+        return
     lines = message.text.split("\n", 1)
     if len(lines) < 2:
-        bot.send_message(ADMIN_ID, "❌ أرسل اللغة ثم رقم المصدر في سطرين.")
+        bot.send_message(message.from_user.id, "❌ أرسل اللغة ثم رقم المصدر في سطرين.")
         return
     lang = lines[0].strip()
     try:
         index = int(lines[1].strip()) - 1
         if lang in RSS and 0 <= index < len(RSS[lang]):
             removed = RSS[lang].pop(index)
-            save_rss()  # حفظ التغييرات
-            bot.send_message(ADMIN_ID, f"✅ تم حذف المصدر:\n{removed}")
+            save_rss()
+            bot.send_message(message.from_user.id, f"✅ تم حذف المصدر:\n{removed}")
         else:
-            bot.send_message(ADMIN_ID, "❌ رقم أو لغة غير صحيحة.")
+            bot.send_message(message.from_user.id, "❌ رقم أو لغة غير صحيحة.")
     except Exception as e:
-        bot.send_message(ADMIN_ID, f"❌ خطأ: {e}")
+        bot.send_message(message.from_user.id, f"❌ خطأ: {e}")
 
 def change_welcome_step(message):
     global welcome_override
     if message.text.strip() == "افتراضي":
         welcome_override = None
-        bot.send_message(ADMIN_ID, "✅ تم الرجوع لرسالة الترحيب الافتراضية.")
+        bot.send_message(message.from_user.id, "✅ تم الرجوع لرسالة الترحيب الافتراضية.")
     else:
         welcome_override = message.text.strip()
-        bot.send_message(ADMIN_ID, "✅ تم تغيير رسالة الترحيب.")
+        bot.send_message(message.from_user.id, "✅ تم تغيير رسالة الترحيب.")
 
-# ======== رسالة الترحيب الأولى (للمستخدمين الجدد فقط — مرة واحدة) ========
+# ======== رسالة الترحيب الأولى ========
 def send_first_time_welcome(uid, name):
     markup = types.InlineKeyboardMarkup()
     markup.add(types.InlineKeyboardButton("💬 تواصل مع الدعم", url=CONTACT_LINK))
@@ -1293,7 +1710,6 @@ def welcome_user(uid):
     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     for lang in languages.values():
         markup.add(lang)
-    # زر تواصل inline منفصل عن لوحة الأزرار
     inline_markup = types.InlineKeyboardMarkup()
     inline_markup.add(types.InlineKeyboardButton("💬 تواصل / Contact", url=CONTACT_LINK))
     text = welcome_override if welcome_override else (
@@ -1311,10 +1727,9 @@ def welcome_user(uid):
         f"💬 للتواصل: {CONTACT_LINK}"
     )
     bot.send_message(uid, text, parse_mode="Markdown", reply_markup=markup)
-    # زر Inline للتواصل المباشر
     bot.send_message(uid, "💬 تواصل معنا مباشرة:", reply_markup=inline_markup)
 
-# ======== تلميح الاستخدام (بعد اختيار اللغة أو الدولة) ========
+# ======== تلميح الاستخدام ========
 def send_usage_hint(uid, lang):
     hint = USAGE_HINTS.get(lang, USAGE_HINTS["English 🇬🇧"])
     markup = types.InlineKeyboardMarkup()
@@ -1329,13 +1744,18 @@ def send_main_menu(uid):
     notif_label = btn["notif_on"] if notif_on else btn["notif_off"]
     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     markup.add(
-        btn["weather"], btn["news"],
-        btn["all_news"], btn["mena_politics"],
-        btn["currency"], btn["search"],
+        btn["weather"], btn.get("forecast", "📅 توقعات 3 أيام"),
+        btn["news"], btn.get("trending", "🔥 الأكثر تداولاً"),
+        btn.get("sports", "⚽ رياضة"), btn["mena_politics"],
+        btn["daily_summary"], btn["news_cats"],
+        btn["currency"], btn.get("convert", "🔄 محوّل العملات"),
+        btn.get("crypto", "💎 كريبتو"), btn.get("prayer", "🕌 الصلاة"),
+        btn["search"], btn.get("my_stats", "📈 إحصائياتي"),
+        btn.get("referral", "🎁 دعواتي"), btn.get("top_referrers", "🏆 أفضل الداعين"),
+        btn.get("share_bot", "📢 انشر البوت"), btn.get("public_stats", "📊 إحصائيات"),
         notif_label, btn.get("premium", "⭐ Premium"),
         btn["settings"]
     )
-    # إضافة (4): رابط التواصل في نص القائمة الرئيسية
     inline_markup = types.InlineKeyboardMarkup()
     inline_markup.add(types.InlineKeyboardButton("💬 تواصل / Contact", url=CONTACT_LINK))
     bot.send_message(uid, btn["choose"], reply_markup=markup)
@@ -1370,7 +1790,7 @@ def send_currency(uid):
         bot.send_message(uid, "⚠️ لا يمكن جلب أسعار العملات حالياً.")
         notify_admin_error(f"خطأ في أسعار العملات: {e}")
 
-# ======== بحث في الأخبار ========
+# ======== بحث في الأخبار (عنوان فقط — بدون رابط أو مصدر) ========
 def search_news(uid, query):
     user = users.get(str(uid))
     lang = user.get("lang", "English 🇬🇧")
@@ -1385,13 +1805,55 @@ def search_news(uid, query):
         bot.send_message(uid, f"🔍 *نتائج البحث عن: {query}*", parse_mode="Markdown")
         for article in articles[:5]:
             title = article.get("title", "")
-            url_link = article.get("url", "")
-            source = article.get("source", {}).get("name", "")
-            if title and url_link:
-                bot.send_message(uid, f"📰 *{title}*\n🔗 {url_link}\n📡 {source}", parse_mode="Markdown")
+            link = article.get("url", "")
+            if title:
+                if link:
+                    markup = make_news_share_markup(link, title)
+                    bot.send_message(uid, f"📰 {title}", parse_mode="Markdown", reply_markup=markup)
+                else:
+                    bot.send_message(uid, f"📰 {title}", parse_mode="Markdown")
     except Exception as e:
         bot.send_message(uid, "⚠️ حدث خطأ أثناء البحث.")
         notify_admin_error(f"خطأ في البحث: {e}")
+
+def send_trending_news(uid):
+    user = users.get(str(uid))
+    if not user:
+        return
+    lang = user.get("lang", "English 🇬🇧")
+    lang_code = LANG_CODES.get(lang, "en")
+    try:
+        url = f"https://newsapi.org/v2/top-headlines?language={lang_code}&pageSize=8&sortBy=popularity&apiKey={NEWS_KEY}"
+        r = requests.get(url, timeout=10).json()
+        articles = r.get("articles", [])
+        if not articles:
+            feeds = RSS.get(lang, [])
+            if feeds:
+                try:
+                    feed = feedparser.parse(feeds[0])
+                    articles_rss = feed.entries[:8]
+                    bot.send_message(uid, "🔥 *الأكثر تداولاً*\n━━━━━━━━━━━━━━━", parse_mode="Markdown")
+                    for item in articles_rss:
+                        title = getattr(item, 'title', '')
+                        link = getattr(item, 'link', '')
+                        if title and link:
+                            markup = make_news_share_markup(link, title)
+                            bot.send_message(uid, format_news_item("🔥", title), parse_mode="Markdown", reply_markup=markup)
+                    return
+                except:
+                    pass
+            bot.send_message(uid, "⚠️ لا توجد أخبار رائجة الآن، حاول لاحقاً.")
+            return
+        bot.send_message(uid, "🔥 *الأكثر تداولاً*\n━━━━━━━━━━━━━━━", parse_mode="Markdown")
+        for article in articles[:8]:
+            title = article.get("title", "")
+            link = article.get("url", "")
+            if title and link:
+                markup = make_news_share_markup(link, title)
+                bot.send_message(uid, format_news_item("🔥", title), parse_mode="Markdown", reply_markup=markup)
+    except Exception as e:
+        bot.send_message(uid, "⚠️ حدث خطأ أثناء جلب الأخبار الرائجة.")
+        notify_admin_error(f"خطأ في الأخبار الرائجة: {e}")
 
 def send_premium_upgrade(uid):
     user = users.get(str(uid))
@@ -1405,10 +1867,15 @@ def send_premium_menu(uid):
     markup = types.InlineKeyboardMarkup(row_width=2)
     markup.add(
         types.InlineKeyboardButton("🌤 توقعات 7 أيام", callback_data="prem_7day"),
+        types.InlineKeyboardButton("🕐 طقس كل 3 ساعات", callback_data="prem_hourly"),
         types.InlineKeyboardButton("🏙 إضافة مدينة", callback_data="prem_addcity"),
+        types.InlineKeyboardButton("📋 مدنيّ المحفوظة", callback_data="prem_mycities"),
         types.InlineKeyboardButton("📌 اهتماماتي", callback_data="prem_interests"),
         types.InlineKeyboardButton("💱 تنبيه العملات", callback_data="prem_currency_alert"),
+        types.InlineKeyboardButton("📊 جدول العملات", callback_data="prem_currency_table"),
         types.InlineKeyboardButton("🕐 وقت الإشعارات", callback_data="prem_notif_time"),
+        types.InlineKeyboardButton("📰 ملخص أسبوعي", callback_data="prem_weekly"),
+        types.InlineKeyboardButton("🔑 كلمات مفتاحية", callback_data="prem_keywords"),
     )
     bot.send_message(uid, "⭐ *قائمة المميز — اختر ما تريد:*", parse_mode="Markdown", reply_markup=markup)
 
@@ -1439,12 +1906,204 @@ def send_7day_forecast(uid):
         except Exception as e:
             notify_admin_error(f"خطأ في توقعات 7 أيام ({city}): {e}")
 
+def get_weather_emoji(weather_id):
+    if weather_id < 300:
+        return "⚡"
+    elif weather_id < 500:
+        return "🌦"
+    elif weather_id < 600:
+        return "🌧"
+    elif weather_id < 700:
+        return "❄️"
+    elif weather_id < 800:
+        return "🌫"
+    elif weather_id == 800:
+        return "☀️"
+    elif weather_id < 803:
+        return "🌤"
+    else:
+        return "☁️"
+
+def get_uv_level(uvi):
+    if uvi is None:
+        return "غير متوفر"
+    uvi = float(uvi)
+    if uvi < 3:
+        return f"{uvi:.1f} 🟢 منخفض"
+    elif uvi < 6:
+        return f"{uvi:.1f} 🟡 متوسط"
+    elif uvi < 8:
+        return f"{uvi:.1f} 🟠 مرتفع"
+    elif uvi < 11:
+        return f"{uvi:.1f} 🔴 خطر"
+    else:
+        return f"{uvi:.1f} 🟣 شديد الخطورة"
+
+def get_wind_direction(deg):
+    dirs = ["⬆️ شمال", "↗️ شمال شرق", "➡️ شرق", "↘️ جنوب شرق",
+            "⬇️ جنوب", "↙️ جنوب غرب", "⬅️ غرب", "↖️ شمال غرب"]
+    return dirs[round(deg / 45) % 8] if deg is not None else "-"
+
+def send_detailed_weather(uid):
+    user = users.get(str(uid))
+    if not user:
+        return
+    lang = user.get("lang", "English 🇬🇧")
+    lang_code = LANG_CODES.get(lang, "en")
+    province = user.get("province", "")
+    try:
+        url = f"https://api.openweathermap.org/data/2.5/weather?q={province}&appid={WEATHER_KEY}&units=metric&lang={lang_code}"
+        data = requests.get(url, timeout=10).json()
+        if data.get("cod") != 200:
+            bot.send_message(uid, f"⚠️ لم يتم العثور على بيانات الطقس لمدينة: {province}")
+            return
+        temp = round(data['main']['temp'], 1)
+        feels = round(data['main']['feels_like'], 1)
+        temp_min = round(data['main']['temp_min'], 1)
+        temp_max = round(data['main']['temp_max'], 1)
+        humidity = data['main']['humidity']
+        pressure = data['main']['pressure']
+        desc = data['weather'][0]['description'].capitalize()
+        weather_id = data['weather'][0]['id']
+        weather_emoji = get_weather_emoji(weather_id)
+        wind_speed = data['wind']['speed']
+        wind_deg = data['wind'].get('deg')
+        wind_gust = data['wind'].get('gust', '-')
+        visibility = data.get('visibility', 0)
+        visibility_km = round(visibility / 1000, 1) if visibility else '-'
+        clouds = data['clouds']['all']
+        sunrise_ts = data['sys'].get('sunrise', 0)
+        sunset_ts = data['sys'].get('sunset', 0)
+        sunrise = datetime.datetime.fromtimestamp(sunrise_ts).strftime("%H:%M") if sunrise_ts else "-"
+        sunset = datetime.datetime.fromtimestamp(sunset_ts).strftime("%H:%M") if sunset_ts else "-"
+        lat = data['coord']['lat']
+        lon = data['coord']['lon']
+        try:
+            one_call_url = f"https://api.openweathermap.org/data/2.5/onecall?lat={lat}&lon={lon}&exclude=minutely,hourly,daily,alerts&appid={WEATHER_KEY}&units=metric"
+            one_call = requests.get(one_call_url, timeout=5).json()
+            uvi = one_call.get('current', {}).get('uvi')
+        except:
+            uvi = None
+        msg = (
+            f"{weather_emoji} *الطقس في {province}*\n"
+            f"━━━━━━━━━━━━━━━\n\n"
+            f"🌡 *الحرارة:* {temp}°C\n"
+            f"🤔 *يشعر كـ:* {feels}°C\n"
+            f"🔼 أعلى: {temp_max}°C  |  🔽 أدنى: {temp_min}°C\n\n"
+            f"☁️ *الحالة:* {desc}\n"
+            f"🌫 *الغيوم:* {clouds}%\n"
+            f"👁 *الرؤية:* {visibility_km} كم\n\n"
+            f"💧 *الرطوبة:* {humidity}%\n"
+            f"🌀 *الضغط الجوي:* {pressure} hPa\n"
+            f"☀️ *مؤشر UV:* {get_uv_level(uvi)}\n\n"
+            f"💨 *الرياح:* {wind_speed} م/ث | {get_wind_direction(wind_deg)}\n"
+            f"💨 *أقصى هبوب:* {wind_gust} م/ث\n\n"
+            f"🌅 *الشروق:* {sunrise}  |  🌇 *الغروب:* {sunset}\n"
+            f"━━━━━━━━━━━━━━━\n"
+        )
+        bot.send_message(uid, msg, parse_mode="Markdown")
+    except Exception as e:
+        bot.send_message(uid, "⚠️ لا يمكن جلب بيانات الطقس حالياً.")
+        notify_admin_error(f"خطأ في الطقس لـ {uid}: {e}")
+
 def add_extra_city(uid, city):
     users[str(uid)].setdefault("extra_cities", [])
     if city not in users[str(uid)]["extra_cities"]:
         users[str(uid)]["extra_cities"].append(city)
     save_json(USERS_FILE, users)
     bot.send_message(uid, f"✅ تمت إضافة مدينة: *{city}*", parse_mode="Markdown")
+
+def send_hourly_weather_forecast(uid):
+    user = users.get(str(uid))
+    if not user:
+        return
+    lang = user.get("lang", "English 🇬🇧")
+    lang_code = LANG_CODES.get(lang, "en")
+    province = user.get("province", "")
+    try:
+        url = f"https://api.openweathermap.org/data/2.5/forecast?q={province}&appid={WEATHER_KEY}&units=metric&lang={lang_code}&cnt=8"
+        data = requests.get(url, timeout=10).json()
+        if str(data.get("cod")) != "200":
+            bot.send_message(uid, "⚠️ لا يمكن جلب توقعات الساعات.")
+            return
+        msg = f"🕐 *الطقس كل 3 ساعات — {province}*\n━━━━━━━━━━━━━━━\n\n"
+        for item in data["list"][:8]:
+            time_str = item["dt_txt"].split(" ")[1][:5]
+            date_str = item["dt_txt"].split(" ")[0][5:]
+            temp = round(item["main"]["temp"], 1)
+            desc = item["weather"][0]["description"].capitalize()
+            wid = item["weather"][0]["id"]
+            emoji = get_weather_emoji(wid)
+            humidity = item["main"]["humidity"]
+            wind = item["wind"]["speed"]
+            msg += f"{emoji} *{date_str} | {time_str}*\n"
+            msg += f"   🌡 {temp}°C | {desc}\n"
+            msg += f"   💧 {humidity}% | 💨 {wind} م/ث\n\n"
+        bot.send_message(uid, msg, parse_mode="Markdown")
+    except Exception as e:
+        bot.send_message(uid, "⚠️ حدث خطأ في جلب توقعات الساعات.")
+        notify_admin_error(f"خطأ في الطقس الساعي لـ {uid}: {e}")
+
+def send_full_currency_table(uid):
+    user = users.get(str(uid))
+    lang = user.get("lang", "English 🇬🇧") if user else "English 🇬🇧"
+    try:
+        r = requests.get("https://api.exchangerate-api.com/v4/latest/USD", timeout=10).json()
+        rates = r.get("rates", {})
+        pairs = [
+            ("🇪🇺", "EUR", "اليورو"),
+            ("🇬🇧", "GBP", "الجنيه الإسترليني"),
+            ("🇮🇶", "IQD", "الدينار العراقي"),
+            ("🇸🇦", "SAR", "الريال السعودي"),
+            ("🇦🇪", "AED", "الدرهم الإماراتي"),
+            ("🇹🇷", "TRY", "الليرة التركية"),
+            ("🇮🇷", "IRR", "الريال الإيراني"),
+            ("🇷🇺", "RUB", "الروبل الروسي"),
+            ("🇵🇰", "PKR", "الروبية الباكستانية"),
+            ("🇮🇳", "INR", "الروبية الهندية"),
+            ("🇧🇷", "BRL", "الريال البرازيلي"),
+            ("🇲🇽", "MXN", "البيزو المكسيكي"),
+            ("🇨🇳", "CNY", "اليوان الصيني"),
+            ("🇯🇵", "JPY", "الين الياباني"),
+            ("🇨🇦", "CAD", "الدولار الكندي"),
+            ("🇦🇺", "AUD", "الدولار الأسترالي"),
+            ("🇰🇼", "KWD", "الدينار الكويتي"),
+            ("🇪🇬", "EGP", "الجنيه المصري"),
+        ]
+        msg = "📊 *جدول أسعار الصرف الكامل مقابل الدولار 🇺🇸*\n━━━━━━━━━━━━━━━\n\n"
+        for flag, code, name in pairs:
+            rate = rates.get(code, "-")
+            msg += f"{flag} {name}: `{rate}`\n"
+        bot.send_message(uid, msg, parse_mode="Markdown")
+    except Exception as e:
+        bot.send_message(uid, "⚠️ لا يمكن جلب الأسعار حالياً.")
+        notify_admin_error(f"خطأ في جدول العملات: {e}")
+
+def send_weekly_news_summary(uid):
+    user = users.get(str(uid))
+    if not user:
+        return
+    lang = user.get("lang", "English 🇬🇧")
+    feeds = RSS.get(lang, [])
+    headlines = []
+    for feed_url in feeds:
+        try:
+            feed = feedparser.parse(feed_url)
+            for item in feed.entries[:5]:
+                title = getattr(item, 'title', '')
+                if title:
+                    headlines.append(title)
+            if len(headlines) >= 20:
+                break
+        except:
+            pass
+    if not headlines:
+        bot.send_message(uid, "⚠️ لا توجد أخبار لإنشاء الملخص الأسبوعي.")
+        return
+    msg = f"📰 *الملخص الأسبوعي — أبرز {min(len(headlines), 20)} خبر*\n━━━━━━━━━━━━━━━\n\n"
+    for i, title in enumerate(headlines[:20], 1):
+        msg += f"{i}. {title}\n\n"
+    bot.send_message(uid, msg, parse_mode="Markdown")
 
 def send_interest_menu(uid):
     user = users.get(str(uid))
@@ -1513,8 +2172,7 @@ def broadcast_premium_instant_news():
                     if not news_matches_interests(item.title, interests):
                         continue
                     sent.add(item.link)
-                    source_name = get_source_name(feed_url)
-                    bot.send_message(uid, format_news_item("⚡ خبر عاجل فوري", item.title, item.link, source_name), parse_mode="Markdown")
+                    bot.send_message(uid, f"⚡ *خبر عاجل فوري*\n\n📰 {item.title}", parse_mode="Markdown")
             except Exception as e:
                 notify_admin_error(f"خطأ في الأخبار الفورية للمميز: {e}")
     save_json(USERS_FILE, users)
@@ -1597,36 +2255,53 @@ def check_currency_alerts():
     except Exception as e:
         notify_admin_error(f"خطأ في تنبيهات العملة: {e}")
 
-# ======== /start (مصلح — لا يمسح بيانات المستخدم القديم) ========
+# ======== /start ========
 @bot.message_handler(commands=['start'])
 def start(message):
     uid = message.from_user.id
     if uid in banned:
         bot.send_message(uid, "🚫 أنت محظور من استخدام البوت.")
         return
-    if bot_paused and uid != ADMIN_ID:
+    if bot_paused and not is_admin(uid):
         bot.send_message(uid, pause_message)
         return
-    username = message.from_user.username or "لا يوجد يوزر"
+    username = message.from_user.username or "لا يوزر"
+    args = message.text.split()
+    referrer_id = None
+    if len(args) > 1 and args[1].startswith("ref_"):
+        try:
+            referrer_id = int(args[1][4:])
+        except:
+            pass
     is_new = str(uid) not in users
     if is_new:
-        users[str(uid)] = {"name": message.from_user.first_name, "sent_news": set(), "first_visit": True}
+        users[str(uid)] = {"name": message.from_user.first_name, "sent_news": set(), "first_visit": True, "referrals": [], "join_date": datetime.datetime.now().strftime("%Y-%m-%d")}
+        if referrer_id and referrer_id != uid and str(referrer_id) in users:
+            users[str(uid)]["referred_by"] = referrer_id
+            users[str(referrer_id)].setdefault("referrals", [])
+            if uid not in users[str(referrer_id)]["referrals"]:
+                users[str(referrer_id)]["referrals"].append(uid)
+            try:
+                bot.send_message(referrer_id, f"🎉 انضم شخص جديد عبر رابطك!\n👤 الاسم: {message.from_user.first_name}\n👥 إجمالي دعواتك: {len(users[str(referrer_id)]['referrals'])}")
+            except:
+                pass
         save_json(USERS_FILE, users)
         update_stats("new_user", uid=uid)
-        bot.send_message(ADMIN_ID, f"مستخدم جديد 👤\n\nالاسم: {message.from_user.first_name}\nاليوزر: @{username}\nID: `{uid}`", parse_mode="Markdown")
-        # إضافة (6): رسالة ترحيب خاصة لأول مرة فقط
+        all_admins = [ADMIN_ID] + extra_admins
+        for admin_id in all_admins:
+            try:
+                bot.send_message(admin_id, f"مستخدم جديد 👤\n\nالاسم: {message.from_user.first_name}\nاليوزر: @{username}\nID: `{uid}`", parse_mode="Markdown")
+            except:
+                pass
         send_first_time_welcome(uid, message.from_user.first_name)
         welcome_user(uid)
     else:
-        # FIX: تحديث الاسم فقط دون مسح البيانات
         users[str(uid)]["name"] = message.from_user.first_name
         save_json(USERS_FILE, users)
         user = users[str(uid)]
         if "province" in user:
-            # المستخدم مكتمل التسجيل — اعرض القائمة مباشرة
             send_main_menu(uid)
         else:
-            # المستخدم لم يكمل التسجيل — أعد عرض الترحيب
             welcome_user(uid)
 
 # ======== التعامل مع الرسائل ========
@@ -1636,7 +2311,7 @@ def handle_selection(m):
     text = m.text
     if uid in banned:
         return
-    if bot_paused and uid != ADMIN_ID:
+    if bot_paused and not is_admin(uid):
         bot.send_message(uid, pause_message)
         return
     user = users.get(str(uid))
@@ -1646,57 +2321,92 @@ def handle_selection(m):
     lang = user.get("lang", "English 🇬🇧")
     btn = BUTTONS.get(lang, BUTTONS["English 🇬🇧"])
 
-    # حالة البحث — المستخدم أرسل كلمة البحث
     if user_states.get(uid) == "searching":
         user_states.pop(uid, None)
         search_news(uid, text)
         return
 
+    if user_states.get(uid) == "converting_currency":
+        user_states.pop(uid, None)
+        parts = text.strip().split()
+        if len(parts) >= 2:
+            try:
+                amount = float(parts[0].replace(",", ""))
+                currency = parts[1].upper()
+                convert_currency_msg(uid, amount, currency)
+            except ValueError:
+                bot.send_message(uid, "⚠️ صيغة غير صحيحة. مثال: *100 USD*", parse_mode="Markdown")
+        else:
+            bot.send_message(uid, "⚠️ أرسل المبلغ والعملة معاً. مثال: *100 USD*", parse_mode="Markdown")
+        return
+
+    if user_states.get(uid) == "adding_keyword":
+        user_states.pop(uid, None)
+        if not is_premium(uid):
+            bot.send_message(uid, "⭐ هذه الميزة للمشتركين المميزين فقط.")
+            return
+        if text.strip().startswith("حذف") or text.strip().startswith("delete"):
+            user_keywords[str(uid)] = []
+            save_keywords()
+            bot.send_message(uid, "✅ تم حذف جميع كلماتك المفتاحية.")
+        else:
+            new_kws = [k.strip() for k in text.replace("،", ",").split(",") if k.strip()]
+            existing = user_keywords.get(str(uid), [])
+            for kw in new_kws:
+                if kw not in existing:
+                    existing.append(kw)
+            user_keywords[str(uid)] = existing[:20]
+            save_keywords()
+            bot.send_message(uid, f"✅ تم حفظ {len(new_kws)} كلمة مفتاحية.\n🔔 ستصلك تنبيه عند ظهورها في أي خبر!")
+        return
+
     if "province" in user:
         update_stats("button", button=text)
         if text == btn["settings"]:
-            # FIX: تغيير الإعدادات يعيد للترحيب دون مسح كل البيانات
             users[str(uid)] = {"name": user["name"], "sent_news": set()}
             save_json(USERS_FILE, users)
             welcome_user(uid)
         elif text == btn["weather"]:
-            province = user.get("province")
-            lang_code = LANG_CODES.get(lang, "en")
-            url = f"https://api.openweathermap.org/data/2.5/weather?q={province}&appid={WEATHER_KEY}&units=metric&lang={lang_code}"
-            try:
-                data = requests.get(url, timeout=10).json()
-                if data.get("cod") != 200:
-                    bot.send_message(uid, f"⚠️ لم يتم العثور على بيانات الطقس لمدينة: {province}")
-                else:
-                    temp = data['main']['temp']
-                    feels = data['main']['feels_like']
-                    humidity = data['main']['humidity']
-                    desc = data['weather'][0]['description']
-                    wind = data['wind']['speed']
-                    bot.send_message(uid,
-                        f"🌤 *الطقس في {province}*\n\n"
-                        f"🌡 الحرارة: *{temp}°C* (يشعر كـ {feels}°C)\n"
-                        f"☁️ الحالة: {desc}\n"
-                        f"💧 الرطوبة: {humidity}%\n"
-                        f"💨 الرياح: {wind} م/ث",
-                        parse_mode="Markdown"
-                    )
-            except Exception as e:
-                bot.send_message(uid, "⚠️ لا يمكن جلب بيانات الطقس حالياً.")
-                notify_admin_error(f"خطأ في الطقس لـ {uid}: {e}")
+            send_detailed_weather(uid)
+        elif text == btn.get("forecast"):
+            send_3day_forecast(uid)
         elif text == btn["news"]:
             send_hourly_news(uid)
         elif text == btn["all_news"]:
             send_all_news(uid)
         elif text == btn["mena_politics"]:
             send_mena_politics(uid)
+        elif text == btn.get("trending"):
+            send_trending_news(uid)
+        elif text == btn.get("daily_summary"):
+            send_daily_summary(uid)
+        elif text == btn.get("news_cats"):
+            send_interest_menu(uid)
         elif text == btn["currency"]:
             send_currency(uid)
+        elif text == btn.get("crypto"):
+            send_crypto_prices(uid)
+        elif text == btn.get("prayer"):
+            send_prayer_times(uid)
         elif text == btn["search"]:
             user_states[uid] = "searching"
             bot.send_message(uid, "🔍 اكتب كلمة البحث:")
+        elif text == btn.get("referral"):
+            send_referral_stats(uid)
+        elif text == btn.get("top_referrers"):
+            send_top_referrers(uid)
+        elif text == btn.get("sports"):
+            send_sports_news(uid)
+        elif text == btn.get("convert"):
+            user_states[uid] = "converting_currency"
+            bot.send_message(uid, "🔄 أرسل المبلغ والعملة، مثال:\n*100 USD*\n*50 EUR*\n*200 IQD*", parse_mode="Markdown")
+        elif text == btn.get("my_stats"):
+            send_my_stats(uid)
+        elif text == btn.get("share_bot"):
+            send_share_bot(uid)
+        elif text == btn.get("public_stats"):
+            send_public_stats(uid)
         elif text in (btn["notif_on"], btn["notif_off"]):
-            # FIX: التعامل مع كلا زري الإشعارات بشكل صحيح
             current = users[str(uid)].get("notifications", True)
             users[str(uid)]["notifications"] = not current
             save_json(USERS_FILE, users)
@@ -1726,7 +2436,6 @@ def handle_selection(m):
                 for country in countries[val]:
                     markup.add(country)
                 bot.send_message(uid, "اختر دولتك / Choose your country:", reply_markup=markup)
-                # إضافة (3): تلميح الاستخدام بعد اختيار اللغة
                 send_usage_hint(uid, val)
                 return
         bot.send_message(uid, "👇 الرجاء اختيار لغة من القائمة.")
@@ -1757,20 +2466,22 @@ def handle_selection(m):
             else:
                 bot.send_message(uid, "👇 الرجاء اختيار محافظة من القائمة.")
 
-# ======== مساعد استخراج اسم المصدر (إضافة 5) ========
-def get_source_name(feed_url):
-    try:
-        from urllib.parse import urlparse
-        domain = urlparse(feed_url).netloc
-        domain = domain.replace("www.", "").replace("feeds.", "").replace("rss.", "")
-        return domain.split(".")[0].capitalize()
-    except:
-        return "News"
+BOT_SIGNATURE = "\n━━━━━━━━━━━━━━\nعبر بوت أخبار العالم\n@Iraqnowbot"
 
-def format_news_item(prefix, title, link, source_name):
-    return f"{prefix}\n\n📰 {title}\n📡 *{source_name}*\n🔗 {link}"
+# ======== دوال الأخبار (عنوان فقط — بدون رابط أو مصدر) ========
+def format_news_item(prefix, title):
+    return f"{prefix}\n\n📰 {title}{BOT_SIGNATURE}"
 
-# ======== دوال الأخبار ========
+def make_news_share_markup(link, title=""):
+    markup = types.InlineKeyboardMarkup()
+    share_text = f"📰 {title[:80]}\n\nعبر @{BOT_USERNAME}" if title else f"عبر @{BOT_USERNAME}"
+    share_url = f"https://t.me/share/url?url={link}&text={share_text}"
+    markup.add(
+        types.InlineKeyboardButton("🔗 فتح الخبر", url=link),
+        types.InlineKeyboardButton("📤 مشاركة", url=share_url)
+    )
+    return markup
+
 def send_hourly_news(uid):
     user = users.get(str(uid))
     if not user:
@@ -1785,12 +2496,12 @@ def send_hourly_news(uid):
     for feed_url in feeds:
         try:
             feed = feedparser.parse(feed_url)
-            source_name = get_source_name(feed_url)
             for item in feed.entries[:3]:
                 if not hasattr(item, 'link') or item.link in sent:
                     continue
                 sent.add(item.link)
-                bot.send_message(uid, format_news_item("🚨 خبر", item.title, item.link, source_name), parse_mode="Markdown")
+                markup = make_news_share_markup(item.link, getattr(item, 'title', ''))
+                bot.send_message(uid, format_news_item("🚨 خبر", item.title), parse_mode="Markdown", reply_markup=markup)
                 count += 1
         except Exception as e:
             notify_admin_error(f"خطأ في RSS ({feed_url}): {e}")
@@ -1813,12 +2524,12 @@ def send_all_news(uid):
     for feed_url in feeds:
         try:
             feed = feedparser.parse(feed_url)
-            source_name = get_source_name(feed_url)
             for item in feed.entries[:15]:
                 if not hasattr(item, 'link') or item.link in sent:
                     continue
                 sent.add(item.link)
-                bot.send_message(uid, format_news_item("🚨 خبر عاجل", item.title, item.link, source_name), parse_mode="Markdown")
+                markup = make_news_share_markup(item.link, getattr(item, 'title', ''))
+                bot.send_message(uid, format_news_item("🚨 خبر عاجل", item.title), parse_mode="Markdown", reply_markup=markup)
                 count += 1
         except Exception as e:
             notify_admin_error(f"خطأ في RSS ({feed_url}): {e}")
@@ -1835,20 +2546,52 @@ def send_mena_politics(uid):
     mena_feeds = MENA_RSS.get(lang, MENA_RSS.get("العربية 🇮🇶", []))
     sent = user.setdefault("sent_news", set())
     count = 0
+    headlines_sent = []
     for feed_url in mena_feeds:
         try:
             feed = feedparser.parse(feed_url)
-            source_name = get_source_name(feed_url)
-            for item in feed.entries[:5]:
-                if not hasattr(item, 'link') or item.link in sent:
+            for item in feed.entries[:10]:
+                title = getattr(item, 'title', '')
+                link = getattr(item, 'link', '')
+                if not link:
                     continue
-                sent.add(item.link)
-                bot.send_message(uid, format_news_item("📰 أخبار الشرق الأوسط السياسية", item.title, item.link, source_name), parse_mode="Markdown")
+                if link in sent:
+                    continue
+                sent.add(link)
+                markup = make_news_share_markup(link, title)
+                bot.send_message(uid, format_news_item("📰 أخبار الشرق الأوسط السياسية", title), parse_mode="Markdown", reply_markup=markup)
+                headlines_sent.append(title)
                 count += 1
+                if count >= 10:
+                    break
         except Exception as e:
-            notify_admin_error(f"خطأ في RSS MENA: {e}")
+            notify_admin_error(f"خطأ في RSS MENA ({feed_url}): {e}")
+        if count >= 10:
+            break
     if count == 0:
-        bot.send_message(uid, "⚠️ لا توجد أخبار سياسية جديدة الآن.")
+        general_feeds = RSS.get(lang, [])
+        for feed_url in general_feeds:
+            try:
+                feed = feedparser.parse(feed_url)
+                for item in feed.entries[:20]:
+                    title = getattr(item, 'title', '')
+                    link = getattr(item, 'link', '')
+                    if not link or link in sent:
+                        continue
+                    title_lower = title.lower()
+                    if any(kw.lower() in title_lower for kw in MENA_KEYWORDS):
+                        sent.add(link)
+                        markup = make_news_share_markup(link, title)
+                        bot.send_message(uid, format_news_item("📰 أخبار الشرق الأوسط السياسية", title), parse_mode="Markdown", reply_markup=markup)
+                        count += 1
+                        if count >= 5:
+                            break
+            except Exception as e:
+                notify_admin_error(f"خطأ في RSS fallback MENA: {e}")
+            if count >= 5:
+                break
+    if count == 0:
+        bot.send_message(uid, "⚠️ لا توجد أخبار سياسية جديدة الآن، حاول مرة أخرى لاحقاً.")
     else:
         save_json(USERS_FILE, users)
 
@@ -1879,7 +2622,6 @@ def broadcast_news():
         if not info.get("notifications", True):
             continue
         if "province" not in info:
-            # FIX: تخطي المستخدمين الذين لم يكملوا التسجيل
             continue
         lang = info.get("lang", "English 🇬🇧")
         feeds = RSS.get(lang, [])
@@ -1887,14 +2629,236 @@ def broadcast_news():
         for feed_url in feeds:
             try:
                 feed = feedparser.parse(feed_url)
-                source_name = get_source_name(feed_url)
                 for item in feed.entries[:5]:
                     if not hasattr(item, 'link') or item.link in sent:
                         continue
                     sent.add(item.link)
-                    bot.send_message(uid, format_news_item("🚨 خبر عاجل", item.title, item.link, source_name), parse_mode="Markdown")
+                    bot.send_message(uid, format_news_item("🚨 خبر عاجل", item.title), parse_mode="Markdown")
             except Exception as e:
                 notify_admin_error(f"خطأ في RSS ({feed_url}): {e}")
+    save_json(USERS_FILE, users)
+
+# ======== أخبار الرياضة ========
+def send_sports_news(uid):
+    user = users.get(str(uid))
+    if not user:
+        return
+    lang = user.get("lang", "English 🇬🇧")
+    feeds = SPORTS_RSS.get(lang, SPORTS_RSS.get("English 🇬🇧", []))
+    if not feeds:
+        bot.send_message(uid, "⚠️ لا توجد مصادر رياضية لهذه اللغة.")
+        return
+    sent = user.setdefault("sent_news", set())
+    count = 0
+    bot.send_message(uid, "⚽ *أخبار الرياضة*\n━━━━━━━━━━━━━━━", parse_mode="Markdown")
+    for feed_url in feeds:
+        try:
+            feed = feedparser.parse(feed_url)
+            for item in feed.entries[:5]:
+                if not hasattr(item, 'link') or item.link in sent:
+                    continue
+                sent.add(item.link)
+                markup = make_news_share_markup(item.link, getattr(item, 'title', ''))
+                bot.send_message(uid, format_news_item("⚽", item.title), parse_mode="Markdown", reply_markup=markup)
+                count += 1
+                if count >= 8:
+                    break
+        except Exception as e:
+            notify_admin_error(f"خطأ في أخبار الرياضة: {e}")
+        if count >= 8:
+            break
+    if count == 0:
+        bot.send_message(uid, "⚠️ لا توجد أخبار رياضية جديدة الآن.")
+    else:
+        save_json(USERS_FILE, users)
+
+# ======== محوّل العملات ========
+CURRENCY_SYMBOLS = {
+    "USD": "🇺🇸 دولار أمريكي",
+    "EUR": "🇪🇺 يورو",
+    "GBP": "🇬🇧 جنيه إسترليني",
+    "IQD": "🇮🇶 دينار عراقي",
+    "SAR": "🇸🇦 ريال سعودي",
+    "AED": "🇦🇪 درهم إماراتي",
+    "TRY": "🇹🇷 ليرة تركية",
+    "IRR": "🇮🇷 ريال إيراني",
+    "KWD": "🇰🇼 دينار كويتي",
+    "JOD": "🇯🇴 دينار أردني",
+    "EGP": "🇪🇬 جنيه مصري",
+    "RUB": "🇷🇺 روبل روسي",
+    "CNY": "🇨🇳 يوان صيني",
+    "INR": "🇮🇳 روبية هندية",
+}
+
+def convert_currency_msg(uid, amount, from_currency):
+    try:
+        url = f"https://api.exchangerate-api.com/v4/latest/{from_currency}"
+        r = requests.get(url, timeout=10).json()
+        rates = r.get("rates", {})
+        if not rates:
+            bot.send_message(uid, f"⚠️ عملة غير مدعومة: {from_currency}")
+            return
+        targets = ["USD", "EUR", "IQD", "SAR", "AED", "GBP", "TRY", "KWD", "EGP", "RUB"]
+        msg = f"🔄 *تحويل {amount:,.2f} {from_currency}*\n━━━━━━━━━━━━━━━\n\n"
+        for t in targets:
+            if t == from_currency:
+                continue
+            rate = rates.get(t)
+            if rate:
+                converted = amount * rate
+                label = CURRENCY_SYMBOLS.get(t, t)
+                msg += f"{label}: *{converted:,.2f}*\n"
+        bot.send_message(uid, msg, parse_mode="Markdown")
+    except Exception as e:
+        bot.send_message(uid, "⚠️ لا يمكن جلب أسعار الصرف الآن.")
+        notify_admin_error(f"خطأ في محوّل العملات: {e}")
+
+# ======== إحصائيات المستخدم الشخصية ========
+def send_my_stats(uid):
+    user = users.get(str(uid))
+    if not user:
+        return
+    name = user.get("name", "مستخدم")
+    lang = user.get("lang", "—")
+    province = user.get("province", "—")
+    sent_news = user.get("sent_news", set())
+    referrals = user.get("referrals", [])
+    is_prem = "⭐ نعم" if is_premium(uid) else "❌ لا"
+    notif = "🔔 مفعّلة" if user.get("notifications", True) else "🔕 متوقفة"
+    join_date = user.get("join_date", "—")
+    kws = user_keywords.get(str(uid), [])
+
+    msg = (
+        f"📈 *إحصائياتك الشخصية*\n━━━━━━━━━━━━━━━\n\n"
+        f"👤 الاسم: *{name}*\n"
+        f"🌍 اللغة: *{lang}*\n"
+        f"🏙 المدينة: *{province}*\n"
+        f"📅 تاريخ الانضمام: *{join_date}*\n\n"
+        f"📰 أخبار استلمتها: *{len(sent_news)}*\n"
+        f"🎁 دعوات أرسلتها: *{len(referrals)}*\n"
+        f"🔑 كلمات مفتاحية: *{len(kws)}*\n"
+        f"⭐ اشتراك مميز: *{is_prem}*\n"
+        f"🔔 الإشعارات: *{notif}*\n"
+    )
+    bot.send_message(uid, msg, parse_mode="Markdown")
+
+# ======== توقعات 3 أيام (مجانية) ========
+def send_3day_forecast(uid):
+    user = users.get(str(uid))
+    if not user:
+        return
+    lang = user.get("lang", "English 🇬🇧")
+    lang_code = LANG_CODES.get(lang, "en")
+    province = user.get("province", "")
+    if not province:
+        bot.send_message(uid, "⚠️ لم يتم تحديد مدينتك بعد.")
+        return
+    try:
+        url = f"https://api.openweathermap.org/data/2.5/forecast?q={province}&appid={WEATHER_KEY}&units=metric&lang={lang_code}&cnt=24"
+        data = requests.get(url, timeout=10).json()
+        if str(data.get("cod")) != "200":
+            bot.send_message(uid, f"⚠️ لم يتم العثور على بيانات الطقس لمدينة: {province}")
+            return
+        days = {}
+        for item in data["list"]:
+            date = item["dt_txt"].split(" ")[0]
+            if date not in days:
+                days[date] = {"temps": [], "descs": [], "icons": []}
+            days[date]["temps"].append(item["main"]["temp"])
+            days[date]["descs"].append(item["weather"][0]["description"])
+            days[date]["icons"].append(item["weather"][0]["id"])
+        msg = f"📅 *توقعات الطقس لـ 3 أيام — {province}*\n━━━━━━━━━━━━━━━\n\n"
+        day_names = list(days.items())[:3]
+        for date, info in day_names:
+            min_t = round(min(info["temps"]))
+            max_t = round(max(info["temps"]))
+            desc = info["descs"][len(info["descs"])//2]
+            icon = get_weather_emoji(info["icons"][len(info["icons"])//2])
+            msg += f"{icon} *{date}*\n"
+            msg += f"   🌡 {min_t}°C — {max_t}°C\n"
+            msg += f"   ☁️ {desc.capitalize()}\n\n"
+        bot.send_message(uid, msg, parse_mode="Markdown")
+    except Exception as e:
+        bot.send_message(uid, "⚠️ لا يمكن جلب توقعات الطقس حالياً.")
+        notify_admin_error(f"خطأ في توقعات 3 أيام لـ {uid}: {e}")
+
+# ======== ترتيب أفضل الداعين ========
+def send_top_referrers(uid):
+    referral_counts = []
+    for user_id, info in users.items():
+        refs = info.get("referrals", [])
+        if refs:
+            name = info.get("name", "مستخدم")
+            referral_counts.append((name, len(refs)))
+    referral_counts.sort(key=lambda x: x[1], reverse=True)
+    top = referral_counts[:10]
+    if not top:
+        bot.send_message(uid, "📊 لا توجد دعوات بعد، كن أول من يدعو أصدقاءه! 🎯")
+        return
+    medals = ["🥇", "🥈", "🥉"] + ["4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"]
+    msg = "🏆 *أفضل الداعين*\n━━━━━━━━━━━━━━━\n\n"
+    for i, (name, count) in enumerate(top):
+        medal = medals[i] if i < len(medals) else f"{i+1}."
+        msg += f"{medal} *{name}* — {count} دعوة\n"
+    bot.send_message(uid, msg, parse_mode="Markdown")
+
+# ======== تنظيف البيانات التلقائي (Auto-Clean) ========
+def auto_clean_sent_news():
+    cutoff = datetime.datetime.now() - datetime.timedelta(days=2)
+    cleaned = 0
+    for uid, info in users.items():
+        sent = info.get("sent_news", set())
+        if isinstance(sent, list):
+            sent = set(sent)
+        if len(sent) > 500:
+            sent_list = list(sent)
+            users[uid]["sent_news"] = set(sent_list[-300:])
+            cleaned += 1
+    if cleaned > 0:
+        save_json(USERS_FILE, users)
+        notify_admin_error(f"✅ Auto-Clean: تم تنظيف بيانات {cleaned} مستخدم")
+
+# ======== فحص الكلمات المفتاحية للمميزين ========
+def check_keyword_alerts():
+    for uid, keywords in list(user_keywords.items()):
+        if not keywords:
+            continue
+        if not is_premium(uid):
+            continue
+        if int(uid) in banned:
+            continue
+        user = users.get(uid)
+        if not user:
+            continue
+        lang = user.get("lang", "English 🇬🇧")
+        feeds = RSS.get(lang, [])
+        sent = user.setdefault("sent_news", set())
+        for feed_url in feeds:
+            try:
+                feed = feedparser.parse(feed_url)
+                for item in feed.entries[:5]:
+                    if not hasattr(item, 'link') or item.link in sent:
+                        continue
+                    title = getattr(item, 'title', '')
+                    title_lower = title.lower()
+                    matched_kw = None
+                    for kw in keywords:
+                        if kw.lower() in title_lower:
+                            matched_kw = kw
+                            break
+                    if matched_kw:
+                        sent.add(item.link)
+                        try:
+                            bot.send_message(
+                                int(uid),
+                                f"🔑 *تنبيه كلمة مفتاحية: {matched_kw}*\n\n"
+                                f"📰 {title}{BOT_SIGNATURE}",
+                                parse_mode="Markdown"
+                            )
+                        except:
+                            pass
+            except Exception as e:
+                notify_admin_error(f"خطأ في فحص الكلمات المفتاحية: {e}")
     save_json(USERS_FILE, users)
 
 # ======== الجدولة ========
@@ -1905,6 +2869,8 @@ scheduler.add_job(broadcast_premium_instant_news, 'interval', minutes=5)
 scheduler.add_job(send_morning_summary, 'interval', hours=1)
 scheduler.add_job(check_weather_alerts, 'interval', hours=6)
 scheduler.add_job(check_currency_alerts, 'interval', hours=3)
+scheduler.add_job(check_keyword_alerts, 'interval', minutes=15)
+scheduler.add_job(auto_clean_sent_news, 'interval', hours=24)
 scheduler.add_job(lambda: save_json(USERS_FILE, users), 'interval', minutes=10)
 scheduler.start()
 atexit.register(lambda: scheduler.shutdown(wait=False))
