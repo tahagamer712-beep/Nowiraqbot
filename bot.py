@@ -14,9 +14,6 @@ ADMIN_ID = 5149213983  # الاي دي مالك
 
 bot = telebot.TeleBot(BOT_TOKEN)
 
-# ======== حفظ الأخبار المرسلة ========
-sent_news = set()
-
 # ======== اللغات ========
 languages = {
     "Arabic": {"name": "العربية 🇮🇶", "code": "ar"},
@@ -35,25 +32,26 @@ languages = {
 
 # ======== الدول + المحافظات ========
 countries = {
-    "العربية 🇮🇶": {"العراق": ["بغداد", "البصرة", "أربيل", "نينوى", "بقية المحافظات"]},
-    "English 🇬🇧": {"USA": ["New York", "Washington"], "UK": ["London", "Manchester"]},
-    "Русский 🇷🇺": {"Россия": ["Москва", "Санкт-Петербург"]},
-    "فارسی 🇮🇷": {"ایران": ["تهران", "مشهد"]},
-    "हिन्दी 🇮🇳": {"भारत": ["दिल्ली", "मुंबई"]},
-    "Português 🇧🇷": {"Brasil": ["São Paulo", "Rio de Janeiro"]},
-    "Türkçe 🇹🇷": {"Türkiye": ["İstanbul", "Ankara"]},
-    "اردو 🇵🇰": {"پاکستان": ["کراچی", "لاہور"]},
-    "Deutsch 🇩🇪": {"Deutschland": ["Berlin", "Munich"]},
-    "Українська 🇺🇦": {"Україна": ["Київ", "Львів"]},
-    "Italiano 🇮🇹": {"Italia": ["Roma", "Milano"]},
-    "Español 🇲🇽": {"México": ["Ciudad de México", "Guadalajara"]}
+    "العربية 🇮🇶": {"العراق": ["بغداد","البصرة","أربيل","الموصل","كربلاء","النجف","السليمانية","دهوك","ميسان","ذي قار","ديالى","الحلة","كركوك","واسط","المثنى","صلاح الدين","بابل","القادسية"]},
+    "English 🇬🇧": {"USA": ["New York","Washington","Los Angeles","Chicago"], "UK": ["London","Manchester","Birmingham"]},
+    "Русский 🇷🇺": {"Россия": ["Москва","Санкт-Петербург","Новосибирск","Екатеринбург"]},
+    "فارسی 🇮🇷": {"ایران": ["تهران","مشهد","اصفهان","شیراز"]},
+    "हिन्दी 🇮🇳": {"भारत": ["दिल्ली","मुंबई","बंगलोर","चेन्नई"]},
+    "Português 🇧🇷": {"Brasil": ["São Paulo","Rio de Janeiro","Brasília","Salvador"]},
+    "Türkçe 🇹🇷": {"Türkiye": ["İstanbul","Ankara","İzmir","Bursa"]},
+    "اردو 🇵🇰": {"پاکستان": ["کراچی","لاہور","اسلام آباد","فیصل آباد"]},
+    "Deutsch 🇩🇪": {"Deutschland": ["Berlin","Munich","Hamburg","Frankfurt"]},
+    "Українська 🇺🇦": {"Україна": ["Київ","Львів","Одеса","Харків"]},
+    "Italiano 🇮🇹": {"Italia": ["Roma","Milano","Napoli","Torino"]},
+    "Español 🇲🇽": {"México": ["Ciudad de México","Guadalajara","Monterrey","Puebla"]}
 }
 
 # ======== قائمة المستخدمين ========
 users = {}  # user_id : {"name":"", "lang": "", "country": "", "province": ""}
+sent_news = set()  # حفظ الأخبار المرسلة
 
 # ======== RSS المصادر ========
-RSS = {
+RSS_SOURCES = {
     "العربية 🇮🇶": ["https://www.alarabiya.net/.mrss/ar/0/0/0.xml", "https://www.bbc.com/arabic/index.xml"],
     "English 🇬🇧": ["https://rss.nytimes.com/services/xml/rss/nyt/World.xml", "http://feeds.bbci.co.uk/news/world/rss.xml"],
     "Русский 🇷🇺": ["https://www.rbc.ru/rbcnews.rss"],
@@ -68,135 +66,121 @@ RSS = {
     "Español 🇲🇽": ["https://www.bbc.com/mundo/index.xml"]
 }
 
-# ======== دالة حفظ المستخدم ========
-def save_user(user_id, info):
-    users[user_id] = info
-
-# ======== /start ========
+# ======== أوامر البوت ========
 @bot.message_handler(commands=['start'])
-def start(message):
-    user_id = message.from_user.id
-    first_name = message.from_user.first_name
-    last_name = message.from_user.last_name if message.from_user.last_name else ""
-    username = message.from_user.username if message.from_user.username else "لا يوجد يوزر"
-
-    # تسجيل المستخدم
-    users[user_id] = {"name": first_name}
-
-    # إرسال رسالة للـ ADMIN
+def start(m):
+    uid = m.from_user.id
+    username = m.from_user.username if m.from_user.username else "لا يوجد يوزر"
+    users[uid] = {"name": m.from_user.first_name}
+    
+    # إرسال بيانات المستخدم للادمن
     bot.send_message(
         ADMIN_ID,
-        f"👤 مستخدم جديد دخل البوت\n\n"
-        f"الاسم: {first_name} {last_name}\n"
+        f"مستخدم جديد 👤\n\n"
+        f"الاسم: {m.from_user.first_name}\n"
         f"اليوزر: @{username}\n"
-        f"ID: {user_id}"
+        f"ID: {uid}"
     )
-
-    # رسالة الترحيب
+    
+    # إنشاء أزرار اللغات
     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     for lang in languages:
         markup.add(languages[lang]["name"])
-
+    
+    # رسالة الترحيب
     welcome_text = (
-    "🌍 *World News & Weather Bot*\n\n"
-    "👋 أهلاً وسهلاً بك\n"
-    "👋 Welcome!\n\n"
-    "هذا البوت يوفر لك معلومات مهمة بشكل تلقائي:\n"
-    "This bot automatically provides useful information:\n\n"
-    "📰 آخر أخبار العالم من مصادر موثوقة\n"
-    "📰 Latest world news from trusted sources\n\n"
-    "🌤 حالة الطقس في مدينتك\n"
-    "🌤 Weather updates for your city\n\n"
-    "💱 أسعار العملات مقابل الدولار\n"
-    "💱 Currency exchange rates vs USD\n\n"
-    "📢 يمكنك أيضاً إضافة البوت إلى قناتك أو مجموعتك في تلغرام\n"
-    "📢 You can also add the bot to your Telegram channel or group\n"
-    "وسيتم نشر الأخبار تلقائياً.\n"
-    "And it will automatically publish news.\n\n"
-    "🌐 البوت يدعم 12 لغة حول العالم\n"
-    "🌐 The bot supports 12 languages worldwide\n\n"
-    "👇 اختر لغتك للمتابعة\n"
-    "👇 Choose your language to continue"
+        "🌍 *World News & Weather Bot*\n\n"
+        "👋 أهلاً وسهلاً بك\n"
+        "👋 Welcome!\n\n"
+        "هذا البوت يوفر لك معلومات مهمة بشكل تلقائي:\n"
+        "This bot automatically provides useful information:\n\n"
+        "📰 آخر أخبار العالم من مصادر موثوقة\n"
+        "📰 Latest world news from trusted sources\n\n"
+        "🌤 حالة الطقس في مدينتك\n"
+        "🌤 Weather updates for your city\n\n"
+        "💱 أسعار العملات مقابل الدولار\n"
+        "💱 Currency exchange rates vs USD\n\n"
+        "📢 يمكنك أيضاً إضافة البوت إلى قناتك أو مجموعتك في تلغرام\n"
+        "📢 You can also add the bot to your Telegram channel or group\n"
+        "وسيتم نشر الأخبار تلقائياً.\n"
+        "And it will automatically publish news.\n\n"
+        "🌐 البوت يدعم 12 لغة حول العالم\n"
+        "🌐 The bot supports 12 languages worldwide\n\n"
+        "👇 اختر لغتك للمتابعة\n"
+        "👇 Choose your language to continue"
     )
+    
+    bot.send_message(uid, welcome_text, parse_mode="Markdown", reply_markup=markup)
 
-    bot.send_message(
-        user_id,
-        welcome_text,
-        parse_mode="Markdown",
-        reply_markup=markup
-    )
 
-# ======== التعامل مع الرسائل ========
 @bot.message_handler(func=lambda m: True)
 def handle_selection(m):
-    user_id = m.from_user.id
+    uid = m.from_user.id
     text = m.text
-    user_name = users[user_id]["name"]
-
-    # 1️⃣ اختيار اللغة
-    if "lang" not in users[user_id]:
-        for key, val in languages.items():
+    name = users[uid]["name"]
+    
+    # اختيار اللغة
+    if "lang" not in users[uid]:
+        for key,val in languages.items():
             if text == val["name"]:
-                users[user_id]["lang"] = val["name"]
+                users[uid]["lang"] = val["name"]
+                bot.send_message(ADMIN_ID, f"المستخدم {name} ({uid}) اختار اللغة: {text}")
                 markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
                 for country in countries[val["name"]]:
                     markup.add(country)
-                bot.send_message(user_id, "اختر دولتك / Choose your country:", reply_markup=markup)
+                bot.send_message(uid, "اختر دولتك / Choose your country:", reply_markup=markup)
                 return
-
-    # 2️⃣ اختيار الدولة
-    elif "country" not in users[user_id]:
-        lang = users[user_id]["lang"]
+    
+    # اختيار الدولة
+    elif "country" not in users[uid]:
+        lang = users[uid]["lang"]
         if text in countries[lang]:
-            users[user_id]["country"] = text
+            users[uid]["country"] = text
+            bot.send_message(ADMIN_ID, f"المستخدم {name} ({uid}) اختار الدولة: {text}")
             markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
             for province in countries[lang][text]:
                 markup.add(province)
-            bot.send_message(user_id, "اختر محافظتك / Choose your province:", reply_markup=markup)
+            bot.send_message(uid, "اختر محافظتك / Choose your province:", reply_markup=markup)
             return
-
-    # 3️⃣ اختيار المحافظة
-    elif "province" not in users[user_id]:
-        users[user_id]["province"] = text
-        bot.send_message(user_id, "✅ تم حفظ اختياراتك\nستصلك الأخبار والطقس والعملات تلقائيًا كل ساعة.")
+    
+    # اختيار المحافظة
+    elif "province" not in users[uid]:
+        users[uid]["province"] = text
+        bot.send_message(uid, "تم حفظ اختياراتك ✅\nستصلك جميع الأخبار والطقس تلقائيًا كل ساعة.")
+        bot.send_message(ADMIN_ID, f"المستخدم {name} ({uid}) اختار المحافظة: {text}")
         return
 
-# ======== دالة الطقس ========
+# ======== دوال البث التلقائي ========
 def broadcast_weather():
-    for user_id, info in users.items():
+    for uid, info in users.items():
         province = info.get("province", "Baghdad")
-        user_name = info.get("name", "صديقي")
+        name = info.get("name", "صديقي")
+        url = f"https://api.openweathermap.org/data/2.5/weather?q={province}&appid={WEATHER_KEY}&units=metric"
         try:
-            url = f"https://api.openweathermap.org/data/2.5/weather?q={province}&appid={WEATHER_KEY}&units=metric"
             data = requests.get(url).json()
             temp = data['main']['temp']
-            bot.send_message(user_id, f"{user_name}, 🌤 الطقس في {province}: {temp}°C")
+            bot.send_message(uid, f"{name}, 🌤 الطقس في {province}: {temp}°C")
         except:
-            bot.send_message(user_id, f"{user_name}, ⚠️ لا يمكن جلب بيانات الطقس حالياً.")
+            bot.send_message(uid, f"{name}, ⚠️ لا يمكن جلب بيانات الطقس حالياً.")
 
-# ======== دالة الأخبار ========
 def broadcast_news():
-    for user_id, info in users.items():
-        lang = info.get("lang", "English 🇬🇧")
-        user_name = info.get("name", "صديقي")
-        if lang in RSS:
-            for feed in RSS[lang]:
+    for uid, info in users.items():
+        lang = info.get("lang")
+        name = info.get("name", "صديقي")
+        if lang not in RSS_SOURCES:
+            continue
+        for feed in RSS_SOURCES[lang]:
+            try:
                 rss = feedparser.parse(feed)
                 for entry in rss.entries[:10]:
                     if entry.link in sent_news:
                         continue
                     sent_news.add(entry.link)
-                    bot.send_message(user_id, f"{user_name}, 🚨 {entry.title}\n{entry.link}")
+                    bot.send_message(uid, f"{name}, 📰 {entry.title}\n{entry.link}")
+            except:
+                continue
 
-# ======== أمر الإحصائيات ========
-@bot.message_handler(commands=['stats'])
-def stats(message):
-    if message.from_user.id != ADMIN_ID:
-        return
-    total_users = len(users)
-    bot.send_message(ADMIN_ID, f"📊 إحصائيات البوت\n\nعدد المستخدمين: {total_users}")
-
-# ======== جدولة البث ========
+# ======== جدولة كل ساعة ========
 schedule.every().hour.do(broadcast_weather)
 schedule.every().hour.do(broadcast_news)
 
