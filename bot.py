@@ -23,6 +23,7 @@ BANNED_FILE = "banned.json"
 RSS_FILE = "rss.json"
 ADMINS_FILE = "admins.json"
 KEYWORDS_FILE = "keywords.json"
+TRACK_FILE = "tracking.json"
 
 # ======== اسم البوت ========
 BOT_USERNAME = "Iraqnowbot"
@@ -438,6 +439,12 @@ user_keywords = load_json(KEYWORDS_FILE, {})
 def save_keywords():
     save_json(KEYWORDS_FILE, user_keywords)
 
+# ======== تتبع العملات والأسهم ========
+tracked_assets = load_json(TRACK_FILE, {})
+
+def save_tracked_assets():
+    save_json(TRACK_FILE, tracked_assets)
+
 # ======== الأزرار ========
 BUTTONS = {
     "العربية 🇮🇶": {
@@ -449,10 +456,13 @@ BUTTONS = {
         "trending": "🔥 الأكثر تداولاً",
         "sports": "⚽ أخبار الرياضة",
         "daily_summary": "📋 ملخص أخبار اليوم",
+        "weekly_summary": "📆 ملخص أسبوعي",
         "news_cats": "🗂 اختيار أنواع الأخبار",
         "currency": "💱 أسعار العملات",
+        "dollar_parallel": "💵 دولار السوق",
         "convert": "🔄 محوّل العملات",
         "crypto": "💎 العملات الرقمية",
+        "track_asset": "📌 تتبع عملة/سهم",
         "prayer": "🕌 أوقات الصلاة",
         "search": "🔍 بحث في الأخبار",
         "my_stats": "📈 إحصائياتي",
@@ -475,10 +485,13 @@ BUTTONS = {
         "trending": "🔥 Trending News",
         "sports": "⚽ Sports News",
         "daily_summary": "📋 Daily News Summary",
+        "weekly_summary": "📆 Weekly Summary",
         "news_cats": "🗂 News Categories",
         "currency": "💱 Currency Rates",
+        "dollar_parallel": "💵 Parallel Dollar",
         "convert": "🔄 Currency Converter",
         "crypto": "💎 Crypto Prices",
+        "track_asset": "📌 Track Asset",
         "prayer": "🕌 Prayer Times",
         "search": "🔍 Search News",
         "my_stats": "📈 My Statistics",
@@ -501,10 +514,13 @@ BUTTONS = {
         "trending": "🔥 В тренде",
         "sports": "⚽ Спортивные новости",
         "daily_summary": "📋 Сводка дня",
+        "weekly_summary": "📆 Недельный итог",
         "news_cats": "🗂 Категории новостей",
         "currency": "💱 Курсы валют",
+        "dollar_parallel": "💵 Параллельный доллар",
         "convert": "🔄 Конвертер валют",
         "crypto": "💎 Криптовалюты",
+        "track_asset": "📌 Отслеживать актив",
         "prayer": "🕌 Время намаза",
         "search": "🔍 Поиск новостей",
         "my_stats": "📈 Моя статистика",
@@ -527,10 +543,13 @@ BUTTONS = {
         "trending": "🔥 پرتداول‌ترین",
         "sports": "⚽ اخبار ورزشی",
         "daily_summary": "📋 خلاصه اخبار امروز",
+        "weekly_summary": "📆 خلاصه هفتگی",
         "news_cats": "🗂 دسته‌بندی اخبار",
         "currency": "💱 نرخ ارز",
+        "dollar_parallel": "💵 دلار موازی",
         "convert": "🔄 تبدیل ارز",
         "crypto": "💎 ارز دیجیتال",
+        "track_asset": "📌 پیگیری دارایی",
         "prayer": "🕌 اوقات نماز",
         "search": "🔍 جستجوی اخبار",
         "my_stats": "📈 آمار من",
@@ -553,10 +572,13 @@ BUTTONS = {
         "trending": "🔥 ट्रेंडिंग",
         "sports": "⚽ खेल समाचार",
         "daily_summary": "📋 आज की खबर सारांश",
+        "weekly_summary": "📆 साप्ताहिक सारांश",
         "news_cats": "🗂 समाचार श्रेणियाँ",
         "currency": "💱 मुद्रा दरें",
+        "dollar_parallel": "💵 Parallel Dollar",
         "convert": "🔄 मुद्रा परिवर्तक",
         "crypto": "💎 क्रिप्टो कीमतें",
+        "track_asset": "📌 Asset Track",
         "prayer": "🕌 नमाज़ के वक्त",
         "search": "🔍 खबर खोजें",
         "my_stats": "📈 मेरे आँकड़े",
@@ -579,10 +601,13 @@ BUTTONS = {
         "trending": "🔥 Em alta",
         "sports": "⚽ Esportes",
         "daily_summary": "📋 Resumo do dia",
+        "weekly_summary": "📆 Resumo semanal",
         "news_cats": "🗂 Categorias de notícias",
         "currency": "💱 Taxas de câmbio",
+        "dollar_parallel": "💵 Dólar paralelo",
         "convert": "🔄 Conversor de moeda",
         "crypto": "💎 Criptomoedas",
+        "track_asset": "📌 Monitorar ativo",
         "prayer": "🕌 Horários de oração",
         "search": "🔍 Buscar notícias",
         "my_stats": "📈 Minhas estatísticas",
@@ -605,10 +630,13 @@ BUTTONS = {
         "trending": "🔥 Trend haberler",
         "sports": "⚽ Spor haberleri",
         "daily_summary": "📋 Günlük özet",
+        "weekly_summary": "📆 Haftalık özet",
         "news_cats": "🗂 Haber kategorileri",
         "currency": "💱 Döviz kurları",
+        "dollar_parallel": "💵 Paralel dolar",
         "convert": "🔄 Döviz çevirici",
         "crypto": "💎 Kripto fiyatları",
+        "track_asset": "📌 Varlık takibi",
         "prayer": "🕌 Namaz vakitleri",
         "search": "🔍 Haber ara",
         "my_stats": "📈 İstatistiklerim",
@@ -631,10 +659,13 @@ BUTTONS = {
         "trending": "🔥 ٹرینڈنگ خبریں",
         "sports": "⚽ کھیل کی خبریں",
         "daily_summary": "📋 آج کا خلاصہ",
+        "weekly_summary": "📆 ہفتہ وار خلاصہ",
         "news_cats": "🗂 خبروں کی اقسام",
         "currency": "💱 کرنسی ریٹ",
+        "dollar_parallel": "💵 پیرالل ڈالر",
         "convert": "🔄 کرنسی کنورٹر",
         "crypto": "💎 کرپٹو قیمتیں",
+        "track_asset": "📌 اثاثہ ٹریک",
         "prayer": "🕌 نماز کے اوقات",
         "search": "🔍 خبریں تلاش کریں",
         "my_stats": "📈 میرے اعداد",
@@ -657,10 +688,13 @@ BUTTONS = {
         "trending": "🔥 Trending",
         "sports": "⚽ Sportnachrichten",
         "daily_summary": "📋 Tageszusammenfassung",
+        "weekly_summary": "📆 Wochenzusammenfassung",
         "news_cats": "🗂 Nachrichtenkategorien",
         "currency": "💱 Wechselkurse",
+        "dollar_parallel": "💵 Parallelkurs Dollar",
         "convert": "🔄 Währungsrechner",
         "crypto": "💎 Kryptowährungen",
+        "track_asset": "📌 Asset verfolgen",
         "prayer": "🕌 Gebetszeiten",
         "search": "🔍 Nachrichten suchen",
         "my_stats": "📈 Meine Statistiken",
@@ -683,10 +717,13 @@ BUTTONS = {
         "trending": "🔥 Тренди",
         "sports": "⚽ Спортивні новини",
         "daily_summary": "📋 Зведення дня",
+        "weekly_summary": "📆 Тижневий підсумок",
         "news_cats": "🗂 Категорії новин",
         "currency": "💱 Курси валют",
+        "dollar_parallel": "💵 Паралельний долар",
         "convert": "🔄 Конвертер валют",
         "crypto": "💎 Криптовалюти",
+        "track_asset": "📌 Стежити за активом",
         "prayer": "🕌 Час молитви",
         "search": "🔍 Пошук новин",
         "my_stats": "📈 Моя статистика",
@@ -709,10 +746,13 @@ BUTTONS = {
         "trending": "🔥 Notizie di tendenza",
         "sports": "⚽ Notizie sportive",
         "daily_summary": "📋 Riepilogo del giorno",
+        "weekly_summary": "📆 Riepilogo settimanale",
         "news_cats": "🗂 Categorie notizie",
         "currency": "💱 Tassi di cambio",
+        "dollar_parallel": "💵 Dollaro parallelo",
         "convert": "🔄 Convertitore valuta",
         "crypto": "💎 Criptovalute",
+        "track_asset": "📌 Traccia attivo",
         "prayer": "🕌 Orari di preghiera",
         "search": "🔍 Cerca notizie",
         "my_stats": "📈 Le mie statistiche",
@@ -735,10 +775,13 @@ BUTTONS = {
         "trending": "🔥 Tendencias",
         "sports": "⚽ Noticias deportivas",
         "daily_summary": "📋 Resumen del día",
+        "weekly_summary": "📆 Resumen semanal",
         "news_cats": "🗂 Categorías de noticias",
         "currency": "💱 Tipos de cambio",
+        "dollar_parallel": "💵 Dólar paralelo",
         "convert": "🔄 Conversor de divisas",
         "crypto": "💎 Criptomonedas",
+        "track_asset": "📌 Rastrear activo",
         "prayer": "🕌 Horarios de oración",
         "search": "🔍 Buscar noticias",
         "my_stats": "📈 Mis estadísticas",
@@ -1747,9 +1790,12 @@ def send_main_menu(uid):
         btn["weather"], btn.get("forecast", "📅 توقعات 3 أيام"),
         btn["news"], btn.get("trending", "🔥 الأكثر تداولاً"),
         btn.get("sports", "⚽ رياضة"), btn["mena_politics"],
-        btn["daily_summary"], btn["news_cats"],
-        btn["currency"], btn.get("convert", "🔄 محوّل العملات"),
-        btn.get("crypto", "💎 كريبتو"), btn.get("prayer", "🕌 الصلاة"),
+        btn["daily_summary"], btn.get("weekly_summary", "📆 ملخص أسبوعي"),
+        btn["news_cats"],
+        btn["currency"], btn.get("dollar_parallel", "💵 دولار السوق"),
+        btn.get("convert", "🔄 محوّل العملات"),
+        btn.get("crypto", "💎 كريبتو"), btn.get("track_asset", "📌 تتبع عملة/سهم"),
+        btn.get("prayer", "🕌 الصلاة"),
         btn["search"], btn.get("my_stats", "📈 إحصائياتي"),
         btn.get("referral", "🎁 دعواتي"), btn.get("top_referrers", "🏆 أفضل الداعين"),
         btn.get("share_bot", "📢 انشر البوت"), btn.get("public_stats", "📊 إحصائيات"),
@@ -2340,6 +2386,35 @@ def handle_selection(m):
             bot.send_message(uid, "⚠️ أرسل المبلغ والعملة معاً. مثال: *100 USD*", parse_mode="Markdown")
         return
 
+    if user_states.get(uid) == "tracking_asset":
+        user_states.pop(uid, None)
+        symbol = text.strip().upper()
+        if not symbol or len(symbol) > 15:
+            bot.send_message(uid, "⚠️ رمز غير صحيح. أرسل مثال: AAPL أو BTC أو EUR")
+            return
+        existing = tracked_assets.get(str(uid), {}).get("assets", [])
+        if symbol in existing:
+            bot.send_message(uid, f"📌 *{symbol}* مضافة مسبقاً في قائمة التتبع.", parse_mode="Markdown")
+        elif len(existing) >= 10:
+            bot.send_message(uid, "⚠️ الحد الأقصى 10 أصول. أرسل /removetrack {رمز} لحذف واحدة.")
+        else:
+            price = fetch_asset_price(symbol)
+            if price is None:
+                bot.send_message(uid, f"⚠️ لم أتمكن من العثور على *{symbol}*. تأكد من الرمز وأعد المحاولة.", parse_mode="Markdown")
+                return
+            if str(uid) not in tracked_assets:
+                tracked_assets[str(uid)] = {"assets": [], "last_prices": {}}
+            tracked_assets[str(uid)]["assets"].append(symbol)
+            tracked_assets[str(uid)]["last_prices"][symbol] = price
+            save_tracked_assets()
+            bot.send_message(uid,
+                f"✅ تمت إضافة *{symbol}* للتتبع!\n"
+                f"💰 السعر الحالي: `{price}`\n\n"
+                f"🔔 ستصلك تنبيه عند تغير السعر بنسبة ±2%",
+                parse_mode="Markdown"
+            )
+        return
+
     if user_states.get(uid) == "adding_keyword":
         user_states.pop(uid, None)
         if not is_premium(uid):
@@ -2406,6 +2481,12 @@ def handle_selection(m):
             send_share_bot(uid)
         elif text == btn.get("public_stats"):
             send_public_stats(uid)
+        elif text == btn.get("dollar_parallel"):
+            send_dollar_parallel(uid)
+        elif text == btn.get("weekly_summary"):
+            send_weekly_summary_text(uid)
+        elif text == btn.get("track_asset"):
+            start_track_asset(uid)
         elif text in (btn["notif_on"], btn["notif_off"]):
             current = users[str(uid)].get("notifications", True)
             users[str(uid)]["notifications"] = not current
@@ -2476,9 +2557,13 @@ def make_news_share_markup(link, title=""):
     markup = types.InlineKeyboardMarkup()
     share_text = f"📰 {title[:80]}\n\nعبر @{BOT_USERNAME}" if title else f"عبر @{BOT_USERNAME}"
     share_url = f"https://t.me/share/url?url={link}&text={share_text}"
+    bot_share_url = f"https://t.me/share/url?url=https://t.me/{BOT_USERNAME}&text=اشترك+في+بوت+الأخبار+%40{BOT_USERNAME}+لأحدث+الأخبار+والطقس+والعملات"
     markup.add(
         types.InlineKeyboardButton("🔗 فتح الخبر", url=link),
-        types.InlineKeyboardButton("📤 مشاركة", url=share_url)
+        types.InlineKeyboardButton("📤 مشاركة الخبر", url=share_url)
+    )
+    markup.add(
+        types.InlineKeyboardButton(f"🤖 انشر البوت @{BOT_USERNAME}", url=bot_share_url)
     )
     return markup
 
@@ -2862,6 +2947,424 @@ def check_keyword_alerts():
     save_json(USERS_FILE, users)
 
 # ======== الجدولة ========
+
+# ======== ملخص أخبار اليوم ========
+def send_daily_summary(uid):
+    user = users.get(str(uid))
+    if not user:
+        return
+    lang = user.get("lang", "English 🇬🇧")
+    feeds = RSS.get(lang, [])
+    if not feeds:
+        bot.send_message(uid, "⚠️ لا توجد مصادر أخبار لهذه اللغة حالياً.")
+        return
+    headlines = []
+    for feed_url in feeds[:3]:
+        try:
+            feed = feedparser.parse(feed_url)
+            for item in feed.entries[:5]:
+                if hasattr(item, 'title') and item.title:
+                    headlines.append(item.title)
+            if len(headlines) >= 15:
+                break
+        except Exception as e:
+            notify_admin_error(f"خطأ في ملخص اليوم ({feed_url}): {e}")
+    if not headlines:
+        bot.send_message(uid, "⚠️ لا توجد أخبار متاحة الآن، حاول لاحقاً.")
+        return
+    today = datetime.date.today().strftime("%Y-%m-%d")
+    msg = f"📋 *ملخص أخبار اليوم — {today}*\n━━━━━━━━━━━━━━━\n\n"
+    for i, title in enumerate(headlines[:10], 1):
+        msg += f"{i}. {title}\n\n"
+    msg += f"━━━━━━━━━━━━━━━\n{BOT_SIGNATURE}"
+    bot.send_message(uid, msg, parse_mode="Markdown")
+
+# ======== أسعار العملات الرقمية ========
+def send_crypto_prices(uid):
+    try:
+        url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tether,binancecoin,solana,ripple,dogecoin,cardano,tron,litecoin&vs_currencies=usd&include_24hr_change=true"
+        r = requests.get(url, timeout=10).json()
+        crypto_names = {
+            "bitcoin": ("₿ بيتكوين", "BTC"),
+            "ethereum": ("⟠ إيثيريوم", "ETH"),
+            "tether": ("💵 تيثر", "USDT"),
+            "binancecoin": ("🟡 بينانس", "BNB"),
+            "solana": ("◎ سولانا", "SOL"),
+            "ripple": ("〇 ريبل", "XRP"),
+            "dogecoin": ("🐶 دوجكوين", "DOGE"),
+            "cardano": ("🔵 كاردانو", "ADA"),
+            "tron": ("🔴 ترون", "TRX"),
+            "litecoin": ("🥈 لايتكوين", "LTC"),
+        }
+        msg = "💎 *أسعار العملات الرقمية*\n━━━━━━━━━━━━━━━\n\n"
+        for coin_id, (name, symbol) in crypto_names.items():
+            data = r.get(coin_id, {})
+            price = data.get("usd", "—")
+            change = data.get("usd_24h_change", None)
+            if isinstance(price, (int, float)):
+                price_str = f"${price:,.4f}" if price < 1 else f"${price:,.2f}"
+            else:
+                price_str = "—"
+            if change is not None:
+                arrow = "📈" if change >= 0 else "📉"
+                change_str = f"{arrow} {change:+.2f}%"
+            else:
+                change_str = ""
+            msg += f"{name} ({symbol})\n   💲 {price_str}  {change_str}\n\n"
+        msg += "━━━━━━━━━━━━━━━\n🔄 البيانات من CoinGecko"
+        bot.send_message(uid, msg, parse_mode="Markdown")
+    except Exception as e:
+        bot.send_message(uid, "⚠️ لا يمكن جلب أسعار العملات الرقمية الآن، حاول لاحقاً.")
+        notify_admin_error(f"خطأ في أسعار الكريبتو: {e}")
+
+# ======== أوقات الصلاة ========
+def send_prayer_times(uid):
+    user = users.get(str(uid))
+    if not user:
+        return
+    province = user.get("province", "")
+    if not province:
+        bot.send_message(uid, "⚠️ لم يتم تحديد مدينتك. اضغط على تغيير الإعدادات وأعد الإعداد.")
+        return
+    try:
+        today = datetime.date.today()
+        url = f"https://api.aladhan.com/v1/timingsByCity?city={province}&country=IQ&method=4&date={today}"
+        r = requests.get(url, timeout=10).json()
+        if r.get("code") != 200:
+            url2 = f"https://api.aladhan.com/v1/timingsByCity?city={province}&country=&method=4&date={today}"
+            r = requests.get(url2, timeout=10).json()
+        if r.get("code") != 200:
+            bot.send_message(uid, f"⚠️ لا يمكن جلب أوقات الصلاة لمدينة: {province}\nتأكد من اسم المدينة باللغة الإنجليزية في إعداداتك.")
+            return
+        timings = r["data"]["timings"]
+        date_info = r["data"]["date"]["readable"]
+        hijri = r["data"]["date"]["hijri"]
+        hijri_str = f"{hijri['day']} {hijri['month']['ar']} {hijri['year']} هـ"
+        msg = (
+            f"🕌 *أوقات الصلاة في {province}*\n"
+            f"📅 {date_info}\n"
+            f"🗓 {hijri_str}\n"
+            f"━━━━━━━━━━━━━━━\n\n"
+            f"🌅 الفجر:     `{timings['Fajr']}`\n"
+            f"☀️ الشروق:   `{timings['Sunrise']}`\n"
+            f"🌞 الظهر:    `{timings['Dhuhr']}`\n"
+            f"🌇 العصر:    `{timings['Asr']}`\n"
+            f"🌆 المغرب:   `{timings['Maghrib']}`\n"
+            f"🌙 العشاء:   `{timings['Isha']}`\n"
+            f"━━━━━━━━━━━━━━━\n"
+            f"🔄 البيانات من Aladhan API"
+        )
+        bot.send_message(uid, msg, parse_mode="Markdown")
+    except Exception as e:
+        bot.send_message(uid, "⚠️ لا يمكن جلب أوقات الصلاة الآن، حاول لاحقاً.")
+        notify_admin_error(f"خطأ في أوقات الصلاة لـ {uid}: {e}")
+
+# ======== إحصائيات الدعوات (رابط الدعوة) ========
+def send_referral_stats(uid):
+    user = users.get(str(uid))
+    if not user:
+        return
+    referrals = user.get("referrals", [])
+    ref_count = len(referrals)
+    invite_link = f"https://t.me/{BOT_USERNAME}?start=ref_{uid}"
+    msg = (
+        f"🎁 *نظام الدعوات*\n━━━━━━━━━━━━━━━\n\n"
+        f"🔗 *رابط دعوتك الخاص:*\n"
+        f"`{invite_link}`\n\n"
+        f"👥 *إجمالي من دعوتهم:* `{ref_count}` شخص\n\n"
+        f"━━━━━━━━━━━━━━━\n"
+        f"📤 شارك الرابط مع أصدقائك وعائلتك!\n"
+        f"كل شخص ينضم عبر رابطك سيُحتسب لك. 🎯"
+    )
+    markup = types.InlineKeyboardMarkup()
+    share_text = f"📰 اكتشف بوت الأخبار والطقس العراقي!\n\n{invite_link}"
+    share_url = f"https://t.me/share/url?url={invite_link}&text=انضم+معي+في+بوت+الأخبار+العراقي+%40{BOT_USERNAME}"
+    markup.add(types.InlineKeyboardButton("📤 مشاركة الرابط", url=share_url))
+    bot.send_message(uid, msg, parse_mode="Markdown", reply_markup=markup)
+
+# ======== انشر البوت ========
+def send_share_bot(uid):
+    invite_link = f"https://t.me/{BOT_USERNAME}"
+    msg = (
+        f"📢 *انشر البوت وساعدنا بالوصول لأكثر مستخدمين!*\n\n"
+        f"🔗 *رابط البوت:*\n"
+        f"@{BOT_USERNAME}\n\n"
+        f"📌 أو عبر الرابط:\n"
+        f"`{invite_link}`\n\n"
+        f"━━━━━━━━━━━━━━━\n"
+        f"💡 شارك البوت مع أصدقائك للحصول على:\n"
+        f"📰 آخر الأخبار العراقية والعالمية\n"
+        f"🌤 حالة الطقس الفورية\n"
+        f"💱 أسعار العملات\n"
+        f"🕌 أوقات الصلاة\n"
+        f"💎 أسعار العملات الرقمية"
+    )
+    markup = types.InlineKeyboardMarkup()
+    share_url = f"https://t.me/share/url?url={invite_link}&text=اشترك+في+بوت+الأخبار+العراقي+%40{BOT_USERNAME}+لأحدث+الأخبار+والطقس"
+    markup.add(
+        types.InlineKeyboardButton("📤 مشاركة البوت", url=share_url),
+        types.InlineKeyboardButton("🔗 فتح البوت", url=invite_link)
+    )
+    bot.send_message(uid, msg, parse_mode="Markdown", reply_markup=markup)
+
+# ======== إحصائيات البوت العامة ========
+def send_public_stats(uid):
+    total = stats.get("total_users", len(users))
+    today = str(datetime.date.today())
+    today_count = stats.get("daily_users", {}).get(today, 0)
+    active = sum(1 for u in users.values() if "province" in u)
+    premium_count = len(stats.get("premium_users", []))
+    top_langs = sorted(stats.get("languages_count", {}).items(), key=lambda x: x[1], reverse=True)[:5]
+    msg = (
+        f"📊 *إحصائيات البوت*\n━━━━━━━━━━━━━━━\n\n"
+        f"👥 إجمالي المستخدمين: *{total}*\n"
+        f"✅ مستخدمون نشطون: *{active}*\n"
+        f"🆕 انضموا اليوم: *{today_count}*\n"
+        f"⭐ مشتركون مميزون: *{premium_count}*\n\n"
+    )
+    if top_langs:
+        msg += "🌍 *أكثر اللغات استخداماً:*\n"
+        for lang_name, count in top_langs:
+            msg += f"  • {lang_name}: {count}\n"
+    msg += f"\n━━━━━━━━━━━━━━━\n🤖 @{BOT_USERNAME}"
+    bot.send_message(uid, msg, parse_mode="Markdown")
+
+# ======== دولار السوق الموازية ========
+def send_dollar_parallel(uid):
+    rate = None
+    source_note = ""
+    try:
+        headers = {"User-Agent": "Mozilla/5.0"}
+        r = requests.get("https://dolarsoft.com/api/v1/price", headers=headers, timeout=8)
+        data = r.json()
+        sell = data.get("sell") or data.get("price") or data.get("usd_sell")
+        buy = data.get("buy") or data.get("usd_buy")
+        if sell:
+            rate = f"بيع: `{sell}` دينار\nشراء: `{buy or '-'}` دينار"
+            source_note = "dolarsoft.com"
+    except:
+        pass
+    if not rate:
+        try:
+            headers = {"User-Agent": "Mozilla/5.0"}
+            r = requests.get("https://api.exchangerate-api.com/v4/latest/USD", timeout=10)
+            iqd = r.json().get("rates", {}).get("IQD", None)
+            if iqd:
+                rate = f"السعر: `{int(iqd):,}` دينار\n_(السعر الرسمي — قد يختلف عن السوق)_"
+                source_note = "exchangerate-api.com"
+        except:
+            pass
+    if not rate:
+        bot.send_message(uid, "⚠️ تعذّر جلب سعر الدولار حالياً. حاول لاحقاً.")
+        return
+    now = datetime.datetime.now().strftime("%H:%M - %d/%m/%Y")
+    msg = (
+        f"💵 *سعر الدولار مقابل الدينار العراقي*\n\n"
+        f"🏪 السوق الموازية:\n"
+        f"{rate}\n\n"
+        f"⏰ آخر تحديث: `{now}`\n"
+        f"📡 المصدر: {source_note}\n\n"
+        f"━━━━━━━━━━━━━━\n"
+        f"🤖 @{BOT_USERNAME}"
+    )
+    bot.send_message(uid, msg, parse_mode="Markdown")
+
+# ======== ملخص أسبوعي نصي ========
+def send_weekly_summary_text(uid):
+    user = users.get(str(uid))
+    if not user:
+        return
+    lang = user.get("lang", "English 🇬🇧")
+    feeds = RSS.get(lang, [])
+    if not feeds:
+        bot.send_message(uid, "⚠️ لا توجد مصادر أخبار متاحة لهذه اللغة.")
+        return
+    bot.send_message(uid, "⏳ جاري جمع أبرز أخبار الأسبوع...")
+    headlines = []
+    seen_titles = set()
+    cutoff = datetime.datetime.now() - datetime.timedelta(days=7)
+    for feed_url in feeds[:6]:
+        try:
+            feed = feedparser.parse(feed_url)
+            for entry in feed.entries[:8]:
+                title = getattr(entry, "title", "").strip()
+                if not title or title in seen_titles:
+                    continue
+                pub = getattr(entry, "published_parsed", None)
+                if pub:
+                    try:
+                        pub_dt = datetime.datetime(*pub[:6])
+                        if pub_dt < cutoff:
+                            continue
+                    except:
+                        pass
+                seen_titles.add(title)
+                headlines.append(title)
+                if len(headlines) >= 25:
+                    break
+        except:
+            continue
+        if len(headlines) >= 25:
+            break
+    if not headlines:
+        bot.send_message(uid, "⚠️ لا توجد أخبار كافية هذا الأسبوع.")
+        return
+    week_start = (datetime.datetime.now() - datetime.timedelta(days=6)).strftime("%d/%m")
+    week_end = datetime.datetime.now().strftime("%d/%m/%Y")
+    lines = [f"📆 *ملخص أخبار الأسبوع*\n📅 {week_start} — {week_end}\n━━━━━━━━━━━━━━\n"]
+    for i, title in enumerate(headlines, 1):
+        lines.append(f"{i}. {title}")
+    lines.append(f"\n━━━━━━━━━━━━━━\n🤖 @{BOT_USERNAME}")
+    full_msg = "\n".join(lines)
+    if len(full_msg) > 4000:
+        full_msg = full_msg[:3990] + "\n..."
+    bot.send_message(uid, full_msg, parse_mode="Markdown")
+
+# ======== تتبع العملات والأسهم ========
+CRYPTO_IDS = {
+    "BTC": "bitcoin", "ETH": "ethereum", "BNB": "binancecoin",
+    "USDT": "tether", "XRP": "ripple", "ADA": "cardano",
+    "SOL": "solana", "DOGE": "dogecoin", "DOT": "polkadot",
+    "MATIC": "matic-network", "LTC": "litecoin", "AVAX": "avalanche-2",
+    "SHIB": "shiba-inu", "TRX": "tron", "LINK": "chainlink"
+}
+FIAT_CURRENCIES = {"USD", "EUR", "GBP", "IQD", "SAR", "AED", "TRY", "JPY", "CNY", "KWD", "EGP", "JOD"}
+
+def fetch_asset_price(symbol):
+    if symbol in CRYPTO_IDS:
+        try:
+            cg_id = CRYPTO_IDS[symbol]
+            r = requests.get(
+                f"https://api.coingecko.com/api/v3/simple/price?ids={cg_id}&vs_currencies=usd",
+                timeout=10
+            ).json()
+            price = r.get(cg_id, {}).get("usd")
+            return float(price) if price else None
+        except:
+            return None
+    if symbol in FIAT_CURRENCIES:
+        try:
+            r = requests.get("https://api.exchangerate-api.com/v4/latest/USD", timeout=10).json()
+            rate = r.get("rates", {}).get(symbol)
+            return float(rate) if rate else None
+        except:
+            return None
+    try:
+        r = requests.get(
+            f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval=1d&range=1d",
+            headers={"User-Agent": "Mozilla/5.0"},
+            timeout=10
+        ).json()
+        closes = r["chart"]["result"][0]["indicators"]["quote"][0]["close"]
+        price = next((p for p in reversed(closes) if p is not None), None)
+        return float(price) if price else None
+    except:
+        return None
+
+def format_asset_price(symbol, price):
+    if price is None:
+        return f"{symbol}: غير متوفر"
+    if price >= 1000:
+        return f"{symbol}: `{price:,.2f}`"
+    elif price >= 1:
+        return f"{symbol}: `{price:.4f}`"
+    else:
+        return f"{symbol}: `{price:.8f}`"
+
+def start_track_asset(uid):
+    user_data = tracked_assets.get(str(uid), {})
+    assets = user_data.get("assets", [])
+    last_prices = user_data.get("last_prices", {})
+    msg = "📌 *تتبع العملات والأسهم*\n\n"
+    if assets:
+        msg += "📋 *قائمتك الحالية:*\n"
+        for sym in assets:
+            p = last_prices.get(sym)
+            msg += f"  • {format_asset_price(sym, p)}\n"
+        msg += "\n"
+    msg += (
+        "➕ *لإضافة رمز جديد:* أرسل اسمه\n"
+        "مثال: `AAPL` `TSLA` `BTC` `EUR` `GOLD`\n\n"
+        "❌ *لحذف رمز:* أرسل `/removetrack AAPL`\n"
+        "📋 *لعرض قائمتك:* أرسل `/mytrack`"
+    )
+    user_states[uid] = "tracking_asset"
+    bot.send_message(uid, msg, parse_mode="Markdown")
+
+def check_asset_tracking():
+    for uid_str, data in list(tracked_assets.items()):
+        assets = data.get("assets", [])
+        last_prices = data.get("last_prices", {})
+        changed = False
+        for symbol in assets:
+            try:
+                new_price = fetch_asset_price(symbol)
+                if new_price is None:
+                    continue
+                old_price = last_prices.get(symbol)
+                if old_price and old_price > 0:
+                    change_pct = ((new_price - old_price) / old_price) * 100
+                    if abs(change_pct) >= 2.0:
+                        direction = "📈 ارتفع" if change_pct > 0 else "📉 انخفض"
+                        try:
+                            bot.send_message(
+                                int(uid_str),
+                                f"🔔 *تنبيه تغير السعر*\n\n"
+                                f"💱 *{symbol}*\n"
+                                f"{direction} بنسبة `{change_pct:+.2f}%`\n\n"
+                                f"السعر القديم: `{old_price:.4f}`\n"
+                                f"السعر الجديد: `{new_price:.4f}`\n\n"
+                                f"🤖 @{BOT_USERNAME}",
+                                parse_mode="Markdown"
+                            )
+                        except:
+                            pass
+                tracked_assets[uid_str]["last_prices"][symbol] = new_price
+                changed = True
+            except:
+                continue
+        if changed:
+            save_tracked_assets()
+
+@bot.message_handler(commands=["mytrack"])
+def cmd_mytrack(m):
+    uid = m.from_user.id
+    data = tracked_assets.get(str(uid), {})
+    assets = data.get("assets", [])
+    if not assets:
+        bot.send_message(uid, "📌 قائمة التتبع فارغة.\nاضغط زر *تتبع عملة/سهم* لإضافة رموز.", parse_mode="Markdown")
+        return
+    last_prices = data.get("last_prices", {})
+    msg = "📌 *قائمة أصولك المتتبعة:*\n━━━━━━━━━━━━━━\n"
+    for sym in assets:
+        price = fetch_asset_price(sym)
+        if price:
+            tracked_assets[str(uid)]["last_prices"][sym] = price
+            save_tracked_assets()
+        msg += f"• {format_asset_price(sym, price or last_prices.get(sym))}\n"
+    msg += f"━━━━━━━━━━━━━━\n🤖 @{BOT_USERNAME}"
+    bot.send_message(uid, msg, parse_mode="Markdown")
+
+@bot.message_handler(commands=["removetrack"])
+def cmd_removetrack(m):
+    uid = m.from_user.id
+    parts = m.text.strip().split()
+    if len(parts) < 2:
+        bot.send_message(uid, "⚠️ أرسل الرمز بعد الأمر. مثال: `/removetrack AAPL`", parse_mode="Markdown")
+        return
+    symbol = parts[1].upper()
+    data = tracked_assets.get(str(uid), {})
+    assets = data.get("assets", [])
+    if symbol not in assets:
+        bot.send_message(uid, f"⚠️ *{symbol}* غير موجودة في قائمتك.", parse_mode="Markdown")
+        return
+    assets.remove(symbol)
+    tracked_assets[str(uid)]["assets"] = assets
+    tracked_assets[str(uid)]["last_prices"].pop(symbol, None)
+    save_tracked_assets()
+    bot.send_message(uid, f"✅ تم حذف *{symbol}* من قائمة التتبع.", parse_mode="Markdown")
+
+# ======== الجدولة ========
 scheduler = BackgroundScheduler()
 scheduler.add_job(broadcast_weather, 'interval', hours=1)
 scheduler.add_job(broadcast_news, 'interval', minutes=5)
@@ -2871,6 +3374,7 @@ scheduler.add_job(check_weather_alerts, 'interval', hours=6)
 scheduler.add_job(check_currency_alerts, 'interval', hours=3)
 scheduler.add_job(check_keyword_alerts, 'interval', minutes=15)
 scheduler.add_job(auto_clean_sent_news, 'interval', hours=24)
+scheduler.add_job(check_asset_tracking, 'interval', minutes=30)
 scheduler.add_job(lambda: save_json(USERS_FILE, users), 'interval', minutes=10)
 scheduler.start()
 atexit.register(lambda: scheduler.shutdown(wait=False))
