@@ -2665,24 +2665,26 @@ def send_premium_upgrade(uid):
     lang = user.get("lang", "English 🇬🇧") if user else "English 🇬🇧"
     msg = PREMIUM_UPGRADE_MSG.get(lang, PREMIUM_UPGRADE_MSG["English 🇬🇧"])
     markup = types.InlineKeyboardMarkup()
-    markup.add(types.InlineKeyboardButton("⭐ طلب الاشتراك المميز", callback_data=f"req_premium_{uid}"))
+    markup.add(types.InlineKeyboardButton(t(lang, "premium_subscribe_btn"), callback_data=f"req_premium_{uid}"))
     bot.send_message(uid, msg, parse_mode="Markdown", reply_markup=markup)
 
 def send_premium_menu(uid):
+    user = users.get(str(uid))
+    lang = user.get("lang", "English 🇬🇧") if user else "English 🇬🇧"
     markup = types.InlineKeyboardMarkup(row_width=2)
     markup.add(
-        types.InlineKeyboardButton("🌤 توقعات 7 أيام", callback_data="prem_7day"),
-        types.InlineKeyboardButton("🕐 طقس كل 3 ساعات", callback_data="prem_hourly"),
-        types.InlineKeyboardButton("🏙 إضافة مدينة", callback_data="prem_addcity"),
-        types.InlineKeyboardButton("📋 مدنيّ المحفوظة", callback_data="prem_mycities"),
-        types.InlineKeyboardButton("📌 اهتماماتي", callback_data="prem_interests"),
-        types.InlineKeyboardButton("💱 تنبيه العملات", callback_data="prem_currency_alert"),
-        types.InlineKeyboardButton("📊 جدول العملات", callback_data="prem_currency_table"),
-        types.InlineKeyboardButton("🕐 وقت الإشعارات", callback_data="prem_notif_time"),
-        types.InlineKeyboardButton("📰 ملخص أسبوعي", callback_data="prem_weekly"),
-        types.InlineKeyboardButton("🔑 كلمات مفتاحية", callback_data="prem_keywords"),
+        types.InlineKeyboardButton(t(lang, "premium_btn_7day"), callback_data="prem_7day"),
+        types.InlineKeyboardButton(t(lang, "premium_btn_hourly"), callback_data="prem_hourly"),
+        types.InlineKeyboardButton(t(lang, "premium_btn_addcity"), callback_data="prem_addcity"),
+        types.InlineKeyboardButton(t(lang, "premium_btn_mycities"), callback_data="prem_mycities"),
+        types.InlineKeyboardButton(t(lang, "premium_btn_interests"), callback_data="prem_interests"),
+        types.InlineKeyboardButton(t(lang, "premium_btn_currency_alert"), callback_data="prem_currency_alert"),
+        types.InlineKeyboardButton(t(lang, "premium_btn_currency_table"), callback_data="prem_currency_table"),
+        types.InlineKeyboardButton(t(lang, "premium_btn_notif_time"), callback_data="prem_notif_time"),
+        types.InlineKeyboardButton(t(lang, "premium_btn_weekly"), callback_data="prem_weekly"),
+        types.InlineKeyboardButton(t(lang, "premium_btn_keywords"), callback_data="prem_keywords"),
     )
-    bot.send_message(uid, "⭐ *قائمة المميز — اختر ما تريد:*", parse_mode="Markdown", reply_markup=markup)
+    bot.send_message(uid, t(lang, "premium_menu_header"), parse_mode="Markdown", reply_markup=markup)
 
 def send_7day_forecast(uid):
     user = users.get(str(uid))
@@ -2702,7 +2704,7 @@ def send_7day_forecast(uid):
                 if date not in days:
                     days[date] = {"temps": [], "desc": item["weather"][0]["description"]}
                 days[date]["temps"].append(item["main"]["temp"])
-            msg = f"🌤 *توقعات الطقس لـ 7 أيام — {city}*\n\n"
+            msg = t(lang, "forecast_7day_header").format(city=city)
             for date, info in list(days.items())[:7]:
                 min_t = round(min(info["temps"]))
                 max_t = round(max(info["temps"]))
@@ -2729,25 +2731,27 @@ def get_weather_emoji(weather_id):
     else:
         return "☁️"
 
-def get_uv_level(uvi):
+def get_uv_level(uvi, lang="English 🇬🇧"):
     if uvi is None:
-        return "غير متوفر"
+        return t(lang, "uv_na")
     uvi = float(uvi)
     if uvi < 3:
-        return f"{uvi:.1f} 🟢 منخفض"
+        return f"{uvi:.1f} 🟢 {t(lang, 'uv_low')}"
     elif uvi < 6:
-        return f"{uvi:.1f} 🟡 متوسط"
+        return f"{uvi:.1f} 🟡 {t(lang, 'uv_moderate')}"
     elif uvi < 8:
-        return f"{uvi:.1f} 🟠 مرتفع"
+        return f"{uvi:.1f} 🟠 {t(lang, 'uv_high')}"
     elif uvi < 11:
-        return f"{uvi:.1f} 🔴 خطر"
+        return f"{uvi:.1f} 🔴 {t(lang, 'uv_very_high')}"
     else:
-        return f"{uvi:.1f} 🟣 شديد الخطورة"
+        return f"{uvi:.1f} 🟣 {t(lang, 'uv_extreme')}"
 
-def get_wind_direction(deg):
-    dirs = ["⬆️ شمال", "↗️ شمال شرق", "➡️ شرق", "↘️ جنوب شرق",
-            "⬇️ جنوب", "↙️ جنوب غرب", "⬅️ غرب", "↖️ شمال غرب"]
-    return dirs[round(deg / 45) % 8] if deg is not None else "-"
+def get_wind_direction(deg, lang="English 🇬🇧"):
+    keys = ["wind_N", "wind_NE", "wind_E", "wind_SE",
+            "wind_S", "wind_SW", "wind_W", "wind_NW"]
+    if deg is None:
+        return "-"
+    return t(lang, keys[round(deg / 45) % 8])
 
 def send_detailed_weather(uid):
     user = users.get(str(uid))
@@ -2760,7 +2764,7 @@ def send_detailed_weather(uid):
         url = f"https://api.openweathermap.org/data/2.5/weather?q={province}&appid={WEATHER_KEY}&units=metric&lang={lang_code}"
         data = requests.get(url, timeout=10).json()
         if data.get("cod") != 200:
-            bot.send_message(uid, f"⚠️ لم يتم العثور على بيانات الطقس لمدينة: {province}")
+            bot.send_message(uid, t(lang, "city_not_found").format(city=province))
             return
         temp = round(data['main']['temp'], 1)
         feels = round(data['main']['feels_like'], 1)
@@ -2789,26 +2793,17 @@ def send_detailed_weather(uid):
             uvi = one_call.get('current', {}).get('uvi')
         except:
             uvi = None
-        msg = (
-            f"{weather_emoji} *الطقس في {province}*\n"
-            f"━━━━━━━━━━━━━━━\n\n"
-            f"🌡 *الحرارة:* {temp}°C\n"
-            f"🤔 *يشعر كـ:* {feels}°C\n"
-            f"🔼 أعلى: {temp_max}°C  |  🔽 أدنى: {temp_min}°C\n\n"
-            f"☁️ *الحالة:* {desc}\n"
-            f"🌫 *الغيوم:* {clouds}%\n"
-            f"👁 *الرؤية:* {visibility_km} كم\n\n"
-            f"💧 *الرطوبة:* {humidity}%\n"
-            f"🌀 *الضغط الجوي:* {pressure} hPa\n"
-            f"☀️ *مؤشر UV:* {get_uv_level(uvi)}\n\n"
-            f"💨 *الرياح:* {wind_speed} م/ث | {get_wind_direction(wind_deg)}\n"
-            f"💨 *أقصى هبوب:* {wind_gust} م/ث\n\n"
-            f"🌅 *الشروق:* {sunrise}  |  🌇 *الغروب:* {sunset}\n"
-            f"━━━━━━━━━━━━━━━\n"
+        msg = t(lang, "weather_header").format(
+            emoji=weather_emoji, city=province, temp=temp, feels=feels,
+            temp_max=temp_max, temp_min=temp_min, desc=desc, clouds=clouds,
+            visibility_km=visibility_km, humidity=humidity, pressure=pressure,
+            uvi=get_uv_level(uvi, lang),
+            wind_speed=wind_speed, wind_dir=get_wind_direction(wind_deg, lang),
+            wind_gust=wind_gust, sunrise=sunrise, sunset=sunset
         )
         bot.send_message(uid, msg, parse_mode="Markdown")
     except Exception as e:
-        bot.send_message(uid, "⚠️ لا يمكن جلب بيانات الطقس حالياً.")
+        bot.send_message(uid, t(lang, "weather_error"))
         notify_admin_error(f"خطأ في الطقس لـ {uid}: {e}")
 
 def add_extra_city(uid, city):
@@ -2829,9 +2824,10 @@ def send_hourly_weather_forecast(uid):
         url = f"https://api.openweathermap.org/data/2.5/forecast?q={province}&appid={WEATHER_KEY}&units=metric&lang={lang_code}&cnt=8"
         data = requests.get(url, timeout=10).json()
         if str(data.get("cod")) != "200":
-            bot.send_message(uid, "⚠️ لا يمكن جلب توقعات الساعات.")
+            bot.send_message(uid, t(lang, "forecast_error"))
             return
-        msg = f"🕐 *الطقس كل 3 ساعات — {province}*\n━━━━━━━━━━━━━━━\n\n"
+        msg = t(lang, "hourly_header").format(city=province)
+        wind_unit = t(lang, "wind_unit")
         for item in data["list"][:8]:
             time_str = item["dt_txt"].split(" ")[1][:5]
             date_str = item["dt_txt"].split(" ")[0][5:]
@@ -2843,10 +2839,10 @@ def send_hourly_weather_forecast(uid):
             wind = item["wind"]["speed"]
             msg += f"{emoji} *{date_str} | {time_str}*\n"
             msg += f"   🌡 {temp}°C | {desc}\n"
-            msg += f"   💧 {humidity}% | 💨 {wind} م/ث\n\n"
+            msg += f"   💧 {humidity}% | 💨 {wind} {wind_unit}\n\n"
         bot.send_message(uid, msg, parse_mode="Markdown")
     except Exception as e:
-        bot.send_message(uid, "⚠️ حدث خطأ في جلب توقعات الساعات.")
+        bot.send_message(uid, t(lang, "forecast_error"))
         notify_admin_error(f"خطأ في الطقس الساعي لـ {uid}: {e}")
 
 def send_full_currency_table(uid):
@@ -2856,32 +2852,22 @@ def send_full_currency_table(uid):
         r = requests.get("https://api.exchangerate-api.com/v4/latest/USD", timeout=10).json()
         rates = r.get("rates", {})
         pairs = [
-            ("🇪🇺", "EUR", "اليورو"),
-            ("🇬🇧", "GBP", "الجنيه الإسترليني"),
-            ("🇮🇶", "IQD", "الدينار العراقي"),
-            ("🇸🇦", "SAR", "الريال السعودي"),
-            ("🇦🇪", "AED", "الدرهم الإماراتي"),
-            ("🇹🇷", "TRY", "الليرة التركية"),
-            ("🇮🇷", "IRR", "الريال الإيراني"),
-            ("🇷🇺", "RUB", "الروبل الروسي"),
-            ("🇵🇰", "PKR", "الروبية الباكستانية"),
-            ("🇮🇳", "INR", "الروبية الهندية"),
-            ("🇧🇷", "BRL", "الريال البرازيلي"),
-            ("🇲🇽", "MXN", "البيزو المكسيكي"),
-            ("🇨🇳", "CNY", "اليوان الصيني"),
-            ("🇯🇵", "JPY", "الين الياباني"),
-            ("🇨🇦", "CAD", "الدولار الكندي"),
-            ("🇦🇺", "AUD", "الدولار الأسترالي"),
-            ("🇰🇼", "KWD", "الدينار الكويتي"),
-            ("🇪🇬", "EGP", "الجنيه المصري"),
+            ("🇪🇺", "EUR"), ("🇬🇧", "GBP"), ("🇮🇶", "IQD"),
+            ("🇸🇦", "SAR"), ("🇦🇪", "AED"), ("🇹🇷", "TRY"),
+            ("🇮🇷", "IRR"), ("🇷🇺", "RUB"), ("🇵🇰", "PKR"),
+            ("🇮🇳", "INR"), ("🇧🇷", "BRL"), ("🇲🇽", "MXN"),
+            ("🇨🇳", "CNY"), ("🇯🇵", "JPY"), ("🇨🇦", "CAD"),
+            ("🇦🇺", "AUD"), ("🇰🇼", "KWD"), ("🇪🇬", "EGP"),
+            ("🇯🇴", "JOD"), ("🇵🇱", "PLN"), ("🇨🇭", "CHF"),
+            ("🇸🇬", "SGD"), ("🇿🇦", "ZAR"), ("🇳🇬", "NGN"),
         ]
-        msg = "📊 *جدول أسعار الصرف الكامل مقابل الدولار 🇺🇸*\n━━━━━━━━━━━━━━━\n\n"
-        for flag, code, name in pairs:
+        msg = t(lang, "currency_table_header")
+        for flag, code in pairs:
             rate = rates.get(code, "-")
-            msg += f"{flag} {name}: `{rate}`\n"
+            msg += f"{flag} {code}: `{rate}`\n"
         bot.send_message(uid, msg, parse_mode="Markdown")
     except Exception as e:
-        bot.send_message(uid, "⚠️ لا يمكن جلب الأسعار حالياً.")
+        bot.send_message(uid, t(lang, "currency_error"))
         notify_admin_error(f"خطأ في جدول العملات: {e}")
 
 def send_weekly_news_summary(uid):
@@ -2903,9 +2889,10 @@ def send_weekly_news_summary(uid):
         except:
             pass
     if not headlines:
-        bot.send_message(uid, "⚠️ لا توجد أخبار لإنشاء الملخص الأسبوعي.")
+        bot.send_message(uid, t(lang, "no_weekly"))
         return
-    msg = f"📰 *الملخص الأسبوعي — أبرز {min(len(headlines), 20)} خبر*\n━━━━━━━━━━━━━━━\n\n"
+    count = min(len(headlines), 20)
+    msg = t(lang, "weekly_summary_header").format(count=count)
     for i, title in enumerate(headlines[:20], 1):
         msg += f"{i}. {title}\n\n"
     bot.send_message(uid, msg, parse_mode="Markdown")
@@ -3479,6 +3466,78 @@ MSGS = {
         "label_mena": "📰 أخبار الشرق الأوسط السياسية",
         "label_trending": "🔥",
         "label_sports": "⚽",
+        "no_city": "⚠️ لم يتم تحديد مدينتك بعد.",
+        "city_not_found": "⚠️ لم يتم العثور على بيانات الطقس لمدينة: {city}",
+        "weather_header": "{emoji} *الطقس في {city}*\n━━━━━━━━━━━━━━━\n\n🌡 *الحرارة:* {temp}°C\n🤔 *يشعر كـ:* {feels}°C\n🔼 أعلى: {temp_max}°C  |  🔽 أدنى: {temp_min}°C\n\n☁️ *الحالة:* {desc}\n🌫 *الغيوم:* {clouds}%\n👁 *الرؤية:* {visibility_km} كم\n\n💧 *الرطوبة:* {humidity}%\n🌀 *الضغط الجوي:* {pressure} hPa\n☀️ *مؤشر UV:* {uvi}\n\n💨 *الرياح:* {wind_speed} م/ث | {wind_dir}\n💨 *أقصى هبوب:* {wind_gust} م/ث\n\n🌅 *الشروق:* {sunrise}  |  🌇 *الغروب:* {sunset}\n━━━━━━━━━━━━━━━",
+        "forecast_3day_header": "📅 *توقعات الطقس لـ 3 أيام — {city}*\n━━━━━━━━━━━━━━━\n\n",
+        "forecast_7day_header": "🌤 *توقعات الطقس لـ 7 أيام — {city}*\n\n",
+        "hourly_header": "🕐 *الطقس كل 3 ساعات — {city}*\n━━━━━━━━━━━━━━━\n\n",
+        "wind_unit": "م/ث",
+        "uv_low": "منخفض",
+        "uv_moderate": "متوسط",
+        "uv_high": "مرتفع",
+        "uv_very_high": "خطر",
+        "uv_extreme": "شديد الخطورة",
+        "uv_na": "غير متوفر",
+        "wind_N": "⬆️ شمال",
+        "wind_NE": "↗️ شمال شرق",
+        "wind_E": "➡️ شرق",
+        "wind_SE": "↘️ جنوب شرق",
+        "wind_S": "⬇️ جنوب",
+        "wind_SW": "↙️ جنوب غرب",
+        "wind_W": "⬅️ غرب",
+        "wind_NW": "↖️ شمال غرب",
+        "crypto_header": "💎 *أسعار العملات الرقمية*\n━━━━━━━━━━━━━━━\n\n",
+        "crypto_footer": "━━━━━━━━━━━━━━━\n🔄 البيانات من CoinGecko",
+        "crypto_error": "⚠️ لا يمكن جلب أسعار العملات الرقمية الآن، حاول لاحقاً.",
+        "prayer_header": "🕌 *أوقات الصلاة في {city}*\n📅 {date}\n🗓 {hijri}\n━━━━━━━━━━━━━━━\n\n🌅 الفجر:     `{fajr}`\n☀️ الشروق:   `{sunrise}`\n🌞 الظهر:    `{dhuhr}`\n🌇 العصر:    `{asr}`\n🌆 المغرب:   `{maghrib}`\n🌙 العشاء:   `{isha}`\n━━━━━━━━━━━━━━━\n🔄 البيانات من Aladhan API",
+        "prayer_no_city": "⚠️ لم يتم تحديد مدينتك. اضغط على تغيير الإعدادات وأعد الإعداد.",
+        "prayer_city_error": "⚠️ لا يمكن جلب أوقات الصلاة لمدينة: {city}\nتأكد من اسم المدينة باللغة الإنجليزية في إعداداتك.",
+        "prayer_error": "⚠️ لا يمكن جلب أوقات الصلاة الآن، حاول لاحقاً.",
+        "referral_header": "🎁 *نظام الدعوات*\n━━━━━━━━━━━━━━━\n\n🔗 *رابط دعوتك الخاص:*\n`{link}`\n\n👥 *إجمالي من دعوتهم:* `{count}` شخص\n\n━━━━━━━━━━━━━━━\n📤 شارك الرابط مع أصدقائك وعائلتك!\nكل شخص ينضم عبر رابطك سيُحتسب لك. 🎯",
+        "referral_share_btn": "📤 مشاركة الرابط",
+        "share_bot_header": "📢 *انشر البوت وساعدنا بالوصول لأكثر مستخدمين!*\n\n🔗 *رابط البوت:*\n@{username}\n\n📌 أو عبر الرابط:\n`{link}`\n\n━━━━━━━━━━━━━━━\n💡 شارك البوت مع أصدقائك للحصول على:\n📰 آخر الأخبار العراقية والعالمية\n🌤 حالة الطقس الفورية\n💱 أسعار العملات\n🕌 أوقات الصلاة\n💎 أسعار العملات الرقمية",
+        "share_bot_btn": "📤 مشاركة البوت",
+        "open_bot_btn": "🔗 فتح البوت",
+        "public_stats_header": "📊 *إحصائيات البوت*\n━━━━━━━━━━━━━━━\n\n👥 إجمالي المستخدمين: *{total}*\n✅ مستخدمون نشطون: *{active}*\n🆕 انضموا اليوم: *{today}*\n⭐ مشتركون مميزون: *{premium}*\n\n",
+        "public_stats_langs": "🌍 *أكثر اللغات استخداماً:*\n",
+        "public_stats_footer": "\n━━━━━━━━━━━━━━━\n🤖 @{username}",
+        "my_stats_header": "📈 *إحصائياتك الشخصية*\n━━━━━━━━━━━━━━━\n\n👤 الاسم: *{name}*\n🌍 اللغة: *{lang}*\n🏙 المدينة: *{city}*\n📅 تاريخ الانضمام: *{join}*\n\n📰 أخبار استلمتها: *{news}*\n🎁 دعوات أرسلتها: *{refs}*\n🔑 كلمات مفتاحية: *{kws}*\n⭐ اشتراك مميز: *{prem}*\n🔔 الإشعارات: *{notif}*\n",
+        "my_stats_prem_yes": "⭐ نعم",
+        "my_stats_prem_no": "❌ لا",
+        "my_stats_notif_on": "🔔 مفعّلة",
+        "my_stats_notif_off": "🔕 متوقفة",
+        "my_stats_user": "مستخدم",
+        "daily_summary_header": "📋 *ملخص أخبار اليوم — {date}*\n━━━━━━━━━━━━━━━\n\n",
+        "daily_summary_no_source": "⚠️ لا توجد مصادر أخبار لهذه اللغة حالياً.",
+        "daily_summary_no_news": "⚠️ لا توجد أخبار متاحة الآن، حاول لاحقاً.",
+        "top_referrers_header": "🏆 *أفضل الداعين*\n━━━━━━━━━━━━━━━\n\n",
+        "top_referrers_empty": "📊 لا توجد دعوات بعد، كن أول من يدعو أصدقاءه! 🎯",
+        "top_referrers_invite": "دعوة",
+        "dollar_header": "💵 *سعر الدولار مقابل الدينار العراقي*\n\n🏪 السوق الموازية:\n{rate}\n\n⏰ آخر تحديث: `{time}`\n📡 المصدر: {source}\n\n━━━━━━━━━━━━━━\n🤖 @{username}",
+        "dollar_sell": "بيع",
+        "dollar_buy": "شراء",
+        "dollar_official": "السعر: `{price}` دينار\n_(السعر الرسمي — قد يختلف عن السوق)_",
+        "dollar_error": "⚠️ تعذّر جلب سعر الدولار حالياً. حاول لاحقاً.",
+        "weekly_summary_header": "📰 *الملخص الأسبوعي — أبرز {count} خبر*\n━━━━━━━━━━━━━━━\n\n",
+        "weekly_summary_text_header": "📆 *ملخص أخبار الأسبوع*\n📅 {start} — {end}\n━━━━━━━━━━━━━━\n",
+        "weekly_summary_text_wait": "⏳ جاري جمع أبرز أخبار الأسبوع...",
+        "weekly_summary_text_no_source": "⚠️ لا توجد مصادر أخبار متاحة لهذه اللغة.",
+        "weekly_summary_text_no_news": "⚠️ لا توجد أخبار كافية هذا الأسبوع.",
+        "currency_table_header": "📊 *جدول أسعار الصرف الكامل مقابل الدولار 🇺🇸*\n━━━━━━━━━━━━━━━\n\n",
+        "premium_menu_header": "⭐ *قائمة المميز — اختر ما تريد:*",
+        "premium_btn_7day": "🌤 توقعات 7 أيام",
+        "premium_btn_hourly": "🕐 طقس كل 3 ساعات",
+        "premium_btn_addcity": "🏙 إضافة مدينة",
+        "premium_btn_mycities": "📋 مدنيّ المحفوظة",
+        "premium_btn_interests": "📌 اهتماماتي",
+        "premium_btn_currency_alert": "💱 تنبيه العملات",
+        "premium_btn_currency_table": "📊 جدول العملات",
+        "premium_btn_notif_time": "🕐 وقت الإشعارات",
+        "premium_btn_weekly": "📰 ملخص أسبوعي",
+        "premium_btn_keywords": "🔑 كلمات مفتاحية",
+        "premium_subscribe_btn": "⭐ طلب الاشتراك المميز",
+        "broadcast_weather_msg": "🌤 الطقس في {city}: {temp}°C\n☁️ {desc}",
     },
     "English 🇬🇧": {
         "no_news": "⚠️ No new news available right now.",
@@ -3501,6 +3560,78 @@ MSGS = {
         "label_mena": "📰 Middle East Political News",
         "label_trending": "🔥",
         "label_sports": "⚽",
+        "no_city": "⚠️ Your city is not set yet.",
+        "city_not_found": "⚠️ Weather data not found for: {city}",
+        "weather_header": "{emoji} *Weather in {city}*\n━━━━━━━━━━━━━━━\n\n🌡 *Temp:* {temp}°C\n🤔 *Feels like:* {feels}°C\n🔼 Max: {temp_max}°C  |  🔽 Min: {temp_min}°C\n\n☁️ *Condition:* {desc}\n🌫 *Clouds:* {clouds}%\n👁 *Visibility:* {visibility_km} km\n\n💧 *Humidity:* {humidity}%\n🌀 *Pressure:* {pressure} hPa\n☀️ *UV Index:* {uvi}\n\n💨 *Wind:* {wind_speed} m/s | {wind_dir}\n💨 *Gusts:* {wind_gust} m/s\n\n🌅 *Sunrise:* {sunrise}  |  🌇 *Sunset:* {sunset}\n━━━━━━━━━━━━━━━",
+        "forecast_3day_header": "📅 *3-Day Weather Forecast — {city}*\n━━━━━━━━━━━━━━━\n\n",
+        "forecast_7day_header": "🌤 *7-Day Weather Forecast — {city}*\n\n",
+        "hourly_header": "🕐 *3-Hourly Weather — {city}*\n━━━━━━━━━━━━━━━\n\n",
+        "wind_unit": "m/s",
+        "uv_low": "Low",
+        "uv_moderate": "Moderate",
+        "uv_high": "High",
+        "uv_very_high": "Very High",
+        "uv_extreme": "Extreme",
+        "uv_na": "N/A",
+        "wind_N": "⬆️ N",
+        "wind_NE": "↗️ NE",
+        "wind_E": "➡️ E",
+        "wind_SE": "↘️ SE",
+        "wind_S": "⬇️ S",
+        "wind_SW": "↙️ SW",
+        "wind_W": "⬅️ W",
+        "wind_NW": "↖️ NW",
+        "crypto_header": "💎 *Crypto Prices*\n━━━━━━━━━━━━━━━\n\n",
+        "crypto_footer": "━━━━━━━━━━━━━━━\n🔄 Data from CoinGecko",
+        "crypto_error": "⚠️ Cannot fetch crypto prices right now, try later.",
+        "prayer_header": "🕌 *Prayer Times in {city}*\n📅 {date}\n🗓 {hijri}\n━━━━━━━━━━━━━━━\n\n🌅 Fajr:    `{fajr}`\n☀️ Sunrise: `{sunrise}`\n🌞 Dhuhr:   `{dhuhr}`\n🌇 Asr:     `{asr}`\n🌆 Maghrib: `{maghrib}`\n🌙 Isha:    `{isha}`\n━━━━━━━━━━━━━━━\n🔄 Data from Aladhan API",
+        "prayer_no_city": "⚠️ Your city is not set. Go to Settings and set it up.",
+        "prayer_city_error": "⚠️ Cannot fetch prayer times for: {city}\nMake sure the city name is in English in your settings.",
+        "prayer_error": "⚠️ Cannot fetch prayer times right now, try later.",
+        "referral_header": "🎁 *Referral System*\n━━━━━━━━━━━━━━━\n\n🔗 *Your referral link:*\n`{link}`\n\n👥 *Total invited:* `{count}` people\n\n━━━━━━━━━━━━━━━\n📤 Share with friends & family!\nEveryone who joins via your link counts. 🎯",
+        "referral_share_btn": "📤 Share Link",
+        "share_bot_header": "📢 *Share the bot and help us grow!*\n\n🔗 *Bot link:*\n@{username}\n\n📌 Or via link:\n`{link}`\n\n━━━━━━━━━━━━━━━\n💡 Share with friends to get:\n📰 Latest world news\n🌤 Live weather\n💱 Currency rates\n🕌 Prayer times\n💎 Crypto prices",
+        "share_bot_btn": "📤 Share Bot",
+        "open_bot_btn": "🔗 Open Bot",
+        "public_stats_header": "📊 *Bot Statistics*\n━━━━━━━━━━━━━━━\n\n👥 Total users: *{total}*\n✅ Active users: *{active}*\n🆕 Joined today: *{today}*\n⭐ Premium subscribers: *{premium}*\n\n",
+        "public_stats_langs": "🌍 *Most used languages:*\n",
+        "public_stats_footer": "\n━━━━━━━━━━━━━━━\n🤖 @{username}",
+        "my_stats_header": "📈 *Your Personal Stats*\n━━━━━━━━━━━━━━━\n\n👤 Name: *{name}*\n🌍 Language: *{lang}*\n🏙 City: *{city}*\n📅 Join date: *{join}*\n\n📰 News received: *{news}*\n🎁 Referrals sent: *{refs}*\n🔑 Keywords: *{kws}*\n⭐ Premium: *{prem}*\n🔔 Notifications: *{notif}*\n",
+        "my_stats_prem_yes": "⭐ Yes",
+        "my_stats_prem_no": "❌ No",
+        "my_stats_notif_on": "🔔 Active",
+        "my_stats_notif_off": "🔕 Paused",
+        "my_stats_user": "User",
+        "daily_summary_header": "📋 *Today's News Summary — {date}*\n━━━━━━━━━━━━━━━\n\n",
+        "daily_summary_no_source": "⚠️ No news sources available for this language.",
+        "daily_summary_no_news": "⚠️ No news available right now, try later.",
+        "top_referrers_header": "🏆 *Top Referrers*\n━━━━━━━━━━━━━━━\n\n",
+        "top_referrers_empty": "📊 No referrals yet — be the first to invite friends! 🎯",
+        "top_referrers_invite": "invite(s)",
+        "dollar_header": "💵 *USD vs Iraqi Dinar*\n\n🏪 Parallel market:\n{rate}\n\n⏰ Last updated: `{time}`\n📡 Source: {source}\n\n━━━━━━━━━━━━━━\n🤖 @{username}",
+        "dollar_sell": "Sell",
+        "dollar_buy": "Buy",
+        "dollar_official": "Rate: `{price}` IQD\n_(Official rate — may differ from market)_",
+        "dollar_error": "⚠️ Cannot fetch dollar rate right now. Try later.",
+        "weekly_summary_header": "📰 *Weekly Summary — Top {count} stories*\n━━━━━━━━━━━━━━━\n\n",
+        "weekly_summary_text_header": "📆 *Weekly News Summary*\n📅 {start} — {end}\n━━━━━━━━━━━━━━\n",
+        "weekly_summary_text_wait": "⏳ Collecting this week's top stories...",
+        "weekly_summary_text_no_source": "⚠️ No news sources available for this language.",
+        "weekly_summary_text_no_news": "⚠️ Not enough news this week.",
+        "currency_table_header": "📊 *Full Exchange Rate Table vs USD 🇺🇸*\n━━━━━━━━━━━━━━━\n\n",
+        "premium_menu_header": "⭐ *Premium Menu — Choose:*",
+        "premium_btn_7day": "🌤 7-Day Forecast",
+        "premium_btn_hourly": "🕐 3-Hourly Weather",
+        "premium_btn_addcity": "🏙 Add City",
+        "premium_btn_mycities": "📋 My Saved Cities",
+        "premium_btn_interests": "📌 My Interests",
+        "premium_btn_currency_alert": "💱 Currency Alert",
+        "premium_btn_currency_table": "📊 Currency Table",
+        "premium_btn_notif_time": "🕐 Notification Time",
+        "premium_btn_weekly": "📰 Weekly Summary",
+        "premium_btn_keywords": "🔑 Keywords",
+        "premium_subscribe_btn": "⭐ Request Premium Subscription",
+        "broadcast_weather_msg": "🌤 Weather in {city}: {temp}°C\n☁️ {desc}",
     },
     "Русский 🇷🇺": {
         "no_news": "⚠️ Новых новостей нет.",
@@ -3523,6 +3654,111 @@ MSGS = {
         "label_mena": "📰 Ближний Восток",
         "label_trending": "🔥",
         "label_sports": "⚽",
+        "no_city": "⚠️ Ваш город ещё не указан.",
+        "city_not_found": "⚠️ Данные о погоде не найдены для: {city}",
+        "weather_header": "{emoji} *Погода в {city}*\n━━━━━━━━━━━━━━━\n\n🌡 *Темп:* {temp}°C\n🤔 *Ощущается:* {feels}°C\n🔼 Макс: {temp_max}°C  |  🔽 Мин: {temp_min}°C\n\n☁️ *Состояние:* {desc}\n🌫 *Облачность:* {clouds}%\n👁 *Видимость:* {visibility_km} км\n\n💧 *Влажность:* {humidity}%\n🌀 *Давление:* {pressure} hPa\n☀️ *УФ-индекс:* {uvi}\n\n💨 *Ветер:* {wind_speed} м/с | {wind_dir}\n💨 *Порывы:* {wind_gust} м/с\n\n🌅 *Восход:* {sunrise}  |  🌇 *Закат:* {sunset}\n━━━━━━━━━━━━━━━",
+        "forecast_3day_header": "📅 *Прогноз на 3 дня — {city}*\n━━━━━━━━━━━━━━━\n\n",
+        "forecast_7day_header": "🌤 *Прогноз на 7 дней — {city}*\n\n",
+        "hourly_header": "🕐 *Погода каждые 3 часа — {city}*\n━━━━━━━━━━━━━━━\n\n",
+        "wind_unit": "м/с",
+        "uv_low": "Низкий",
+        "uv_moderate": "Умеренный",
+        "uv_high": "Высокий",
+        "uv_very_high": "Очень высокий",
+        "uv_extreme": "Экстремальный",
+        "uv_na": "Н/Д",
+        "wind_N": "⬆️ С",
+        "wind_NE": "↗️ СВ",
+        "wind_E": "➡️ В",
+        "wind_SE": "↘️ ЮВ",
+        "wind_S": "⬇️ Ю",
+        "wind_SW": "↙️ ЮЗ",
+        "wind_W": "⬅️ З",
+        "wind_NW": "↖️ СЗ",
+        "crypto_header": "💎 *Курсы криптовалют*\n━━━━━━━━━━━━━━━\n\n",
+        "crypto_footer": "━━━━━━━━━━━━━━━\n🔄 Данные от CoinGecko",
+        "crypto_error": "⚠️ Не удаётся получить курсы криптовалют, попробуйте позже.",
+        "prayer_header": "🕌 *Время молитв в {city}*\n📅 {date}\n🗓 {hijri}\n━━━━━━━━━━━━━━━\n\n🌅 Фаджр:   `{fajr}`\n☀️ Восход:  `{sunrise}`\n🌞 Зухр:    `{dhuhr}`\n🌇 Аср:     `{asr}`\n🌆 Магриб:  `{maghrib}`\n🌙 Иша:     `{isha}`\n━━━━━━━━━━━━━━━\n🔄 Данные от Aladhan API",
+        "prayer_no_city": "⚠️ Ваш город не указан. Перейдите в настройки.",
+        "prayer_city_error": "⚠️ Не удаётся получить время молитв для: {city}",
+        "prayer_error": "⚠️ Не удаётся получить время молитв, попробуйте позже.",
+        "referral_header": "🎁 *Реферальная система*\n━━━━━━━━━━━━━━━\n\n🔗 *Ваша реферальная ссылка:*\n`{link}`\n\n👥 *Всего приглашено:* `{count}` чел.\n\n━━━━━━━━━━━━━━━\n📤 Поделитесь с друзьями и семьёй!\nКаждый, кто присоединится по вашей ссылке, будет засчитан. 🎯",
+        "referral_share_btn": "📤 Поделиться ссылкой",
+        "share_bot_header": "📢 *Поделитесь ботом и помогите нам расти!*\n\n🔗 *Ссылка на бот:*\n@{username}\n\n📌 Или по ссылке:\n`{link}`\n\n━━━━━━━━━━━━━━━\n💡 Поделитесь с друзьями, чтобы получать:\n📰 Последние мировые новости\n🌤 Погода в реальном времени\n💱 Курсы валют\n🕌 Время молитв\n💎 Курсы криптовалют",
+        "share_bot_btn": "📤 Поделиться ботом",
+        "open_bot_btn": "🔗 Открыть бот",
+        "public_stats_header": "📊 *Статистика бота*\n━━━━━━━━━━━━━━━\n\n👥 Всего пользователей: *{total}*\n✅ Активных: *{active}*\n🆕 Присоединились сегодня: *{today}*\n⭐ Премиум-подписчиков: *{premium}*\n\n",
+        "public_stats_langs": "🌍 *Наиболее используемые языки:*\n",
+        "public_stats_footer": "\n━━━━━━━━━━━━━━━\n🤖 @{username}",
+        "my_stats_header": "📈 *Ваша личная статистика*\n━━━━━━━━━━━━━━━\n\n👤 Имя: *{name}*\n🌍 Язык: *{lang}*\n🏙 Город: *{city}*\n📅 Дата регистрации: *{join}*\n\n📰 Получено новостей: *{news}*\n🎁 Отправлено приглашений: *{refs}*\n🔑 Ключевых слов: *{kws}*\n⭐ Премиум: *{prem}*\n🔔 Уведомления: *{notif}*\n",
+        "my_stats_prem_yes": "⭐ Да",
+        "my_stats_prem_no": "❌ Нет",
+        "my_stats_notif_on": "🔔 Активны",
+        "my_stats_notif_off": "🔕 Отключены",
+        "my_stats_user": "Пользователь",
+        "daily_summary_header": "📋 *Сводка новостей за {date}*\n━━━━━━━━━━━━━━━\n\n",
+        "daily_summary_no_source": "⚠️ Нет источников новостей для этого языка.",
+        "daily_summary_no_news": "⚠️ Нет доступных новостей, попробуйте позже.",
+        "top_referrers_header": "🏆 *Лучшие рефереры*\n━━━━━━━━━━━━━━━\n\n",
+        "top_referrers_empty": "📊 Пока нет рефералов — будьте первым! 🎯",
+        "top_referrers_invite": "приглашение(й)",
+        "dollar_header": "💵 *Доллар США к иракскому динару*\n\n🏪 Параллельный рынок:\n{rate}\n\n⏰ Последнее обновление: `{time}`\n📡 Источник: {source}\n\n━━━━━━━━━━━━━━\n🤖 @{username}",
+        "dollar_sell": "Продажа",
+        "dollar_buy": "Покупка",
+        "dollar_official": "Курс: `{price}` IQD\n_(Официальный курс — может отличаться от рыночного)_",
+        "dollar_error": "⚠️ Не удаётся получить курс доллара. Попробуйте позже.",
+        "weekly_summary_header": "📰 *Еженедельный обзор — Топ {count} новостей*\n━━━━━━━━━━━━━━━\n\n",
+        "weekly_summary_text_header": "📆 *Еженедельная сводка*\n📅 {start} — {end}\n━━━━━━━━━━━━━━\n",
+        "weekly_summary_text_wait": "⏳ Собираем главные новости недели...",
+        "weekly_summary_text_no_source": "⚠️ Нет доступных источников для этого языка.",
+        "weekly_summary_text_no_news": "⚠️ Недостаточно новостей за эту неделю.",
+        "currency_table_header": "📊 *Полная таблица курсов валют к USD 🇺🇸*\n━━━━━━━━━━━━━━━\n\n",
+        "premium_menu_header": "⭐ *Премиум-меню — Выберите:*",
+        "premium_btn_7day": "🌤 Прогноз на 7 дней",
+        "premium_btn_hourly": "🕐 Погода каждые 3 часа",
+        "premium_btn_addcity": "🏙 Добавить город",
+        "premium_btn_mycities": "📋 Мои сохранённые города",
+        "premium_btn_interests": "📌 Мои интересы",
+        "premium_btn_currency_alert": "💱 Оповещение о валюте",
+        "premium_btn_currency_table": "📊 Таблица валют",
+        "premium_btn_notif_time": "🕐 Время уведомлений",
+        "premium_btn_weekly": "📰 Еженедельная сводка",
+        "premium_btn_keywords": "🔑 Ключевые слова",
+        "premium_subscribe_btn": "⭐ Запросить премиум-подписку",
+        "broadcast_weather_msg": "🌤 Погода в {city}: {temp}°C\n☁️ {desc}",
+        "track_header": "📌 *Отслеживание активов*\n━━━━━━━━━━━━━━━\n\n",
+        "track_current_list": "📋 *Текущий список:*\n",
+        "track_count": "\n({count}/20 символов)\n\n",
+        "track_add_hint": "➕ *Добавить символ:* отправьте его название\n\n",
+        "track_crypto_label": "💎 *Криптовалюты:*\n",
+        "track_fiat_label": "💱 *Фиатные валюты:*\n",
+        "track_stocks_label": "📈 *Акции:*\n",
+        "track_commodities_label": "🏅 *Сырьё и индексы:*\n",
+        "track_alert_hint": "🔔 *Вы получите мгновенные оповещения при изменении ±1% и ежечасный отчёт.*\n\n",
+        "track_remove_hint": "❌ Удалить символ: `/removetrack AAPL`\n",
+        "track_list_hint": "📋 Просмотреть список: `/mytrack`",
+        "track_empty": "📌 Список отслеживания пуст.\nНажмите *Отслеживать актив* для добавления символов.",
+        "track_list_header": "📌 *Ваши отслеживаемые активы:*\n━━━━━━━━━━━━━━\n",
+        "track_alert_title": "🚨 *Оповещения о ценах*\n━━━━━━━━━━━━━━━\n\n",
+        "track_rose": "📈 вырос",
+        "track_fell": "📉 упал",
+        "track_report_title": "📊 *Ежечасный отчёт — Ваши активы*\n",
+        "track_unavailable": "недоступно",
+        "track_remove_usage": "⚠️ Укажите символ. Пример: `/removetrack AAPL`",
+        "track_not_found": "⚠️ *{symbol}* не найден в вашем списке.",
+        "track_removed": "✅ *{symbol}* удалён из списка отслеживания.",
+        "interest_save_btn": "💾 Сохранить",
+        "interest_choose_msg": "📌 *Выберите интересы (можно несколько):*",
+        "currency_rate_header": "💱 *Курсы валют к доллару 🇺🇸*\n\n",
+        "currency_local_label": "🏠 {name}",
+        "currency_convert_header": "🔄 *Конвертация {amount} {currency}*\n━━━━━━━━━━━━━━━\n\n",
+        "currency_unsupported": "⚠️ Неподдерживаемая валюта: {currency}",
+        "currency_fetch_error": "⚠️ Не удаётся получить курсы валют.",
+        "city_add_success": "✅ Город добавлен: *{city}*",
+        "currency_alert_set": "✅ Вы будете оповещены, когда доллар достигнет `{rate}` вашей валюты.",
+        "currency_alert_invalid": "❌ Введите число, например: 1600",
+        "notif_time_set": "✅ Утренняя сводка будет отправляться в *{hour}:00* ежедневно.",
+        "notif_time_invalid": "❌ Введите число от 0 до 23 (например: 8 для 8 утра)",
     },
     "فارسی 🇮🇷": {
         "no_news": "⚠️ اخبار جدیدی موجود نیست.",
@@ -3545,6 +3781,111 @@ MSGS = {
         "label_mena": "📰 اخبار سیاسی خاورمیانه",
         "label_trending": "🔥",
         "label_sports": "⚽",
+        "no_city": "⚠️ شهر شما هنوز تنظیم نشده.",
+        "city_not_found": "⚠️ اطلاعات آب‌وهوا برای شهر {city} یافت نشد.",
+        "weather_header": "{emoji} *آب‌وهوا در {city}*\n━━━━━━━━━━━━━━━\n\n🌡 *دما:* {temp}°C\n🤔 *احساس می‌شود:* {feels}°C\n🔼 حداکثر: {temp_max}°C  |  🔽 حداقل: {temp_min}°C\n\n☁️ *وضعیت:* {desc}\n🌫 *ابرناکی:* {clouds}%\n👁 *دید:* {visibility_km} کم\n\n💧 *رطوبت:* {humidity}%\n🌀 *فشار:* {pressure} hPa\n☀️ *شاخص UV:* {uvi}\n\n💨 *باد:* {wind_speed} م/ث | {wind_dir}\n💨 *وزش:* {wind_gust} م/ث\n\n🌅 *طلوع:* {sunrise}  |  🌇 *غروب:* {sunset}\n━━━━━━━━━━━━━━━",
+        "forecast_3day_header": "📅 *پیش‌بینی ۳ روزه — {city}*\n━━━━━━━━━━━━━━━\n\n",
+        "forecast_7day_header": "🌤 *پیش‌بینی ۷ روزه — {city}*\n\n",
+        "hourly_header": "🕐 *آب‌وهوا هر ۳ ساعت — {city}*\n━━━━━━━━━━━━━━━\n\n",
+        "wind_unit": "م/ث",
+        "uv_low": "کم",
+        "uv_moderate": "متوسط",
+        "uv_high": "زیاد",
+        "uv_very_high": "خیلی زیاد",
+        "uv_extreme": "بسیار خطرناک",
+        "uv_na": "ناموجود",
+        "wind_N": "⬆️ شمال",
+        "wind_NE": "↗️ شمال‌شرق",
+        "wind_E": "➡️ شرق",
+        "wind_SE": "↘️ جنوب‌شرق",
+        "wind_S": "⬇️ جنوب",
+        "wind_SW": "↙️ جنوب‌غرب",
+        "wind_W": "⬅️ غرب",
+        "wind_NW": "↖️ شمال‌غرب",
+        "crypto_header": "💎 *قیمت ارزهای دیجیتال*\n━━━━━━━━━━━━━━━\n\n",
+        "crypto_footer": "━━━━━━━━━━━━━━━\n🔄 داده‌ها از CoinGecko",
+        "crypto_error": "⚠️ دریافت قیمت ارزهای دیجیتال ممکن نیست، بعداً امتحان کنید.",
+        "prayer_header": "🕌 *اوقات نماز در {city}*\n📅 {date}\n🗓 {hijri}\n━━━━━━━━━━━━━━━\n\n🌅 صبح:    `{fajr}`\n☀️ طلوع:   `{sunrise}`\n🌞 ظهر:    `{dhuhr}`\n🌇 عصر:    `{asr}`\n🌆 مغرب:   `{maghrib}`\n🌙 عشاء:   `{isha}`\n━━━━━━━━━━━━━━━\n🔄 داده‌ها از Aladhan API",
+        "prayer_no_city": "⚠️ شهر شما تنظیم نشده. به تنظیمات بروید.",
+        "prayer_city_error": "⚠️ دریافت اوقات نماز برای {city} ممکن نیست.",
+        "prayer_error": "⚠️ دریافت اوقات نماز ممکن نیست، بعداً امتحان کنید.",
+        "referral_header": "🎁 *سیستم دعوت*\n━━━━━━━━━━━━━━━\n\n🔗 *لینک دعوت شما:*\n`{link}`\n\n👥 *جمع دعوت‌شدگان:* `{count}` نفر\n\n━━━━━━━━━━━━━━━\n📤 با دوستان و خانواده به اشتراک بگذارید!\nهر کسی که از لینک شما بپیوندد حساب می‌شود. 🎯",
+        "referral_share_btn": "📤 اشتراک‌گذاری لینک",
+        "share_bot_header": "📢 *ربات را به اشتراک بگذارید و کمک کنید رشد کند!*\n\n🔗 *لینک ربات:*\n@{username}\n\n📌 یا از طریق لینک:\n`{link}`\n\n━━━━━━━━━━━━━━━\n💡 با دوستان به اشتراک بگذارید:",
+        "share_bot_btn": "📤 اشتراک‌گذاری ربات",
+        "open_bot_btn": "🔗 باز کردن ربات",
+        "public_stats_header": "📊 *آمار ربات*\n━━━━━━━━━━━━━━━\n\n👥 کل کاربران: *{total}*\n✅ کاربران فعال: *{active}*\n🆕 امروز پیوستند: *{today}*\n⭐ اشتراک ویژه: *{premium}*\n\n",
+        "public_stats_langs": "🌍 *پرکاربردترین زبان‌ها:*\n",
+        "public_stats_footer": "\n━━━━━━━━━━━━━━━\n🤖 @{username}",
+        "my_stats_header": "📈 *آمار شخصی شما*\n━━━━━━━━━━━━━━━\n\n👤 نام: *{name}*\n🌍 زبان: *{lang}*\n🏙 شهر: *{city}*\n📅 تاریخ عضویت: *{join}*\n\n📰 اخبار دریافتی: *{news}*\n🎁 دعوت‌های ارسالی: *{refs}*\n🔑 کلمات کلیدی: *{kws}*\n⭐ اشتراک ویژه: *{prem}*\n🔔 اعلان‌ها: *{notif}*\n",
+        "my_stats_prem_yes": "⭐ بله",
+        "my_stats_prem_no": "❌ خیر",
+        "my_stats_notif_on": "🔔 فعال",
+        "my_stats_notif_off": "🔕 غیرفعال",
+        "my_stats_user": "کاربر",
+        "daily_summary_header": "📋 *خلاصه اخبار امروز — {date}*\n━━━━━━━━━━━━━━━\n\n",
+        "daily_summary_no_source": "⚠️ منبع خبری برای این زبان موجود نیست.",
+        "daily_summary_no_news": "⚠️ اخبار موجود نیست، بعداً امتحان کنید.",
+        "top_referrers_header": "🏆 *برترین دعوت‌کنندگان*\n━━━━━━━━━━━━━━━\n\n",
+        "top_referrers_empty": "📊 هنوز دعوتی نیست — اولین باشید! 🎯",
+        "top_referrers_invite": "دعوت",
+        "dollar_header": "💵 *دلار آمریکا در برابر دینار عراق*\n\n🏪 بازار موازی:\n{rate}\n\n⏰ آخرین به‌روزرسانی: `{time}`\n📡 منبع: {source}\n\n━━━━━━━━━━━━━━\n🤖 @{username}",
+        "dollar_sell": "فروش",
+        "dollar_buy": "خرید",
+        "dollar_official": "نرخ: `{price}` IQD\n_(نرخ رسمی — ممکن است با بازار متفاوت باشد)_",
+        "dollar_error": "⚠️ دریافت نرخ دلار ممکن نیست. بعداً امتحان کنید.",
+        "weekly_summary_header": "📰 *خلاصه هفتگی — برترین {count} خبر*\n━━━━━━━━━━━━━━━\n\n",
+        "weekly_summary_text_header": "📆 *خلاصه اخبار هفته*\n📅 {start} — {end}\n━━━━━━━━━━━━━━\n",
+        "weekly_summary_text_wait": "⏳ در حال جمع‌آوری اخبار برتر هفته...",
+        "weekly_summary_text_no_source": "⚠️ منبع خبری برای این زبان موجود نیست.",
+        "weekly_summary_text_no_news": "⚠️ اخبار کافی این هفته وجود ندارد.",
+        "currency_table_header": "📊 *جدول کامل نرخ ارز در برابر دلار 🇺🇸*\n━━━━━━━━━━━━━━━\n\n",
+        "premium_menu_header": "⭐ *منوی ویژه — انتخاب کنید:*",
+        "premium_btn_7day": "🌤 پیش‌بینی ۷ روزه",
+        "premium_btn_hourly": "🕐 آب‌وهوا هر ۳ ساعت",
+        "premium_btn_addcity": "🏙 افزودن شهر",
+        "premium_btn_mycities": "📋 شهرهای ذخیره‌شده",
+        "premium_btn_interests": "📌 علاقه‌مندی‌های من",
+        "premium_btn_currency_alert": "💱 هشدار ارز",
+        "premium_btn_currency_table": "📊 جدول ارز",
+        "premium_btn_notif_time": "🕐 زمان اعلان",
+        "premium_btn_weekly": "📰 خلاصه هفتگی",
+        "premium_btn_keywords": "🔑 کلمات کلیدی",
+        "premium_subscribe_btn": "⭐ درخواست اشتراک ویژه",
+        "broadcast_weather_msg": "🌤 آب‌وهوا در {city}: {temp}°C\n☁️ {desc}",
+        "track_header": "📌 *ردیابی ارزها، سهام و کالاها*\n━━━━━━━━━━━━━━━\n\n",
+        "track_current_list": "📋 *لیست فعلی شما:*\n",
+        "track_count": "\n({count}/20 نماد)\n\n",
+        "track_add_hint": "➕ *افزودن نماد:* نام آن را ارسال کنید\n\n",
+        "track_crypto_label": "💎 *ارزهای دیجیتال:*\n",
+        "track_fiat_label": "💱 *ارزهای فیات:*\n",
+        "track_stocks_label": "📈 *سهام:*\n",
+        "track_commodities_label": "🏅 *کالا و شاخص‌ها:*\n",
+        "track_alert_hint": "🔔 *هنگام تغییر ±۱٪ هشدار فوری دریافت می‌کنید و گزارش ساعتی نیز ارسال می‌شود.*\n\n",
+        "track_remove_hint": "❌ حذف نماد: `/removetrack AAPL`\n",
+        "track_list_hint": "📋 مشاهده لیست: `/mytrack`",
+        "track_empty": "📌 لیست ردیابی خالی است.\nروی *ردیابی دارایی* بزنید تا نماد اضافه کنید.",
+        "track_list_header": "📌 *دارایی‌های ردیابی‌شده شما:*\n━━━━━━━━━━━━━━\n",
+        "track_alert_title": "🚨 *هشدارهای قیمت*\n━━━━━━━━━━━━━━━\n\n",
+        "track_rose": "📈 افزایش یافت",
+        "track_fell": "📉 کاهش یافت",
+        "track_report_title": "📊 *گزارش ساعتی — دارایی‌های شما*\n",
+        "track_unavailable": "ناموجود",
+        "track_remove_usage": "⚠️ نماد را بعد از دستور بفرستید. مثال: `/removetrack AAPL`",
+        "track_not_found": "⚠️ *{symbol}* در لیست شما یافت نشد.",
+        "track_removed": "✅ *{symbol}* از لیست ردیابی حذف شد.",
+        "interest_save_btn": "💾 ذخیره",
+        "interest_choose_msg": "📌 *علاقه‌مندی‌های خود را انتخاب کنید (چندتایی):*",
+        "currency_rate_header": "💱 *نرخ ارز در برابر دلار 🇺🇸*\n\n",
+        "currency_local_label": "🏠 {name}",
+        "currency_convert_header": "🔄 *تبدیل {amount} {currency}*\n━━━━━━━━━━━━━━━\n\n",
+        "currency_unsupported": "⚠️ ارز پشتیبانی‌نشده: {currency}",
+        "currency_fetch_error": "⚠️ دریافت نرخ ارز ممکن نیست.",
+        "city_add_success": "✅ شهر اضافه شد: *{city}*",
+        "currency_alert_set": "✅ وقتی دلار به `{rate}` ارز محلی شما برسد هشدار می‌گیرید.",
+        "currency_alert_invalid": "❌ یک عدد ارسال کنید، مثلاً: 1600",
+        "notif_time_set": "✅ خلاصه صبحگاهی روزانه در ساعت *{hour}:00* ارسال می‌شود.",
+        "notif_time_invalid": "❌ عددی بین ۰ تا ۲۳ وارد کنید (مثال: ۸ برای ساعت ۸ صبح)",
     },
     "हिन्दी 🇮🇳": {
         "no_news": "⚠️ अभी कोई नई खबर नहीं है।",
@@ -3567,6 +3908,111 @@ MSGS = {
         "label_mena": "📰 मध्य पूर्व राजनीतिक समाचार",
         "label_trending": "🔥",
         "label_sports": "⚽",
+        "no_city": "⚠️ आपका शहर अभी तक सेट नहीं है।",
+        "city_not_found": "⚠️ {city} के लिए मौसम डेटा नहीं मिला।",
+        "weather_header": "{emoji} *{city} में मौसम*\n━━━━━━━━━━━━━━━\n\n🌡 *तापमान:* {temp}°C\n🤔 *महसूस होता है:* {feels}°C\n🔼 अधिकतम: {temp_max}°C  |  🔽 न्यूनतम: {temp_min}°C\n\n☁️ *स्थिति:* {desc}\n🌫 *बादल:* {clouds}%\n👁 *दृश्यता:* {visibility_km} किमी\n\n💧 *नमी:* {humidity}%\n🌀 *दबाव:* {pressure} hPa\n☀️ *UV सूचकांक:* {uvi}\n\n💨 *हवा:* {wind_speed} मी/से | {wind_dir}\n💨 *झोंके:* {wind_gust} मी/से\n\n🌅 *सूर्योदय:* {sunrise}  |  🌇 *सूर्यास्त:* {sunset}\n━━━━━━━━━━━━━━━",
+        "forecast_3day_header": "📅 *3-दिन का मौसम पूर्वानुमान — {city}*\n━━━━━━━━━━━━━━━\n\n",
+        "forecast_7day_header": "🌤 *7-दिन का मौसम पूर्वानुमान — {city}*\n\n",
+        "hourly_header": "🕐 *हर 3 घंटे का मौसम — {city}*\n━━━━━━━━━━━━━━━\n\n",
+        "wind_unit": "मी/से",
+        "uv_low": "कम",
+        "uv_moderate": "मध्यम",
+        "uv_high": "उच्च",
+        "uv_very_high": "बहुत उच्च",
+        "uv_extreme": "अत्यधिक",
+        "uv_na": "उपलब्ध नहीं",
+        "wind_N": "⬆️ उत्तर",
+        "wind_NE": "↗️ उत्तर-पूर्व",
+        "wind_E": "➡️ पूर्व",
+        "wind_SE": "↘️ दक्षिण-पूर्व",
+        "wind_S": "⬇️ दक्षिण",
+        "wind_SW": "↙️ दक्षिण-पश्चिम",
+        "wind_W": "⬅️ पश्चिम",
+        "wind_NW": "↖️ उत्तर-पश्चिम",
+        "crypto_header": "💎 *क्रिप्टो मूल्य*\n━━━━━━━━━━━━━━━\n\n",
+        "crypto_footer": "━━━━━━━━━━━━━━━\n🔄 CoinGecko से डेटा",
+        "crypto_error": "⚠️ अभी क्रिप्टो मूल्य प्राप्त नहीं हो सका, बाद में प्रयास करें।",
+        "prayer_header": "🕌 *{city} में नमाज़ के समय*\n📅 {date}\n🗓 {hijri}\n━━━━━━━━━━━━━━━\n\n🌅 फज्र:    `{fajr}`\n☀️ उदय:    `{sunrise}`\n🌞 जुहर:   `{dhuhr}`\n🌇 अस्र:    `{asr}`\n🌆 मगरिब:  `{maghrib}`\n🌙 ईशा:    `{isha}`\n━━━━━━━━━━━━━━━\n🔄 Aladhan API से डेटा",
+        "prayer_no_city": "⚠️ आपका शहर सेट नहीं है। सेटिंग्स में जाएं।",
+        "prayer_city_error": "⚠️ {city} के लिए नमाज़ के समय प्राप्त नहीं हो सके।",
+        "prayer_error": "⚠️ नमाज़ के समय अभी प्राप्त नहीं हो सके, बाद में प्रयास करें।",
+        "referral_header": "🎁 *रेफरल सिस्टम*\n━━━━━━━━━━━━━━━\n\n🔗 *आपका रेफरल लिंक:*\n`{link}`\n\n👥 *कुल आमंत्रित:* `{count}` लोग\n\n━━━━━━━━━━━━━━━\n📤 दोस्तों और परिवार के साथ साझा करें!\nआपके लिंक से जुड़ने वाला हर व्यक्ति गिना जाएगा। 🎯",
+        "referral_share_btn": "📤 लिंक साझा करें",
+        "share_bot_header": "📢 *बॉट साझा करें और हमें बढ़ने में मदद करें!*\n\n🔗 *बॉट लिंक:*\n@{username}\n\n📌 या लिंक से:\n`{link}`\n\n━━━━━━━━━━━━━━━\n💡 दोस्तों के साथ साझा करें:",
+        "share_bot_btn": "📤 बॉट साझा करें",
+        "open_bot_btn": "🔗 बॉट खोलें",
+        "public_stats_header": "📊 *बॉट सांख्यिकी*\n━━━━━━━━━━━━━━━\n\n👥 कुल उपयोगकर्ता: *{total}*\n✅ सक्रिय उपयोगकर्ता: *{active}*\n🆕 आज जुड़े: *{today}*\n⭐ प्रीमियम सदस्य: *{premium}*\n\n",
+        "public_stats_langs": "🌍 *सबसे अधिक उपयोग की जाने वाली भाषाएं:*\n",
+        "public_stats_footer": "\n━━━━━━━━━━━━━━━\n🤖 @{username}",
+        "my_stats_header": "📈 *आपकी व्यक्तिगत सांख्यिकी*\n━━━━━━━━━━━━━━━\n\n👤 नाम: *{name}*\n🌍 भाषा: *{lang}*\n🏙 शहर: *{city}*\n📅 शामिल होने की तारीख: *{join}*\n\n📰 प्राप्त समाचार: *{news}*\n🎁 भेजे गए रेफरल: *{refs}*\n🔑 कीवर्ड: *{kws}*\n⭐ प्रीमियम: *{prem}*\n🔔 सूचनाएं: *{notif}*\n",
+        "my_stats_prem_yes": "⭐ हाँ",
+        "my_stats_prem_no": "❌ नहीं",
+        "my_stats_notif_on": "🔔 सक्रिय",
+        "my_stats_notif_off": "🔕 बंद",
+        "my_stats_user": "उपयोगकर्ता",
+        "daily_summary_header": "📋 *आज के समाचार का सारांश — {date}*\n━━━━━━━━━━━━━━━\n\n",
+        "daily_summary_no_source": "⚠️ इस भाषा के लिए कोई समाचार स्रोत नहीं।",
+        "daily_summary_no_news": "⚠️ अभी कोई समाचार उपलब्ध नहीं, बाद में प्रयास करें।",
+        "top_referrers_header": "🏆 *शीर्ष रेफरर्स*\n━━━━━━━━━━━━━━━\n\n",
+        "top_referrers_empty": "📊 अभी कोई रेफरल नहीं — पहले बनें! 🎯",
+        "top_referrers_invite": "आमंत्रण",
+        "dollar_header": "💵 *USD बनाम इराकी दीनार*\n\n🏪 समानांतर बाज़ार:\n{rate}\n\n⏰ अंतिम अपडेट: `{time}`\n📡 स्रोत: {source}\n\n━━━━━━━━━━━━━━\n🤖 @{username}",
+        "dollar_sell": "बिक्री",
+        "dollar_buy": "खरीद",
+        "dollar_official": "दर: `{price}` IQD\n_(आधिकारिक दर — बाज़ार से भिन्न हो सकती है)_",
+        "dollar_error": "⚠️ अभी डॉलर दर प्राप्त नहीं हो सकी। बाद में प्रयास करें।",
+        "weekly_summary_header": "📰 *साप्ताहिक सारांश — शीर्ष {count} खबरें*\n━━━━━━━━━━━━━━━\n\n",
+        "weekly_summary_text_header": "📆 *साप्ताहिक समाचार सारांश*\n📅 {start} — {end}\n━━━━━━━━━━━━━━\n",
+        "weekly_summary_text_wait": "⏳ इस सप्ताह की शीर्ष खबरें एकत्र की जा रही हैं...",
+        "weekly_summary_text_no_source": "⚠️ इस भाषा के लिए कोई समाचार स्रोत नहीं।",
+        "weekly_summary_text_no_news": "⚠️ इस सप्ताह पर्याप्त खबरें नहीं।",
+        "currency_table_header": "📊 *USD के मुकाबले पूर्ण विनिमय दर तालिका 🇺🇸*\n━━━━━━━━━━━━━━━\n\n",
+        "premium_menu_header": "⭐ *प्रीमियम मेनू — चुनें:*",
+        "premium_btn_7day": "🌤 7-दिन का पूर्वानुमान",
+        "premium_btn_hourly": "🕐 हर 3 घंटे का मौसम",
+        "premium_btn_addcity": "🏙 शहर जोड़ें",
+        "premium_btn_mycities": "📋 मेरे सहेजे गए शहर",
+        "premium_btn_interests": "📌 मेरी रुचियां",
+        "premium_btn_currency_alert": "💱 मुद्रा अलर्ट",
+        "premium_btn_currency_table": "📊 मुद्रा तालिका",
+        "premium_btn_notif_time": "🕐 सूचना समय",
+        "premium_btn_weekly": "📰 साप्ताहिक सारांश",
+        "premium_btn_keywords": "🔑 कीवर्ड",
+        "premium_subscribe_btn": "⭐ प्रीमियम सदस्यता का अनुरोध करें",
+        "broadcast_weather_msg": "🌤 {city} में मौसम: {temp}°C\n☁️ {desc}",
+        "track_header": "📌 *मुद्राओं, शेयरों और वस्तुओं की निगरानी*\n━━━━━━━━━━━━━━━\n\n",
+        "track_current_list": "📋 *आपकी वर्तमान सूची:*\n",
+        "track_count": "\n({count}/20 प्रतीक)\n\n",
+        "track_add_hint": "➕ *प्रतीक जोड़ें:* सीधे नाम भेजें\n\n",
+        "track_crypto_label": "💎 *क्रिप्टोकरेंसी:*\n",
+        "track_fiat_label": "💱 *फिएट मुद्राएं:*\n",
+        "track_stocks_label": "📈 *शेयर:*\n",
+        "track_commodities_label": "🏅 *वस्तु और सूचकांक:*\n",
+        "track_alert_hint": "🔔 *±1% परिवर्तन पर तुरंत अलर्ट और प्रति घंटे रिपोर्ट मिलेगी।*\n\n",
+        "track_remove_hint": "❌ प्रतीक हटाएं: `/removetrack AAPL`\n",
+        "track_list_hint": "📋 सूची देखें: `/mytrack`",
+        "track_empty": "📌 ट्रैकिंग सूची खाली है।\n*संपत्ति ट्रैक करें* बटन दबाएं।",
+        "track_list_header": "📌 *आपकी ट्रैक की गई संपत्तियां:*\n━━━━━━━━━━━━━━\n",
+        "track_alert_title": "🚨 *मूल्य अलर्ट*\n━━━━━━━━━━━━━━━\n\n",
+        "track_rose": "📈 बढ़ा",
+        "track_fell": "📉 गिरा",
+        "track_report_title": "📊 *प्रति घंटे रिपोर्ट — आपकी संपत्तियां*\n",
+        "track_unavailable": "अनुपलब्ध",
+        "track_remove_usage": "⚠️ कमांड के बाद प्रतीक भेजें। उदाहरण: `/removetrack AAPL`",
+        "track_not_found": "⚠️ *{symbol}* आपकी सूची में नहीं है।",
+        "track_removed": "✅ *{symbol}* ट्रैकिंग सूची से हटा दिया।",
+        "interest_save_btn": "💾 सहेजें",
+        "interest_choose_msg": "📌 *अपनी रुचियां चुनें (एक से अधिक):*",
+        "currency_rate_header": "💱 *USD के मुकाबले विनिमय दरें 🇺🇸*\n\n",
+        "currency_local_label": "🏠 {name}",
+        "currency_convert_header": "🔄 *{amount} {currency} का रूपांतरण*\n━━━━━━━━━━━━━━━\n\n",
+        "currency_unsupported": "⚠️ असमर्थित मुद्रा: {currency}",
+        "currency_fetch_error": "⚠️ विनिमय दरें प्राप्त नहीं हो सकीं।",
+        "city_add_success": "✅ शहर जोड़ा गया: *{city}*",
+        "currency_alert_set": "✅ जब डॉलर आपकी स्थानीय मुद्रा के `{rate}` पर पहुंचेगा तो सूचित किया जाएगा।",
+        "currency_alert_invalid": "❌ एक संख्या भेजें, जैसे: 1600",
+        "notif_time_set": "✅ सुबह की सारांश रोज *{hour}:00* बजे भेजी जाएगी।",
+        "notif_time_invalid": "❌ 0 से 23 के बीच संख्या दर्ज करें (उदाहरण: 8 सुबह 8 बजे के लिए)",
     },
     "Português 🇧🇷": {
         "no_news": "⚠️ Nenhuma notícia nova agora.",
@@ -3589,6 +4035,111 @@ MSGS = {
         "label_mena": "📰 Notícias Políticas do Médio Oriente",
         "label_trending": "🔥",
         "label_sports": "⚽",
+        "no_city": "⚠️ Sua cidade ainda não foi definida.",
+        "city_not_found": "⚠️ Dados meteorológicos não encontrados para: {city}",
+        "weather_header": "{emoji} *Tempo em {city}*\n━━━━━━━━━━━━━━━\n\n🌡 *Temp:* {temp}°C\n🤔 *Sensação:* {feels}°C\n🔼 Máx: {temp_max}°C  |  🔽 Mín: {temp_min}°C\n\n☁️ *Condição:* {desc}\n🌫 *Nuvens:* {clouds}%\n👁 *Visibilidade:* {visibility_km} km\n\n💧 *Umidade:* {humidity}%\n🌀 *Pressão:* {pressure} hPa\n☀️ *Índice UV:* {uvi}\n\n💨 *Vento:* {wind_speed} m/s | {wind_dir}\n💨 *Rajadas:* {wind_gust} m/s\n\n🌅 *Nascer:* {sunrise}  |  🌇 *Pôr do sol:* {sunset}\n━━━━━━━━━━━━━━━",
+        "forecast_3day_header": "📅 *Previsão de 3 dias — {city}*\n━━━━━━━━━━━━━━━\n\n",
+        "forecast_7day_header": "🌤 *Previsão de 7 dias — {city}*\n\n",
+        "hourly_header": "🕐 *Tempo a cada 3 horas — {city}*\n━━━━━━━━━━━━━━━\n\n",
+        "wind_unit": "m/s",
+        "uv_low": "Baixo",
+        "uv_moderate": "Moderado",
+        "uv_high": "Alto",
+        "uv_very_high": "Muito alto",
+        "uv_extreme": "Extremo",
+        "uv_na": "N/D",
+        "wind_N": "⬆️ N",
+        "wind_NE": "↗️ NE",
+        "wind_E": "➡️ L",
+        "wind_SE": "↘️ SE",
+        "wind_S": "⬇️ S",
+        "wind_SW": "↙️ SO",
+        "wind_W": "⬅️ O",
+        "wind_NW": "↖️ NO",
+        "crypto_header": "💎 *Preços de Criptomoedas*\n━━━━━━━━━━━━━━━\n\n",
+        "crypto_footer": "━━━━━━━━━━━━━━━\n🔄 Dados do CoinGecko",
+        "crypto_error": "⚠️ Não foi possível obter preços de cripto agora, tente mais tarde.",
+        "prayer_header": "🕌 *Horários de Oração em {city}*\n📅 {date}\n🗓 {hijri}\n━━━━━━━━━━━━━━━\n\n🌅 Fajr:    `{fajr}`\n☀️ Nascer:  `{sunrise}`\n🌞 Dhuhr:   `{dhuhr}`\n🌇 Asr:     `{asr}`\n🌆 Maghrib: `{maghrib}`\n🌙 Isha:    `{isha}`\n━━━━━━━━━━━━━━━\n🔄 Dados da Aladhan API",
+        "prayer_no_city": "⚠️ Sua cidade não está definida. Vá às Configurações.",
+        "prayer_city_error": "⚠️ Não foi possível obter horários de oração para: {city}",
+        "prayer_error": "⚠️ Não foi possível obter horários de oração, tente mais tarde.",
+        "referral_header": "🎁 *Sistema de Indicação*\n━━━━━━━━━━━━━━━\n\n🔗 *Seu link de indicação:*\n`{link}`\n\n👥 *Total indicados:* `{count}` pessoas\n\n━━━━━━━━━━━━━━━\n📤 Compartilhe com amigos e família!\nCada pessoa que entrar pelo seu link conta. 🎯",
+        "referral_share_btn": "📤 Compartilhar Link",
+        "share_bot_header": "📢 *Compartilhe o bot e ajude-nos a crescer!*\n\n🔗 *Link do bot:*\n@{username}\n\n📌 Ou via link:\n`{link}`\n\n━━━━━━━━━━━━━━━\n💡 Compartilhe com amigos para receber:\n📰 Últimas notícias\n🌤 Tempo ao vivo\n💱 Taxas de câmbio\n🕌 Horários de oração\n💎 Preços de cripto",
+        "share_bot_btn": "📤 Compartilhar Bot",
+        "open_bot_btn": "🔗 Abrir Bot",
+        "public_stats_header": "📊 *Estatísticas do Bot*\n━━━━━━━━━━━━━━━\n\n👥 Total de usuários: *{total}*\n✅ Usuários ativos: *{active}*\n🆕 Entraram hoje: *{today}*\n⭐ Assinantes premium: *{premium}*\n\n",
+        "public_stats_langs": "🌍 *Idiomas mais usados:*\n",
+        "public_stats_footer": "\n━━━━━━━━━━━━━━━\n🤖 @{username}",
+        "my_stats_header": "📈 *Suas Estatísticas Pessoais*\n━━━━━━━━━━━━━━━\n\n👤 Nome: *{name}*\n🌍 Idioma: *{lang}*\n🏙 Cidade: *{city}*\n📅 Data de entrada: *{join}*\n\n📰 Notícias recebidas: *{news}*\n🎁 Indicações enviadas: *{refs}*\n🔑 Palavras-chave: *{kws}*\n⭐ Premium: *{prem}*\n🔔 Notificações: *{notif}*\n",
+        "my_stats_prem_yes": "⭐ Sim",
+        "my_stats_prem_no": "❌ Não",
+        "my_stats_notif_on": "🔔 Ativo",
+        "my_stats_notif_off": "🔕 Pausado",
+        "my_stats_user": "Usuário",
+        "daily_summary_header": "📋 *Resumo de Notícias de Hoje — {date}*\n━━━━━━━━━━━━━━━\n\n",
+        "daily_summary_no_source": "⚠️ Nenhuma fonte de notícias para este idioma.",
+        "daily_summary_no_news": "⚠️ Nenhuma notícia disponível agora, tente mais tarde.",
+        "top_referrers_header": "🏆 *Melhores Indicadores*\n━━━━━━━━━━━━━━━\n\n",
+        "top_referrers_empty": "📊 Sem indicações ainda — seja o primeiro! 🎯",
+        "top_referrers_invite": "indicação(ões)",
+        "dollar_header": "💵 *USD vs Dinar Iraquiano*\n\n🏪 Mercado paralelo:\n{rate}\n\n⏰ Última atualização: `{time}`\n📡 Fonte: {source}\n\n━━━━━━━━━━━━━━\n🤖 @{username}",
+        "dollar_sell": "Venda",
+        "dollar_buy": "Compra",
+        "dollar_official": "Taxa: `{price}` IQD\n_(Taxa oficial — pode diferir do mercado)_",
+        "dollar_error": "⚠️ Não foi possível obter a taxa do dólar. Tente mais tarde.",
+        "weekly_summary_header": "📰 *Resumo Semanal — Top {count} notícias*\n━━━━━━━━━━━━━━━\n\n",
+        "weekly_summary_text_header": "📆 *Resumo de Notícias da Semana*\n📅 {start} — {end}\n━━━━━━━━━━━━━━\n",
+        "weekly_summary_text_wait": "⏳ Coletando as principais notícias da semana...",
+        "weekly_summary_text_no_source": "⚠️ Nenhuma fonte de notícias para este idioma.",
+        "weekly_summary_text_no_news": "⚠️ Notícias insuficientes esta semana.",
+        "currency_table_header": "📊 *Tabela Completa de Câmbio vs USD 🇺🇸*\n━━━━━━━━━━━━━━━\n\n",
+        "premium_menu_header": "⭐ *Menu Premium — Escolha:*",
+        "premium_btn_7day": "🌤 Previsão de 7 dias",
+        "premium_btn_hourly": "🕐 Tempo a cada 3 horas",
+        "premium_btn_addcity": "🏙 Adicionar Cidade",
+        "premium_btn_mycities": "📋 Minhas Cidades Salvas",
+        "premium_btn_interests": "📌 Meus Interesses",
+        "premium_btn_currency_alert": "💱 Alerta de Câmbio",
+        "premium_btn_currency_table": "📊 Tabela de Câmbio",
+        "premium_btn_notif_time": "🕐 Horário de Notificação",
+        "premium_btn_weekly": "📰 Resumo Semanal",
+        "premium_btn_keywords": "🔑 Palavras-chave",
+        "premium_subscribe_btn": "⭐ Solicitar Assinatura Premium",
+        "broadcast_weather_msg": "🌤 Tempo em {city}: {temp}°C\n☁️ {desc}",
+        "track_header": "📌 *Rastreamento de Ativos*\n━━━━━━━━━━━━━━━\n\n",
+        "track_current_list": "📋 *Sua lista atual:*\n",
+        "track_count": "\n({count}/20 símbolos)\n\n",
+        "track_add_hint": "➕ *Adicionar símbolo:* envie o nome diretamente\n\n",
+        "track_crypto_label": "💎 *Criptomoedas:*\n",
+        "track_fiat_label": "💱 *Moedas fiduciárias:*\n",
+        "track_stocks_label": "📈 *Ações:*\n",
+        "track_commodities_label": "🏅 *Commodities e Índices:*\n",
+        "track_alert_hint": "🔔 *Você receberá alertas imediatos em mudanças de ±1% e relatório por hora.*\n\n",
+        "track_remove_hint": "❌ Remover símbolo: `/removetrack AAPL`\n",
+        "track_list_hint": "📋 Ver sua lista: `/mytrack`",
+        "track_empty": "📌 Lista de rastreamento vazia.\nToque em *Rastrear ativo* para adicionar símbolos.",
+        "track_list_header": "📌 *Seus ativos rastreados:*\n━━━━━━━━━━━━━━\n",
+        "track_alert_title": "🚨 *Alertas de preço*\n━━━━━━━━━━━━━━━\n\n",
+        "track_rose": "📈 subiu",
+        "track_fell": "📉 caiu",
+        "track_report_title": "📊 *Relatório por hora — Seus ativos*\n",
+        "track_unavailable": "indisponível",
+        "track_remove_usage": "⚠️ Envie o símbolo após o comando. Exemplo: `/removetrack AAPL`",
+        "track_not_found": "⚠️ *{symbol}* não está na sua lista.",
+        "track_removed": "✅ *{symbol}* removido da lista de rastreamento.",
+        "interest_save_btn": "💾 Salvar",
+        "interest_choose_msg": "📌 *Escolha seus interesses (pode ser mais de um):*",
+        "currency_rate_header": "💱 *Taxas de câmbio vs USD 🇺🇸*\n\n",
+        "currency_local_label": "🏠 {name}",
+        "currency_convert_header": "🔄 *Conversão de {amount} {currency}*\n━━━━━━━━━━━━━━━\n\n",
+        "currency_unsupported": "⚠️ Moeda não suportada: {currency}",
+        "currency_fetch_error": "⚠️ Não foi possível obter taxas de câmbio.",
+        "city_add_success": "✅ Cidade adicionada: *{city}*",
+        "currency_alert_set": "✅ Você será alertado quando o dólar atingir `{rate}` da sua moeda local.",
+        "currency_alert_invalid": "❌ Envie um número, por exemplo: 1600",
+        "notif_time_set": "✅ O resumo matinal será enviado às *{hour}:00* todos os dias.",
+        "notif_time_invalid": "❌ Insira um número entre 0 e 23 (exemplo: 8 para 8h)",
     },
     "Türkçe 🇹🇷": {
         "no_news": "⚠️ Şu an yeni haber yok.",
@@ -3611,6 +4162,111 @@ MSGS = {
         "label_mena": "📰 Orta Doğu Siyasi Haberleri",
         "label_trending": "🔥",
         "label_sports": "⚽",
+        "no_city": "⚠️ Şehriniz henüz ayarlanmamış.",
+        "city_not_found": "⚠️ {city} için hava durumu verisi bulunamadı.",
+        "weather_header": "{emoji} *{city} Hava Durumu*\n━━━━━━━━━━━━━━━\n\n🌡 *Sıcaklık:* {temp}°C\n🤔 *Hissedilen:* {feels}°C\n🔼 Maks: {temp_max}°C  |  🔽 Min: {temp_min}°C\n\n☁️ *Durum:* {desc}\n🌫 *Bulut:* {clouds}%\n👁 *Görüş:* {visibility_km} km\n\n💧 *Nem:* {humidity}%\n🌀 *Basınç:* {pressure} hPa\n☀️ *UV İndeksi:* {uvi}\n\n💨 *Rüzgar:* {wind_speed} m/s | {wind_dir}\n💨 *Gusts:* {wind_gust} m/s\n\n🌅 *Gündoğumu:* {sunrise}  |  🌇 *Gün batımı:* {sunset}\n━━━━━━━━━━━━━━━",
+        "forecast_3day_header": "📅 *3 Günlük Hava Tahmini — {city}*\n━━━━━━━━━━━━━━━\n\n",
+        "forecast_7day_header": "🌤 *7 Günlük Hava Tahmini — {city}*\n\n",
+        "hourly_header": "🕐 *3 Saatlik Hava Durumu — {city}*\n━━━━━━━━━━━━━━━\n\n",
+        "wind_unit": "m/s",
+        "uv_low": "Düşük",
+        "uv_moderate": "Orta",
+        "uv_high": "Yüksek",
+        "uv_very_high": "Çok Yüksek",
+        "uv_extreme": "Aşırı",
+        "uv_na": "Yok",
+        "wind_N": "⬆️ K",
+        "wind_NE": "↗️ KD",
+        "wind_E": "➡️ D",
+        "wind_SE": "↘️ GD",
+        "wind_S": "⬇️ G",
+        "wind_SW": "↙️ GB",
+        "wind_W": "⬅️ B",
+        "wind_NW": "↖️ KB",
+        "crypto_header": "💎 *Kripto Para Fiyatları*\n━━━━━━━━━━━━━━━\n\n",
+        "crypto_footer": "━━━━━━━━━━━━━━━\n🔄 CoinGecko'dan veri",
+        "crypto_error": "⚠️ Şu an kripto fiyatları alınamıyor, daha sonra deneyin.",
+        "prayer_header": "🕌 *{city} Namaz Vakitleri*\n📅 {date}\n🗓 {hijri}\n━━━━━━━━━━━━━━━\n\n🌅 İmsak:   `{fajr}`\n☀️ Güneş:   `{sunrise}`\n🌞 Öğle:    `{dhuhr}`\n🌇 İkindi:  `{asr}`\n🌆 Akşam:   `{maghrib}`\n🌙 Yatsı:   `{isha}`\n━━━━━━━━━━━━━━━\n🔄 Aladhan API'den veri",
+        "prayer_no_city": "⚠️ Şehriniz ayarlanmamış. Ayarlara gidin.",
+        "prayer_city_error": "⚠️ {city} için namaz vakitleri alınamıyor.",
+        "prayer_error": "⚠️ Namaz vakitleri şu an alınamıyor, daha sonra deneyin.",
+        "referral_header": "🎁 *Davet Sistemi*\n━━━━━━━━━━━━━━━\n\n🔗 *Davet linkiniz:*\n`{link}`\n\n👥 *Toplam davet:* `{count}` kişi\n\n━━━━━━━━━━━━━━━\n📤 Arkadaş ve ailenizle paylaşın!\nLinkinizle katılan herkes sayılır. 🎯",
+        "referral_share_btn": "📤 Linki Paylaş",
+        "share_bot_header": "📢 *Botu paylaşın ve büyümemize yardımcı olun!*\n\n🔗 *Bot linki:*\n@{username}\n\n📌 Ya da link ile:\n`{link}`\n\n━━━━━━━━━━━━━━━\n💡 Arkadaşlarınızla paylaşarak şunlara ulaşın:\n📰 Son haberler\n🌤 Canlı hava\n💱 Döviz kurları\n🕌 Namaz vakitleri\n💎 Kripto fiyatları",
+        "share_bot_btn": "📤 Botu Paylaş",
+        "open_bot_btn": "🔗 Botu Aç",
+        "public_stats_header": "📊 *Bot İstatistikleri*\n━━━━━━━━━━━━━━━\n\n👥 Toplam kullanıcı: *{total}*\n✅ Aktif kullanıcı: *{active}*\n🆕 Bugün katılan: *{today}*\n⭐ Premium üye: *{premium}*\n\n",
+        "public_stats_langs": "🌍 *En çok kullanılan diller:*\n",
+        "public_stats_footer": "\n━━━━━━━━━━━━━━━\n🤖 @{username}",
+        "my_stats_header": "📈 *Kişisel İstatistikleriniz*\n━━━━━━━━━━━━━━━\n\n👤 Ad: *{name}*\n🌍 Dil: *{lang}*\n🏙 Şehir: *{city}*\n📅 Katılım tarihi: *{join}*\n\n📰 Alınan haber: *{news}*\n🎁 Davet gönderilen: *{refs}*\n🔑 Anahtar kelime: *{kws}*\n⭐ Premium: *{prem}*\n🔔 Bildirimler: *{notif}*\n",
+        "my_stats_prem_yes": "⭐ Evet",
+        "my_stats_prem_no": "❌ Hayır",
+        "my_stats_notif_on": "🔔 Aktif",
+        "my_stats_notif_off": "🔕 Durduruldu",
+        "my_stats_user": "Kullanıcı",
+        "daily_summary_header": "📋 *Bugünün Haber Özeti — {date}*\n━━━━━━━━━━━━━━━\n\n",
+        "daily_summary_no_source": "⚠️ Bu dil için haber kaynağı yok.",
+        "daily_summary_no_news": "⚠️ Şu an haber yok, daha sonra deneyin.",
+        "top_referrers_header": "🏆 *En İyi Davetçiler*\n━━━━━━━━━━━━━━━\n\n",
+        "top_referrers_empty": "📊 Henüz davet yok — ilk siz olun! 🎯",
+        "top_referrers_invite": "davet",
+        "dollar_header": "💵 *USD - Irak Dinarı*\n\n🏪 Paralel piyasa:\n{rate}\n\n⏰ Son güncelleme: `{time}`\n📡 Kaynak: {source}\n\n━━━━━━━━━━━━━━\n🤖 @{username}",
+        "dollar_sell": "Satış",
+        "dollar_buy": "Alış",
+        "dollar_official": "Kur: `{price}` IQD\n_(Resmi kur — piyasadan farklı olabilir)_",
+        "dollar_error": "⚠️ Dolar kuru şu an alınamıyor. Daha sonra deneyin.",
+        "weekly_summary_header": "📰 *Haftalık Özet — En iyi {count} haber*\n━━━━━━━━━━━━━━━\n\n",
+        "weekly_summary_text_header": "📆 *Haftalık Haber Özeti*\n📅 {start} — {end}\n━━━━━━━━━━━━━━\n",
+        "weekly_summary_text_wait": "⏳ Haftanın öne çıkan haberleri toplanıyor...",
+        "weekly_summary_text_no_source": "⚠️ Bu dil için haber kaynağı yok.",
+        "weekly_summary_text_no_news": "⚠️ Bu hafta yeterli haber yok.",
+        "currency_table_header": "📊 *USD'ye Karşı Tam Döviz Tablosu 🇺🇸*\n━━━━━━━━━━━━━━━\n\n",
+        "premium_menu_header": "⭐ *Premium Menü — Seçin:*",
+        "premium_btn_7day": "🌤 7 Günlük Tahmin",
+        "premium_btn_hourly": "🕐 3 Saatlik Hava",
+        "premium_btn_addcity": "🏙 Şehir Ekle",
+        "premium_btn_mycities": "📋 Kayıtlı Şehirlerim",
+        "premium_btn_interests": "📌 İlgi Alanlarım",
+        "premium_btn_currency_alert": "💱 Döviz Uyarısı",
+        "premium_btn_currency_table": "📊 Döviz Tablosu",
+        "premium_btn_notif_time": "🕐 Bildirim Saati",
+        "premium_btn_weekly": "📰 Haftalık Özet",
+        "premium_btn_keywords": "🔑 Anahtar Kelimeler",
+        "premium_subscribe_btn": "⭐ Premium Üyelik Talep Et",
+        "broadcast_weather_msg": "🌤 {city} hava durumu: {temp}°C\n☁️ {desc}",
+        "track_header": "📌 *Döviz, Hisse ve Emtia Takibi*\n━━━━━━━━━━━━━━━\n\n",
+        "track_current_list": "📋 *Mevcut listeniz:*\n",
+        "track_count": "\n({count}/20 sembol)\n\n",
+        "track_add_hint": "➕ *Sembol ekle:* adını doğrudan gönderin\n\n",
+        "track_crypto_label": "💎 *Kripto Paralar:*\n",
+        "track_fiat_label": "💱 *Fiat Para Birimleri:*\n",
+        "track_stocks_label": "📈 *Hisse Senetleri:*\n",
+        "track_commodities_label": "🏅 *Emtia ve Endeksler:*\n",
+        "track_alert_hint": "🔔 *±%1 değişimde anlık uyarı ve saatlik rapor alırsınız.*\n\n",
+        "track_remove_hint": "❌ Sembol sil: `/removetrack AAPL`\n",
+        "track_list_hint": "📋 Listenizi görün: `/mytrack`",
+        "track_empty": "📌 Takip listesi boş.\n*Varlık takip et* butonuna basın.",
+        "track_list_header": "📌 *Takip ettiğiniz varlıklar:*\n━━━━━━━━━━━━━━\n",
+        "track_alert_title": "🚨 *Fiyat Uyarıları*\n━━━━━━━━━━━━━━━\n\n",
+        "track_rose": "📈 yükseldi",
+        "track_fell": "📉 düştü",
+        "track_report_title": "📊 *Saatlik Rapor — Varlıklarınız*\n",
+        "track_unavailable": "mevcut değil",
+        "track_remove_usage": "⚠️ Komuttan sonra sembolü gönderin. Örnek: `/removetrack AAPL`",
+        "track_not_found": "⚠️ *{symbol}* listenizde yok.",
+        "track_removed": "✅ *{symbol}* takip listesinden kaldırıldı.",
+        "interest_save_btn": "💾 Kaydet",
+        "interest_choose_msg": "📌 *İlgi alanlarınızı seçin (birden fazla olabilir):*",
+        "currency_rate_header": "💱 *USD'ye Karşı Döviz Kurları 🇺🇸*\n\n",
+        "currency_local_label": "🏠 {name}",
+        "currency_convert_header": "🔄 *{amount} {currency} Dönüşümü*\n━━━━━━━━━━━━━━━\n\n",
+        "currency_unsupported": "⚠️ Desteklenmeyen para birimi: {currency}",
+        "currency_fetch_error": "⚠️ Döviz kurları alınamıyor.",
+        "city_add_success": "✅ Şehir eklendi: *{city}*",
+        "currency_alert_set": "✅ Dolar yerel paranızın `{rate}` değerine ulaştığında uyarılacaksınız.",
+        "currency_alert_invalid": "❌ Bir sayı gönderin, örnek: 1600",
+        "notif_time_set": "✅ Sabah özeti her gün *{hour}:00*'de gönderilecek.",
+        "notif_time_invalid": "❌ 0 ile 23 arasında bir sayı girin (örnek: sabah 8 için 8)",
     },
     "اردو 🇵🇰": {
         "no_news": "⚠️ ابھی کوئی نئی خبر نہیں۔",
@@ -3633,6 +4289,111 @@ MSGS = {
         "label_mena": "📰 مشرق وسطیٰ سیاسی خبریں",
         "label_trending": "🔥",
         "label_sports": "⚽",
+        "no_city": "⚠️ آپ کا شہر ابھی تک سیٹ نہیں ہوا۔",
+        "city_not_found": "⚠️ {city} کے لیے موسم کا ڈیٹا نہیں ملا۔",
+        "weather_header": "{emoji} *{city} میں موسم*\n━━━━━━━━━━━━━━━\n\n🌡 *درجہ حرارت:* {temp}°C\n🤔 *محسوس ہوتا ہے:* {feels}°C\n🔼 زیادہ: {temp_max}°C  |  🔽 کم: {temp_min}°C\n\n☁️ *حالت:* {desc}\n🌫 *بادل:* {clouds}%\n👁 *مرئیت:* {visibility_km} کمی\n\n💧 *نمی:* {humidity}%\n🌀 *دباؤ:* {pressure} hPa\n☀️ *UV انڈیکس:* {uvi}\n\n💨 *ہوا:* {wind_speed} م/س | {wind_dir}\n💨 *جھونکے:* {wind_gust} م/س\n\n🌅 *طلوع آفتاب:* {sunrise}  |  🌇 *غروب آفتاب:* {sunset}\n━━━━━━━━━━━━━━━",
+        "forecast_3day_header": "📅 *3 روزہ موسم کی پیشگوئی — {city}*\n━━━━━━━━━━━━━━━\n\n",
+        "forecast_7day_header": "🌤 *7 روزہ موسم کی پیشگوئی — {city}*\n\n",
+        "hourly_header": "🕐 *ہر 3 گھنٹے کا موسم — {city}*\n━━━━━━━━━━━━━━━\n\n",
+        "wind_unit": "م/س",
+        "uv_low": "کم",
+        "uv_moderate": "معتدل",
+        "uv_high": "زیادہ",
+        "uv_very_high": "بہت زیادہ",
+        "uv_extreme": "انتہائی خطرناک",
+        "uv_na": "دستیاب نہیں",
+        "wind_N": "⬆️ شمال",
+        "wind_NE": "↗️ شمال مشرق",
+        "wind_E": "➡️ مشرق",
+        "wind_SE": "↘️ جنوب مشرق",
+        "wind_S": "⬇️ جنوب",
+        "wind_SW": "↙️ جنوب مغرب",
+        "wind_W": "⬅️ مغرب",
+        "wind_NW": "↖️ شمال مغرب",
+        "crypto_header": "💎 *کرپٹو کرنسی کے نرخ*\n━━━━━━━━━━━━━━━\n\n",
+        "crypto_footer": "━━━━━━━━━━━━━━━\n🔄 CoinGecko سے ڈیٹا",
+        "crypto_error": "⚠️ ابھی کرپٹو کی قیمتیں حاصل نہیں ہو سکیں، بعد میں کوشش کریں۔",
+        "prayer_header": "🕌 *{city} میں نماز کے اوقات*\n📅 {date}\n🗓 {hijri}\n━━━━━━━━━━━━━━━\n\n🌅 فجر:     `{fajr}`\n☀️ طلوع:    `{sunrise}`\n🌞 ظہر:     `{dhuhr}`\n🌇 عصر:     `{asr}`\n🌆 مغرب:    `{maghrib}`\n🌙 عشاء:    `{isha}`\n━━━━━━━━━━━━━━━\n🔄 Aladhan API سے ڈیٹا",
+        "prayer_no_city": "⚠️ آپ کا شہر سیٹ نہیں۔ ترتیبات میں جائیں۔",
+        "prayer_city_error": "⚠️ {city} کے نماز اوقات حاصل نہیں ہو سکے۔",
+        "prayer_error": "⚠️ نماز اوقات ابھی حاصل نہیں ہو سکے، بعد میں کوشش کریں۔",
+        "referral_header": "🎁 *دعوت نظام*\n━━━━━━━━━━━━━━━\n\n🔗 *آپ کا دعوت لنک:*\n`{link}`\n\n👥 *کل مدعو:* `{count}` افراد\n\n━━━━━━━━━━━━━━━\n📤 دوستوں اور خاندان کے ساتھ شیئر کریں!\nآپ کے لنک سے شامل ہونے والا ہر شخص گنا جائے گا۔ 🎯",
+        "referral_share_btn": "📤 لنک شیئر کریں",
+        "share_bot_header": "📢 *بوٹ شیئر کریں اور ہماری ترقی میں مدد کریں!*\n\n🔗 *بوٹ لنک:*\n@{username}\n\n📌 یا لنک سے:\n`{link}`\n\n━━━━━━━━━━━━━━━\n💡 دوستوں کے ساتھ شیئر کریں:",
+        "share_bot_btn": "📤 بوٹ شیئر کریں",
+        "open_bot_btn": "🔗 بوٹ کھولیں",
+        "public_stats_header": "📊 *بوٹ کے اعداد و شمار*\n━━━━━━━━━━━━━━━\n\n👥 کل صارفین: *{total}*\n✅ فعال صارفین: *{active}*\n🆕 آج شامل ہوئے: *{today}*\n⭐ پریمیم ممبران: *{premium}*\n\n",
+        "public_stats_langs": "🌍 *سب سے زیادہ استعمال ہونے والی زبانیں:*\n",
+        "public_stats_footer": "\n━━━━━━━━━━━━━━━\n🤖 @{username}",
+        "my_stats_header": "📈 *آپ کے ذاتی اعداد و شمار*\n━━━━━━━━━━━━━━━\n\n👤 نام: *{name}*\n🌍 زبان: *{lang}*\n🏙 شہر: *{city}*\n📅 شمولیت کی تاریخ: *{join}*\n\n📰 موصولہ خبریں: *{news}*\n🎁 بھیجی گئی دعوتیں: *{refs}*\n🔑 کلیدی الفاظ: *{kws}*\n⭐ پریمیم: *{prem}*\n🔔 اطلاعات: *{notif}*\n",
+        "my_stats_prem_yes": "⭐ ہاں",
+        "my_stats_prem_no": "❌ نہیں",
+        "my_stats_notif_on": "🔔 فعال",
+        "my_stats_notif_off": "🔕 بند",
+        "my_stats_user": "صارف",
+        "daily_summary_header": "📋 *آج کی خبروں کا خلاصہ — {date}*\n━━━━━━━━━━━━━━━\n\n",
+        "daily_summary_no_source": "⚠️ اس زبان کے لیے کوئی خبر ذریعہ نہیں۔",
+        "daily_summary_no_news": "⚠️ ابھی کوئی خبر دستیاب نہیں، بعد میں کوشش کریں۔",
+        "top_referrers_header": "🏆 *بہترین دعوت دہندگان*\n━━━━━━━━━━━━━━━\n\n",
+        "top_referrers_empty": "📊 ابھی کوئی دعوت نہیں — پہلے بنیں! 🎯",
+        "top_referrers_invite": "دعوت",
+        "dollar_header": "💵 *امریکی ڈالر بمقابلہ عراقی دینار*\n\n🏪 متوازی مارکیٹ:\n{rate}\n\n⏰ آخری اپ ڈیٹ: `{time}`\n📡 ذریعہ: {source}\n\n━━━━━━━━━━━━━━\n🤖 @{username}",
+        "dollar_sell": "فروخت",
+        "dollar_buy": "خریداری",
+        "dollar_official": "شرح: `{price}` IQD\n_(سرکاری شرح — بازار سے مختلف ہو سکتی ہے)_",
+        "dollar_error": "⚠️ ابھی ڈالر کی شرح حاصل نہیں ہو سکی۔ بعد میں کوشش کریں۔",
+        "weekly_summary_header": "📰 *ہفتہ وار خلاصہ — بہترین {count} خبریں*\n━━━━━━━━━━━━━━━\n\n",
+        "weekly_summary_text_header": "📆 *ہفتہ وار خبروں کا خلاصہ*\n📅 {start} — {end}\n━━━━━━━━━━━━━━\n",
+        "weekly_summary_text_wait": "⏳ اس ہفتے کی اہم خبریں جمع کی جا رہی ہیں...",
+        "weekly_summary_text_no_source": "⚠️ اس زبان کے لیے کوئی خبر ذریعہ نہیں۔",
+        "weekly_summary_text_no_news": "⚠️ اس ہفتے کافی خبریں نہیں۔",
+        "currency_table_header": "📊 *USD کے مقابلے مکمل زر مبادلہ جدول 🇺🇸*\n━━━━━━━━━━━━━━━\n\n",
+        "premium_menu_header": "⭐ *پریمیم مینو — انتخاب کریں:*",
+        "premium_btn_7day": "🌤 7 روزہ پیشگوئی",
+        "premium_btn_hourly": "🕐 ہر 3 گھنٹے کا موسم",
+        "premium_btn_addcity": "🏙 شہر شامل کریں",
+        "premium_btn_mycities": "📋 میرے محفوظ شہر",
+        "premium_btn_interests": "📌 میری دلچسپیاں",
+        "premium_btn_currency_alert": "💱 کرنسی الرٹ",
+        "premium_btn_currency_table": "📊 کرنسی جدول",
+        "premium_btn_notif_time": "🕐 اطلاع کا وقت",
+        "premium_btn_weekly": "📰 ہفتہ وار خلاصہ",
+        "premium_btn_keywords": "🔑 کلیدی الفاظ",
+        "premium_subscribe_btn": "⭐ پریمیم سبسکرپشن کی درخواست کریں",
+        "broadcast_weather_msg": "🌤 {city} میں موسم: {temp}°C\n☁️ {desc}",
+        "track_header": "📌 *کرنسیوں، حصص اور اجناس کی نگرانی*\n━━━━━━━━━━━━━━━\n\n",
+        "track_current_list": "📋 *آپ کی موجودہ فہرست:*\n",
+        "track_count": "\n({count}/20 علامات)\n\n",
+        "track_add_hint": "➕ *علامت شامل کریں:* اس کا نام سیدھا بھیجیں\n\n",
+        "track_crypto_label": "💎 *کرپٹو کرنسیاں:*\n",
+        "track_fiat_label": "💱 *فیاٹ کرنسیاں:*\n",
+        "track_stocks_label": "📈 *حصص:*\n",
+        "track_commodities_label": "🏅 *اجناس اور اشاریہ جات:*\n",
+        "track_alert_hint": "🔔 *±1٪ تبدیلی پر فوری الرٹ اور گھنٹہ وار رپورٹ ملے گی۔*\n\n",
+        "track_remove_hint": "❌ علامت حذف کریں: `/removetrack AAPL`\n",
+        "track_list_hint": "📋 اپنی فہرست دیکھیں: `/mytrack`",
+        "track_empty": "📌 ٹریکنگ فہرست خالی ہے۔\n*اثاثہ ٹریک کریں* کا بٹن دبائیں۔",
+        "track_list_header": "📌 *آپ کے ٹریک شدہ اثاثے:*\n━━━━━━━━━━━━━━\n",
+        "track_alert_title": "🚨 *قیمتوں کے الرٹ*\n━━━━━━━━━━━━━━━\n\n",
+        "track_rose": "📈 بڑھا",
+        "track_fell": "📉 گرا",
+        "track_report_title": "📊 *گھنٹہ وار رپورٹ — آپ کے اثاثے*\n",
+        "track_unavailable": "دستیاب نہیں",
+        "track_remove_usage": "⚠️ کمانڈ کے بعد علامت بھیجیں۔ مثال: `/removetrack AAPL`",
+        "track_not_found": "⚠️ *{symbol}* آپ کی فہرست میں نہیں۔",
+        "track_removed": "✅ *{symbol}* ٹریکنگ فہرست سے حذف ہو گیا۔",
+        "interest_save_btn": "💾 محفوظ کریں",
+        "interest_choose_msg": "📌 *اپنی دلچسپیاں چنیں (ایک سے زیادہ ہو سکتی ہیں):*",
+        "currency_rate_header": "💱 *USD کے مقابلے زر مبادلہ 🇺🇸*\n\n",
+        "currency_local_label": "🏠 {name}",
+        "currency_convert_header": "🔄 *{amount} {currency} کی تبدیلی*\n━━━━━━━━━━━━━━━\n\n",
+        "currency_unsupported": "⚠️ غیر معاون کرنسی: {currency}",
+        "currency_fetch_error": "⚠️ زر مبادلہ حاصل نہیں ہو سکے۔",
+        "city_add_success": "✅ شہر شامل ہوا: *{city}*",
+        "currency_alert_set": "✅ جب ڈالر آپ کی مقامی کرنسی کے `{rate}` تک پہنچے گا تو الرٹ ملے گا۔",
+        "currency_alert_invalid": "❌ ایک نمبر بھیجیں، جیسے: 1600",
+        "notif_time_set": "✅ صبح کا خلاصہ روزانہ *{hour}:00* بجے بھیجا جائے گا۔",
+        "notif_time_invalid": "❌ 0 سے 23 کے درمیان نمبر درج کریں (مثال: 8 صبح 8 بجے کے لیے)",
     },
     "Deutsch 🇩🇪": {
         "no_news": "⚠️ Derzeit keine neuen Nachrichten.",
@@ -3655,6 +4416,111 @@ MSGS = {
         "label_mena": "📰 Nahost-Politiknachrichten",
         "label_trending": "🔥",
         "label_sports": "⚽",
+        "no_city": "⚠️ Ihre Stadt ist noch nicht festgelegt.",
+        "city_not_found": "⚠️ Keine Wetterdaten für: {city}",
+        "weather_header": "{emoji} *Wetter in {city}*\n━━━━━━━━━━━━━━━\n\n🌡 *Temp:* {temp}°C\n🤔 *Gefühlt:* {feels}°C\n🔼 Max: {temp_max}°C  |  🔽 Min: {temp_min}°C\n\n☁️ *Zustand:* {desc}\n🌫 *Wolken:* {clouds}%\n👁 *Sichtweite:* {visibility_km} km\n\n💧 *Luftfeuchte:* {humidity}%\n🌀 *Luftdruck:* {pressure} hPa\n☀️ *UV-Index:* {uvi}\n\n💨 *Wind:* {wind_speed} m/s | {wind_dir}\n💨 *Böen:* {wind_gust} m/s\n\n🌅 *Sonnenaufgang:* {sunrise}  |  🌇 *Sonnenuntergang:* {sunset}\n━━━━━━━━━━━━━━━",
+        "forecast_3day_header": "📅 *3-Tage-Wettervorhersage — {city}*\n━━━━━━━━━━━━━━━\n\n",
+        "forecast_7day_header": "🌤 *7-Tage-Wettervorhersage — {city}*\n\n",
+        "hourly_header": "🕐 *Wetter alle 3 Stunden — {city}*\n━━━━━━━━━━━━━━━\n\n",
+        "wind_unit": "m/s",
+        "uv_low": "Niedrig",
+        "uv_moderate": "Mäßig",
+        "uv_high": "Hoch",
+        "uv_very_high": "Sehr hoch",
+        "uv_extreme": "Extrem",
+        "uv_na": "N/V",
+        "wind_N": "⬆️ N",
+        "wind_NE": "↗️ NO",
+        "wind_E": "➡️ O",
+        "wind_SE": "↘️ SO",
+        "wind_S": "⬇️ S",
+        "wind_SW": "↙️ SW",
+        "wind_W": "⬅️ W",
+        "wind_NW": "↖️ NW",
+        "crypto_header": "💎 *Kryptopreise*\n━━━━━━━━━━━━━━━\n\n",
+        "crypto_footer": "━━━━━━━━━━━━━━━\n🔄 Daten von CoinGecko",
+        "crypto_error": "⚠️ Kryptopreise können derzeit nicht abgerufen werden.",
+        "prayer_header": "🕌 *Gebetszeiten in {city}*\n📅 {date}\n🗓 {hijri}\n━━━━━━━━━━━━━━━\n\n🌅 Fajr:    `{fajr}`\n☀️ Aufgang: `{sunrise}`\n🌞 Dhuhr:   `{dhuhr}`\n🌇 Asr:     `{asr}`\n🌆 Maghrib: `{maghrib}`\n🌙 Isha:    `{isha}`\n━━━━━━━━━━━━━━━\n🔄 Daten von Aladhan API",
+        "prayer_no_city": "⚠️ Ihre Stadt ist nicht festgelegt. Gehen Sie zu Einstellungen.",
+        "prayer_city_error": "⚠️ Gebetszeiten für {city} können nicht abgerufen werden.",
+        "prayer_error": "⚠️ Gebetszeiten derzeit nicht abrufbar, versuchen Sie es später.",
+        "referral_header": "🎁 *Empfehlungssystem*\n━━━━━━━━━━━━━━━\n\n🔗 *Ihr Empfehlungslink:*\n`{link}`\n\n👥 *Insgesamt eingeladen:* `{count}` Personen\n\n━━━━━━━━━━━━━━━\n📤 Mit Freunden und Familie teilen!\nJeder, der über Ihren Link beitritt, wird gezählt. 🎯",
+        "referral_share_btn": "📤 Link teilen",
+        "share_bot_header": "📢 *Bot teilen und uns beim Wachsen helfen!*\n\n🔗 *Bot-Link:*\n@{username}\n\n📌 Oder per Link:\n`{link}`\n\n━━━━━━━━━━━━━━━\n💡 Mit Freunden teilen für:\n📰 Aktuelle Nachrichten\n🌤 Live-Wetter\n💱 Wechselkurse\n🕌 Gebetszeiten\n💎 Kryptokurse",
+        "share_bot_btn": "📤 Bot teilen",
+        "open_bot_btn": "🔗 Bot öffnen",
+        "public_stats_header": "📊 *Bot-Statistiken*\n━━━━━━━━━━━━━━━\n\n👥 Gesamte Nutzer: *{total}*\n✅ Aktive Nutzer: *{active}*\n🆕 Heute beigetreten: *{today}*\n⭐ Premium-Abonnenten: *{premium}*\n\n",
+        "public_stats_langs": "🌍 *Am häufigsten verwendete Sprachen:*\n",
+        "public_stats_footer": "\n━━━━━━━━━━━━━━━\n🤖 @{username}",
+        "my_stats_header": "📈 *Ihre persönlichen Statistiken*\n━━━━━━━━━━━━━━━\n\n👤 Name: *{name}*\n🌍 Sprache: *{lang}*\n🏙 Stadt: *{city}*\n📅 Beitrittsdatum: *{join}*\n\n📰 Erhaltene Nachrichten: *{news}*\n🎁 Gesendete Empfehlungen: *{refs}*\n🔑 Schlüsselwörter: *{kws}*\n⭐ Premium: *{prem}*\n🔔 Benachrichtigungen: *{notif}*\n",
+        "my_stats_prem_yes": "⭐ Ja",
+        "my_stats_prem_no": "❌ Nein",
+        "my_stats_notif_on": "🔔 Aktiv",
+        "my_stats_notif_off": "🔕 Pausiert",
+        "my_stats_user": "Benutzer",
+        "daily_summary_header": "📋 *Heutige Nachrichtenübersicht — {date}*\n━━━━━━━━━━━━━━━\n\n",
+        "daily_summary_no_source": "⚠️ Keine Nachrichtenquellen für diese Sprache.",
+        "daily_summary_no_news": "⚠️ Keine Nachrichten verfügbar, versuchen Sie es später.",
+        "top_referrers_header": "🏆 *Top-Empfehlende*\n━━━━━━━━━━━━━━━\n\n",
+        "top_referrers_empty": "📊 Noch keine Empfehlungen — seien Sie der Erste! 🎯",
+        "top_referrers_invite": "Einladung(en)",
+        "dollar_header": "💵 *USD vs Irakischer Dinar*\n\n🏪 Parallelmarkt:\n{rate}\n\n⏰ Zuletzt aktualisiert: `{time}`\n📡 Quelle: {source}\n\n━━━━━━━━━━━━━━\n🤖 @{username}",
+        "dollar_sell": "Verkauf",
+        "dollar_buy": "Kauf",
+        "dollar_official": "Kurs: `{price}` IQD\n_(Offizieller Kurs — kann vom Markt abweichen)_",
+        "dollar_error": "⚠️ Dollarkurs derzeit nicht abrufbar. Versuchen Sie es später.",
+        "weekly_summary_header": "📰 *Wochenrückblick — Top {count} Nachrichten*\n━━━━━━━━━━━━━━━\n\n",
+        "weekly_summary_text_header": "📆 *Wöchentliche Nachrichtenübersicht*\n📅 {start} — {end}\n━━━━━━━━━━━━━━\n",
+        "weekly_summary_text_wait": "⏳ Die wichtigsten Nachrichten der Woche werden gesammelt...",
+        "weekly_summary_text_no_source": "⚠️ Keine Nachrichtenquellen für diese Sprache.",
+        "weekly_summary_text_no_news": "⚠️ Nicht genug Nachrichten diese Woche.",
+        "currency_table_header": "📊 *Vollständige Wechselkurstabelle vs. USD 🇺🇸*\n━━━━━━━━━━━━━━━\n\n",
+        "premium_menu_header": "⭐ *Premium-Menü — Wählen:*",
+        "premium_btn_7day": "🌤 7-Tage-Vorhersage",
+        "premium_btn_hourly": "🕐 Wetter alle 3 Std.",
+        "premium_btn_addcity": "🏙 Stadt hinzufügen",
+        "premium_btn_mycities": "📋 Meine gespeicherten Städte",
+        "premium_btn_interests": "📌 Meine Interessen",
+        "premium_btn_currency_alert": "💱 Währungsalarm",
+        "premium_btn_currency_table": "📊 Währungstabelle",
+        "premium_btn_notif_time": "🕐 Benachrichtigungszeit",
+        "premium_btn_weekly": "📰 Wochenübersicht",
+        "premium_btn_keywords": "🔑 Schlüsselwörter",
+        "premium_subscribe_btn": "⭐ Premium-Abonnement anfragen",
+        "broadcast_weather_msg": "🌤 Wetter in {city}: {temp}°C\n☁️ {desc}",
+        "track_header": "📌 *Währungen, Aktien und Rohstoffe verfolgen*\n━━━━━━━━━━━━━━━\n\n",
+        "track_current_list": "📋 *Ihre aktuelle Liste:*\n",
+        "track_count": "\n({count}/20 Symbole)\n\n",
+        "track_add_hint": "➕ *Symbol hinzufügen:* Namen direkt senden\n\n",
+        "track_crypto_label": "💎 *Kryptowährungen:*\n",
+        "track_fiat_label": "💱 *Fiat-Währungen:*\n",
+        "track_stocks_label": "📈 *Aktien:*\n",
+        "track_commodities_label": "🏅 *Rohstoffe und Indizes:*\n",
+        "track_alert_hint": "🔔 *Bei ±1% Änderung erhalten Sie sofortige Benachrichtigungen und stündliche Berichte.*\n\n",
+        "track_remove_hint": "❌ Symbol entfernen: `/removetrack AAPL`\n",
+        "track_list_hint": "📋 Liste anzeigen: `/mytrack`",
+        "track_empty": "📌 Verfolgungsliste ist leer.\nDrücken Sie *Asset verfolgen*, um Symbole hinzuzufügen.",
+        "track_list_header": "📌 *Ihre verfolgten Assets:*\n━━━━━━━━━━━━━━\n",
+        "track_alert_title": "🚨 *Preisalarme*\n━━━━━━━━━━━━━━━\n\n",
+        "track_rose": "📈 gestiegen",
+        "track_fell": "📉 gefallen",
+        "track_report_title": "📊 *Stündlicher Bericht — Ihre Assets*\n",
+        "track_unavailable": "nicht verfügbar",
+        "track_remove_usage": "⚠️ Senden Sie das Symbol nach dem Befehl. Beispiel: `/removetrack AAPL`",
+        "track_not_found": "⚠️ *{symbol}* ist nicht in Ihrer Liste.",
+        "track_removed": "✅ *{symbol}* aus der Verfolgungsliste entfernt.",
+        "interest_save_btn": "💾 Speichern",
+        "interest_choose_msg": "📌 *Wählen Sie Ihre Interessen (mehrere möglich):*",
+        "currency_rate_header": "💱 *Wechselkurse vs. USD 🇺🇸*\n\n",
+        "currency_local_label": "🏠 {name}",
+        "currency_convert_header": "🔄 *Umrechnung von {amount} {currency}*\n━━━━━━━━━━━━━━━\n\n",
+        "currency_unsupported": "⚠️ Nicht unterstützte Währung: {currency}",
+        "currency_fetch_error": "⚠️ Wechselkurse können nicht abgerufen werden.",
+        "city_add_success": "✅ Stadt hinzugefügt: *{city}*",
+        "currency_alert_set": "✅ Sie werden benachrichtigt, wenn der Dollar `{rate}` Ihrer Lokalwährung erreicht.",
+        "currency_alert_invalid": "❌ Senden Sie eine Zahl, z. B.: 1600",
+        "notif_time_set": "✅ Die Morgenzusammenfassung wird täglich um *{hour}:00* Uhr gesendet.",
+        "notif_time_invalid": "❌ Geben Sie eine Zahl zwischen 0 und 23 ein (Beispiel: 8 für 8 Uhr morgens)",
     },
     "Українська 🇺🇦": {
         "no_news": "⚠️ Зараз немає нових новин.",
@@ -3677,6 +4543,111 @@ MSGS = {
         "label_mena": "📰 Близький Схід",
         "label_trending": "🔥",
         "label_sports": "⚽",
+        "no_city": "⚠️ Ваше місто ще не вказано.",
+        "city_not_found": "⚠️ Дані про погоду не знайдено для: {city}",
+        "weather_header": "{emoji} *Погода в {city}*\n━━━━━━━━━━━━━━━\n\n🌡 *Темп:* {temp}°C\n🤔 *Відчувається:* {feels}°C\n🔼 Макс: {temp_max}°C  |  🔽 Мін: {temp_min}°C\n\n☁️ *Стан:* {desc}\n🌫 *Хмарність:* {clouds}%\n👁 *Видимість:* {visibility_km} км\n\n💧 *Вологість:* {humidity}%\n🌀 *Тиск:* {pressure} hPa\n☀️ *УФ-індекс:* {uvi}\n\n💨 *Вітер:* {wind_speed} м/с | {wind_dir}\n💨 *Пориви:* {wind_gust} м/с\n\n🌅 *Схід:* {sunrise}  |  🌇 *Захід:* {sunset}\n━━━━━━━━━━━━━━━",
+        "forecast_3day_header": "📅 *Прогноз на 3 дні — {city}*\n━━━━━━━━━━━━━━━\n\n",
+        "forecast_7day_header": "🌤 *Прогноз на 7 днів — {city}*\n\n",
+        "hourly_header": "🕐 *Погода кожні 3 години — {city}*\n━━━━━━━━━━━━━━━\n\n",
+        "wind_unit": "м/с",
+        "uv_low": "Низький",
+        "uv_moderate": "Помірний",
+        "uv_high": "Високий",
+        "uv_very_high": "Дуже високий",
+        "uv_extreme": "Екстремальний",
+        "uv_na": "Н/Д",
+        "wind_N": "⬆️ П",
+        "wind_NE": "↗️ ПС",
+        "wind_E": "➡️ С",
+        "wind_SE": "↘️ ПС",
+        "wind_S": "⬇️ Пд",
+        "wind_SW": "↙️ ПдЗ",
+        "wind_W": "⬅️ З",
+        "wind_NW": "↖️ ПнЗ",
+        "crypto_header": "💎 *Курси криптовалют*\n━━━━━━━━━━━━━━━\n\n",
+        "crypto_footer": "━━━━━━━━━━━━━━━\n🔄 Дані від CoinGecko",
+        "crypto_error": "⚠️ Не вдається отримати курси криптовалют, спробуйте пізніше.",
+        "prayer_header": "🕌 *Час молитов у {city}*\n📅 {date}\n🗓 {hijri}\n━━━━━━━━━━━━━━━\n\n🌅 Фаджр:   `{fajr}`\n☀️ Схід:    `{sunrise}`\n🌞 Зухр:    `{dhuhr}`\n🌇 Аср:     `{asr}`\n🌆 Магріб:  `{maghrib}`\n🌙 Іша:     `{isha}`\n━━━━━━━━━━━━━━━\n🔄 Дані від Aladhan API",
+        "prayer_no_city": "⚠️ Ваше місто не вказано. Перейдіть до налаштувань.",
+        "prayer_city_error": "⚠️ Не вдається отримати час молитов для: {city}",
+        "prayer_error": "⚠️ Час молитов зараз недоступний, спробуйте пізніше.",
+        "referral_header": "🎁 *Реферальна система*\n━━━━━━━━━━━━━━━\n\n🔗 *Ваше реферальне посилання:*\n`{link}`\n\n👥 *Усього запрошено:* `{count}` осіб\n\n━━━━━━━━━━━━━━━\n📤 Поділіться з друзями та родиною!\nКожен, хто приєднається за вашим посиланням, буде зарахований. 🎯",
+        "referral_share_btn": "📤 Поділитися посиланням",
+        "share_bot_header": "📢 *Поділіться ботом і допоможіть нам зростати!*\n\n🔗 *Посилання на бот:*\n@{username}\n\n📌 Або за посиланням:\n`{link}`\n\n━━━━━━━━━━━━━━━\n💡 Поділіться з друзями для отримання:\n📰 Останні новини\n🌤 Погода онлайн\n💱 Курси валют\n🕌 Час молитов\n💎 Курси криптовалют",
+        "share_bot_btn": "📤 Поділитися ботом",
+        "open_bot_btn": "🔗 Відкрити бот",
+        "public_stats_header": "📊 *Статистика бота*\n━━━━━━━━━━━━━━━\n\n👥 Всього користувачів: *{total}*\n✅ Активних: *{active}*\n🆕 Приєдналися сьогодні: *{today}*\n⭐ Преміум-передплатників: *{premium}*\n\n",
+        "public_stats_langs": "🌍 *Найбільш використовувані мови:*\n",
+        "public_stats_footer": "\n━━━━━━━━━━━━━━━\n🤖 @{username}",
+        "my_stats_header": "📈 *Ваша особиста статистика*\n━━━━━━━━━━━━━━━\n\n👤 Ім'я: *{name}*\n🌍 Мова: *{lang}*\n🏙 Місто: *{city}*\n📅 Дата реєстрації: *{join}*\n\n📰 Отримано новин: *{news}*\n🎁 Надіслано запрошень: *{refs}*\n🔑 Ключових слів: *{kws}*\n⭐ Преміум: *{prem}*\n🔔 Сповіщення: *{notif}*\n",
+        "my_stats_prem_yes": "⭐ Так",
+        "my_stats_prem_no": "❌ Ні",
+        "my_stats_notif_on": "🔔 Активні",
+        "my_stats_notif_off": "🔕 Вимкнені",
+        "my_stats_user": "Користувач",
+        "daily_summary_header": "📋 *Зведення новин за {date}*\n━━━━━━━━━━━━━━━\n\n",
+        "daily_summary_no_source": "⚠️ Немає джерел новин для цієї мови.",
+        "daily_summary_no_news": "⚠️ Немає доступних новин, спробуйте пізніше.",
+        "top_referrers_header": "🏆 *Кращі реферери*\n━━━━━━━━━━━━━━━\n\n",
+        "top_referrers_empty": "📊 Поки немає рефералів — будьте першим! 🎯",
+        "top_referrers_invite": "запрошення",
+        "dollar_header": "💵 *Долар США до іракського динара*\n\n🏪 Паралельний ринок:\n{rate}\n\n⏰ Останнє оновлення: `{time}`\n📡 Джерело: {source}\n\n━━━━━━━━━━━━━━\n🤖 @{username}",
+        "dollar_sell": "Продаж",
+        "dollar_buy": "Купівля",
+        "dollar_official": "Курс: `{price}` IQD\n_(Офіційний курс — може відрізнятися від ринкового)_",
+        "dollar_error": "⚠️ Не вдається отримати курс долара. Спробуйте пізніше.",
+        "weekly_summary_header": "📰 *Тижневий огляд — Топ {count} новин*\n━━━━━━━━━━━━━━━\n\n",
+        "weekly_summary_text_header": "📆 *Тижневе зведення новин*\n📅 {start} — {end}\n━━━━━━━━━━━━━━\n",
+        "weekly_summary_text_wait": "⏳ Збираємо головні новини тижня...",
+        "weekly_summary_text_no_source": "⚠️ Немає доступних джерел для цієї мови.",
+        "weekly_summary_text_no_news": "⚠️ Недостатньо новин цього тижня.",
+        "currency_table_header": "📊 *Повна таблиця курсів валют до USD 🇺🇸*\n━━━━━━━━━━━━━━━\n\n",
+        "premium_menu_header": "⭐ *Преміум-меню — Оберіть:*",
+        "premium_btn_7day": "🌤 Прогноз на 7 днів",
+        "premium_btn_hourly": "🕐 Погода кожні 3 год.",
+        "premium_btn_addcity": "🏙 Додати місто",
+        "premium_btn_mycities": "📋 Мої збережені міста",
+        "premium_btn_interests": "📌 Мої інтереси",
+        "premium_btn_currency_alert": "💱 Сповіщення про валюту",
+        "premium_btn_currency_table": "📊 Таблиця валют",
+        "premium_btn_notif_time": "🕐 Час сповіщень",
+        "premium_btn_weekly": "📰 Тижневий огляд",
+        "premium_btn_keywords": "🔑 Ключові слова",
+        "premium_subscribe_btn": "⭐ Запросити преміум-передплату",
+        "broadcast_weather_msg": "🌤 Погода в {city}: {temp}°C\n☁️ {desc}",
+        "track_header": "📌 *Відстеження валют, акцій та товарів*\n━━━━━━━━━━━━━━━\n\n",
+        "track_current_list": "📋 *Ваш поточний список:*\n",
+        "track_count": "\n({count}/20 символів)\n\n",
+        "track_add_hint": "➕ *Додати символ:* надішліть його назву\n\n",
+        "track_crypto_label": "💎 *Криптовалюти:*\n",
+        "track_fiat_label": "💱 *Фіатні валюти:*\n",
+        "track_stocks_label": "📈 *Акції:*\n",
+        "track_commodities_label": "🏅 *Сировина та індекси:*\n",
+        "track_alert_hint": "🔔 *При зміні ±1% ви отримаєте миттєві сповіщення та щогодинний звіт.*\n\n",
+        "track_remove_hint": "❌ Видалити символ: `/removetrack AAPL`\n",
+        "track_list_hint": "📋 Переглянути список: `/mytrack`",
+        "track_empty": "📌 Список відстеження порожній.\nНатисніть *Відстежити актив*, щоб додати символи.",
+        "track_list_header": "📌 *Ваші відстежувані активи:*\n━━━━━━━━━━━━━━\n",
+        "track_alert_title": "🚨 *Цінові сповіщення*\n━━━━━━━━━━━━━━━\n\n",
+        "track_rose": "📈 зріс",
+        "track_fell": "📉 впав",
+        "track_report_title": "📊 *Щогодинний звіт — Ваші активи*\n",
+        "track_unavailable": "недоступно",
+        "track_remove_usage": "⚠️ Вкажіть символ після команди. Приклад: `/removetrack AAPL`",
+        "track_not_found": "⚠️ *{symbol}* не знайдено у вашому списку.",
+        "track_removed": "✅ *{symbol}* видалено зі списку відстеження.",
+        "interest_save_btn": "💾 Зберегти",
+        "interest_choose_msg": "📌 *Оберіть свої інтереси (можна кілька):*",
+        "currency_rate_header": "💱 *Курси валют до USD 🇺🇸*\n\n",
+        "currency_local_label": "🏠 {name}",
+        "currency_convert_header": "🔄 *Конвертація {amount} {currency}*\n━━━━━━━━━━━━━━━\n\n",
+        "currency_unsupported": "⚠️ Непідтримувана валюта: {currency}",
+        "currency_fetch_error": "⚠️ Не вдається отримати курси валют.",
+        "city_add_success": "✅ Місто додано: *{city}*",
+        "currency_alert_set": "✅ Ви отримаєте сповіщення, коли долар досягне `{rate}` вашої місцевої валюти.",
+        "currency_alert_invalid": "❌ Введіть число, наприклад: 1600",
+        "notif_time_set": "✅ Ранковий підсумок надсилатиметься щодня о *{hour}:00*.",
+        "notif_time_invalid": "❌ Введіть число від 0 до 23 (наприклад: 8 для 8 ранку)",
     },
     "Italiano 🇮🇹": {
         "no_news": "⚠️ Nessuna notizia nuova al momento.",
@@ -3699,6 +4670,111 @@ MSGS = {
         "label_mena": "📰 Notizie Politiche del Medio Oriente",
         "label_trending": "🔥",
         "label_sports": "⚽",
+        "no_city": "⚠️ La tua città non è ancora impostata.",
+        "city_not_found": "⚠️ Dati meteo non trovati per: {city}",
+        "weather_header": "{emoji} *Meteo a {city}*\n━━━━━━━━━━━━━━━\n\n🌡 *Temp:* {temp}°C\n🤔 *Percepita:* {feels}°C\n🔼 Max: {temp_max}°C  |  🔽 Min: {temp_min}°C\n\n☁️ *Condizione:* {desc}\n🌫 *Nuvole:* {clouds}%\n👁 *Visibilità:* {visibility_km} km\n\n💧 *Umidità:* {humidity}%\n🌀 *Pressione:* {pressure} hPa\n☀️ *Indice UV:* {uvi}\n\n💨 *Vento:* {wind_speed} m/s | {wind_dir}\n💨 *Raffiche:* {wind_gust} m/s\n\n🌅 *Alba:* {sunrise}  |  🌇 *Tramonto:* {sunset}\n━━━━━━━━━━━━━━━",
+        "forecast_3day_header": "📅 *Previsioni 3 giorni — {city}*\n━━━━━━━━━━━━━━━\n\n",
+        "forecast_7day_header": "🌤 *Previsioni 7 giorni — {city}*\n\n",
+        "hourly_header": "🕐 *Meteo ogni 3 ore — {city}*\n━━━━━━━━━━━━━━━\n\n",
+        "wind_unit": "m/s",
+        "uv_low": "Basso",
+        "uv_moderate": "Moderato",
+        "uv_high": "Alto",
+        "uv_very_high": "Molto alto",
+        "uv_extreme": "Estremo",
+        "uv_na": "N/D",
+        "wind_N": "⬆️ N",
+        "wind_NE": "↗️ NE",
+        "wind_E": "➡️ E",
+        "wind_SE": "↘️ SE",
+        "wind_S": "⬇️ S",
+        "wind_SW": "↙️ SO",
+        "wind_W": "⬅️ O",
+        "wind_NW": "↖️ NO",
+        "crypto_header": "💎 *Prezzi Crypto*\n━━━━━━━━━━━━━━━\n\n",
+        "crypto_footer": "━━━━━━━━━━━━━━━\n🔄 Dati da CoinGecko",
+        "crypto_error": "⚠️ Impossibile recuperare i prezzi crypto, riprova più tardi.",
+        "prayer_header": "🕌 *Orari di Preghiera a {city}*\n📅 {date}\n🗓 {hijri}\n━━━━━━━━━━━━━━━\n\n🌅 Fajr:    `{fajr}`\n☀️ Alba:    `{sunrise}`\n🌞 Dhuhr:   `{dhuhr}`\n🌇 Asr:     `{asr}`\n🌆 Maghrib: `{maghrib}`\n🌙 Isha:    `{isha}`\n━━━━━━━━━━━━━━━\n🔄 Dati da Aladhan API",
+        "prayer_no_city": "⚠️ La tua città non è impostata. Vai alle impostazioni.",
+        "prayer_city_error": "⚠️ Impossibile recuperare gli orari di preghiera per: {city}",
+        "prayer_error": "⚠️ Impossibile recuperare gli orari di preghiera, riprova più tardi.",
+        "referral_header": "🎁 *Sistema di Referral*\n━━━━━━━━━━━━━━━\n\n🔗 *Il tuo link di referral:*\n`{link}`\n\n👥 *Totale invitati:* `{count}` persone\n\n━━━━━━━━━━━━━━━\n📤 Condividi con amici e familiari!\nOgni persona che si unisce tramite il tuo link conta. 🎯",
+        "referral_share_btn": "📤 Condividi Link",
+        "share_bot_header": "📢 *Condividi il bot e aiutaci a crescere!*\n\n🔗 *Link del bot:*\n@{username}\n\n📌 O tramite link:\n`{link}`\n\n━━━━━━━━━━━━━━━\n💡 Condividi con gli amici per ottenere:\n📰 Ultime notizie\n🌤 Meteo in diretta\n💱 Tassi di cambio\n🕌 Orari di preghiera\n💎 Prezzi crypto",
+        "share_bot_btn": "📤 Condividi Bot",
+        "open_bot_btn": "🔗 Apri Bot",
+        "public_stats_header": "📊 *Statistiche del Bot*\n━━━━━━━━━━━━━━━\n\n👥 Utenti totali: *{total}*\n✅ Utenti attivi: *{active}*\n🆕 Iscritti oggi: *{today}*\n⭐ Abbonati premium: *{premium}*\n\n",
+        "public_stats_langs": "🌍 *Lingue più usate:*\n",
+        "public_stats_footer": "\n━━━━━━━━━━━━━━━\n🤖 @{username}",
+        "my_stats_header": "📈 *Le Tue Statistiche Personali*\n━━━━━━━━━━━━━━━\n\n👤 Nome: *{name}*\n🌍 Lingua: *{lang}*\n🏙 Città: *{city}*\n📅 Data iscrizione: *{join}*\n\n📰 Notizie ricevute: *{news}*\n🎁 Referral inviati: *{refs}*\n🔑 Parole chiave: *{kws}*\n⭐ Premium: *{prem}*\n🔔 Notifiche: *{notif}*\n",
+        "my_stats_prem_yes": "⭐ Sì",
+        "my_stats_prem_no": "❌ No",
+        "my_stats_notif_on": "🔔 Attive",
+        "my_stats_notif_off": "🔕 In pausa",
+        "my_stats_user": "Utente",
+        "daily_summary_header": "📋 *Sommario Notizie di Oggi — {date}*\n━━━━━━━━━━━━━━━\n\n",
+        "daily_summary_no_source": "⚠️ Nessuna fonte di notizie per questa lingua.",
+        "daily_summary_no_news": "⚠️ Nessuna notizia disponibile, riprova più tardi.",
+        "top_referrers_header": "🏆 *Migliori Referrer*\n━━━━━━━━━━━━━━━\n\n",
+        "top_referrers_empty": "📊 Nessun referral ancora — sii il primo! 🎯",
+        "top_referrers_invite": "invito/i",
+        "dollar_header": "💵 *USD vs Dinaro Iracheno*\n\n🏪 Mercato parallelo:\n{rate}\n\n⏰ Ultimo aggiornamento: `{time}`\n📡 Fonte: {source}\n\n━━━━━━━━━━━━━━\n🤖 @{username}",
+        "dollar_sell": "Vendita",
+        "dollar_buy": "Acquisto",
+        "dollar_official": "Tasso: `{price}` IQD\n_(Tasso ufficiale — può differire dal mercato)_",
+        "dollar_error": "⚠️ Impossibile recuperare il tasso del dollaro. Riprova più tardi.",
+        "weekly_summary_header": "📰 *Riepilogo Settimanale — Top {count} notizie*\n━━━━━━━━━━━━━━━\n\n",
+        "weekly_summary_text_header": "📆 *Riepilogo Notizie della Settimana*\n📅 {start} — {end}\n━━━━━━━━━━━━━━\n",
+        "weekly_summary_text_wait": "⏳ Raccogliendo le principali notizie della settimana...",
+        "weekly_summary_text_no_source": "⚠️ Nessuna fonte di notizie per questa lingua.",
+        "weekly_summary_text_no_news": "⚠️ Notizie insufficienti questa settimana.",
+        "currency_table_header": "📊 *Tabella Completa Tassi di Cambio vs USD 🇺🇸*\n━━━━━━━━━━━━━━━\n\n",
+        "premium_menu_header": "⭐ *Menu Premium — Scegli:*",
+        "premium_btn_7day": "🌤 Previsioni 7 giorni",
+        "premium_btn_hourly": "🕐 Meteo ogni 3 ore",
+        "premium_btn_addcity": "🏙 Aggiungi Città",
+        "premium_btn_mycities": "📋 Le mie città salvate",
+        "premium_btn_interests": "📌 I miei interessi",
+        "premium_btn_currency_alert": "💱 Avviso valuta",
+        "premium_btn_currency_table": "📊 Tabella valute",
+        "premium_btn_notif_time": "🕐 Orario notifiche",
+        "premium_btn_weekly": "📰 Riepilogo settimanale",
+        "premium_btn_keywords": "🔑 Parole chiave",
+        "premium_subscribe_btn": "⭐ Richiedi Abbonamento Premium",
+        "broadcast_weather_msg": "🌤 Meteo a {city}: {temp}°C\n☁️ {desc}",
+        "track_header": "📌 *Monitoraggio Valute, Azioni e Materie Prime*\n━━━━━━━━━━━━━━━\n\n",
+        "track_current_list": "📋 *La tua lista attuale:*\n",
+        "track_count": "\n({count}/20 simboli)\n\n",
+        "track_add_hint": "➕ *Aggiungi simbolo:* invia il suo nome direttamente\n\n",
+        "track_crypto_label": "💎 *Criptovalute:*\n",
+        "track_fiat_label": "💱 *Valute Fiat:*\n",
+        "track_stocks_label": "📈 *Azioni:*\n",
+        "track_commodities_label": "🏅 *Materie Prime e Indici:*\n",
+        "track_alert_hint": "🔔 *Riceverai avvisi immediati a variazioni di ±1% e report orari.*\n\n",
+        "track_remove_hint": "❌ Rimuovi simbolo: `/removetrack AAPL`\n",
+        "track_list_hint": "📋 Visualizza la lista: `/mytrack`",
+        "track_empty": "📌 Lista monitoraggio vuota.\nPremi *Monitora asset* per aggiungere simboli.",
+        "track_list_header": "📌 *I tuoi asset monitorati:*\n━━━━━━━━━━━━━━\n",
+        "track_alert_title": "🚨 *Avvisi di prezzo*\n━━━━━━━━━━━━━━━\n\n",
+        "track_rose": "📈 salito",
+        "track_fell": "📉 sceso",
+        "track_report_title": "📊 *Report orario — I tuoi asset*\n",
+        "track_unavailable": "non disponibile",
+        "track_remove_usage": "⚠️ Invia il simbolo dopo il comando. Esempio: `/removetrack AAPL`",
+        "track_not_found": "⚠️ *{symbol}* non è nella tua lista.",
+        "track_removed": "✅ *{symbol}* rimosso dalla lista di monitoraggio.",
+        "interest_save_btn": "💾 Salva",
+        "interest_choose_msg": "📌 *Scegli i tuoi interessi (puoi sceglierne più di uno):*",
+        "currency_rate_header": "💱 *Tassi di cambio vs USD 🇺🇸*\n\n",
+        "currency_local_label": "🏠 {name}",
+        "currency_convert_header": "🔄 *Conversione di {amount} {currency}*\n━━━━━━━━━━━━━━━\n\n",
+        "currency_unsupported": "⚠️ Valuta non supportata: {currency}",
+        "currency_fetch_error": "⚠️ Impossibile recuperare i tassi di cambio.",
+        "city_add_success": "✅ Città aggiunta: *{city}*",
+        "currency_alert_set": "✅ Sarai avvisato quando il dollaro raggiungerà `{rate}` della tua valuta locale.",
+        "currency_alert_invalid": "❌ Invia un numero, ad esempio: 1600",
+        "notif_time_set": "✅ Il riepilogo mattutino sarà inviato alle *{hour}:00* ogni giorno.",
+        "notif_time_invalid": "❌ Inserisci un numero tra 0 e 23 (esempio: 8 per le 8 di mattina)",
     },
     "Español 🇲🇽": {
         "no_news": "⚠️ No hay noticias nuevas ahora.",
@@ -3721,6 +4797,111 @@ MSGS = {
         "label_mena": "📰 Noticias Políticas del Medio Oriente",
         "label_trending": "🔥",
         "label_sports": "⚽",
+        "no_city": "⚠️ Tu ciudad aún no está configurada.",
+        "city_not_found": "⚠️ No se encontraron datos del tiempo para: {city}",
+        "weather_header": "{emoji} *Tiempo en {city}*\n━━━━━━━━━━━━━━━\n\n🌡 *Temp:* {temp}°C\n🤔 *Sensación:* {feels}°C\n🔼 Máx: {temp_max}°C  |  🔽 Mín: {temp_min}°C\n\n☁️ *Condición:* {desc}\n🌫 *Nubes:* {clouds}%\n👁 *Visibilidad:* {visibility_km} km\n\n💧 *Humedad:* {humidity}%\n🌀 *Presión:* {pressure} hPa\n☀️ *Índice UV:* {uvi}\n\n💨 *Viento:* {wind_speed} m/s | {wind_dir}\n💨 *Ráfagas:* {wind_gust} m/s\n\n🌅 *Amanecer:* {sunrise}  |  🌇 *Atardecer:* {sunset}\n━━━━━━━━━━━━━━━",
+        "forecast_3day_header": "📅 *Pronóstico de 3 días — {city}*\n━━━━━━━━━━━━━━━\n\n",
+        "forecast_7day_header": "🌤 *Pronóstico de 7 días — {city}*\n\n",
+        "hourly_header": "🕐 *Tiempo cada 3 horas — {city}*\n━━━━━━━━━━━━━━━\n\n",
+        "wind_unit": "m/s",
+        "uv_low": "Bajo",
+        "uv_moderate": "Moderado",
+        "uv_high": "Alto",
+        "uv_very_high": "Muy alto",
+        "uv_extreme": "Extremo",
+        "uv_na": "N/D",
+        "wind_N": "⬆️ N",
+        "wind_NE": "↗️ NE",
+        "wind_E": "➡️ E",
+        "wind_SE": "↘️ SE",
+        "wind_S": "⬇️ S",
+        "wind_SW": "↙️ SO",
+        "wind_W": "⬅️ O",
+        "wind_NW": "↖️ NO",
+        "crypto_header": "💎 *Precios de Criptomonedas*\n━━━━━━━━━━━━━━━\n\n",
+        "crypto_footer": "━━━━━━━━━━━━━━━\n🔄 Datos de CoinGecko",
+        "crypto_error": "⚠️ No se pueden obtener precios crypto ahora, inténtalo más tarde.",
+        "prayer_header": "🕌 *Horarios de Oración en {city}*\n📅 {date}\n🗓 {hijri}\n━━━━━━━━━━━━━━━\n\n🌅 Fajr:    `{fajr}`\n☀️ Amanecer:`{sunrise}`\n🌞 Dhuhr:   `{dhuhr}`\n🌇 Asr:     `{asr}`\n🌆 Maghrib: `{maghrib}`\n🌙 Isha:    `{isha}`\n━━━━━━━━━━━━━━━\n🔄 Datos de Aladhan API",
+        "prayer_no_city": "⚠️ Tu ciudad no está configurada. Ve a Ajustes.",
+        "prayer_city_error": "⚠️ No se pueden obtener horarios de oración para: {city}",
+        "prayer_error": "⚠️ No se pueden obtener horarios de oración ahora, inténtalo más tarde.",
+        "referral_header": "🎁 *Sistema de Referidos*\n━━━━━━━━━━━━━━━\n\n🔗 *Tu enlace de referido:*\n`{link}`\n\n👥 *Total invitados:* `{count}` personas\n\n━━━━━━━━━━━━━━━\n📤 ¡Comparte con amigos y familia!\nCada persona que se una a través de tu enlace cuenta. 🎯",
+        "referral_share_btn": "📤 Compartir Enlace",
+        "share_bot_header": "📢 *¡Comparte el bot y ayúdanos a crecer!*\n\n🔗 *Enlace del bot:*\n@{username}\n\n📌 O mediante enlace:\n`{link}`\n\n━━━━━━━━━━━━━━━\n💡 Comparte con amigos para obtener:\n📰 Últimas noticias\n🌤 Tiempo en directo\n💱 Tasas de cambio\n🕌 Horarios de oración\n💎 Precios crypto",
+        "share_bot_btn": "📤 Compartir Bot",
+        "open_bot_btn": "🔗 Abrir Bot",
+        "public_stats_header": "📊 *Estadísticas del Bot*\n━━━━━━━━━━━━━━━\n\n👥 Usuarios totales: *{total}*\n✅ Usuarios activos: *{active}*\n🆕 Se unieron hoy: *{today}*\n⭐ Suscriptores premium: *{premium}*\n\n",
+        "public_stats_langs": "🌍 *Idiomas más usados:*\n",
+        "public_stats_footer": "\n━━━━━━━━━━━━━━━\n🤖 @{username}",
+        "my_stats_header": "📈 *Tus Estadísticas Personales*\n━━━━━━━━━━━━━━━\n\n👤 Nombre: *{name}*\n🌍 Idioma: *{lang}*\n🏙 Ciudad: *{city}*\n📅 Fecha de ingreso: *{join}*\n\n📰 Noticias recibidas: *{news}*\n🎁 Referidos enviados: *{refs}*\n🔑 Palabras clave: *{kws}*\n⭐ Premium: *{prem}*\n🔔 Notificaciones: *{notif}*\n",
+        "my_stats_prem_yes": "⭐ Sí",
+        "my_stats_prem_no": "❌ No",
+        "my_stats_notif_on": "🔔 Activas",
+        "my_stats_notif_off": "🔕 Pausadas",
+        "my_stats_user": "Usuario",
+        "daily_summary_header": "📋 *Resumen de Noticias de Hoy — {date}*\n━━━━━━━━━━━━━━━\n\n",
+        "daily_summary_no_source": "⚠️ No hay fuentes de noticias para este idioma.",
+        "daily_summary_no_news": "⚠️ No hay noticias disponibles ahora, inténtalo más tarde.",
+        "top_referrers_header": "🏆 *Mejores Referidores*\n━━━━━━━━━━━━━━━\n\n",
+        "top_referrers_empty": "📊 Aún no hay referidos — ¡sé el primero! 🎯",
+        "top_referrers_invite": "invitación(es)",
+        "dollar_header": "💵 *USD vs Dinar Iraquí*\n\n🏪 Mercado paralelo:\n{rate}\n\n⏰ Última actualización: `{time}`\n📡 Fuente: {source}\n\n━━━━━━━━━━━━━━\n🤖 @{username}",
+        "dollar_sell": "Venta",
+        "dollar_buy": "Compra",
+        "dollar_official": "Tasa: `{price}` IQD\n_(Tasa oficial — puede diferir del mercado)_",
+        "dollar_error": "⚠️ No se puede obtener la tasa del dólar ahora. Inténtalo más tarde.",
+        "weekly_summary_header": "📰 *Resumen Semanal — Top {count} noticias*\n━━━━━━━━━━━━━━━\n\n",
+        "weekly_summary_text_header": "📆 *Resumen de Noticias de la Semana*\n📅 {start} — {end}\n━━━━━━━━━━━━━━\n",
+        "weekly_summary_text_wait": "⏳ Recopilando las principales noticias de la semana...",
+        "weekly_summary_text_no_source": "⚠️ No hay fuentes de noticias para este idioma.",
+        "weekly_summary_text_no_news": "⚠️ No hay suficientes noticias esta semana.",
+        "currency_table_header": "📊 *Tabla Completa de Tasas de Cambio vs USD 🇺🇸*\n━━━━━━━━━━━━━━━\n\n",
+        "premium_menu_header": "⭐ *Menú Premium — Elige:*",
+        "premium_btn_7day": "🌤 Pronóstico de 7 días",
+        "premium_btn_hourly": "🕐 Tiempo cada 3 horas",
+        "premium_btn_addcity": "🏙 Agregar Ciudad",
+        "premium_btn_mycities": "📋 Mis Ciudades Guardadas",
+        "premium_btn_interests": "📌 Mis Intereses",
+        "premium_btn_currency_alert": "💱 Alerta de Divisas",
+        "premium_btn_currency_table": "📊 Tabla de Divisas",
+        "premium_btn_notif_time": "🕐 Hora de Notificación",
+        "premium_btn_weekly": "📰 Resumen Semanal",
+        "premium_btn_keywords": "🔑 Palabras Clave",
+        "premium_subscribe_btn": "⭐ Solicitar Suscripción Premium",
+        "broadcast_weather_msg": "🌤 Tiempo en {city}: {temp}°C\n☁️ {desc}",
+        "track_header": "📌 *Seguimiento de Divisas, Acciones y Materias Primas*\n━━━━━━━━━━━━━━━\n\n",
+        "track_current_list": "📋 *Tu lista actual:*\n",
+        "track_count": "\n({count}/20 símbolos)\n\n",
+        "track_add_hint": "➕ *Agregar símbolo:* envía su nombre directamente\n\n",
+        "track_crypto_label": "💎 *Criptomonedas:*\n",
+        "track_fiat_label": "💱 *Divisas Fiat:*\n",
+        "track_stocks_label": "📈 *Acciones:*\n",
+        "track_commodities_label": "🏅 *Materias Primas e Índices:*\n",
+        "track_alert_hint": "🔔 *Recibirás alertas inmediatas a cambios de ±1% y reporte por hora.*\n\n",
+        "track_remove_hint": "❌ Eliminar símbolo: `/removetrack AAPL`\n",
+        "track_list_hint": "📋 Ver tu lista: `/mytrack`",
+        "track_empty": "📌 Lista de seguimiento vacía.\nPresiona *Rastrear activo* para agregar símbolos.",
+        "track_list_header": "📌 *Tus activos rastreados:*\n━━━━━━━━━━━━━━\n",
+        "track_alert_title": "🚨 *Alertas de precios*\n━━━━━━━━━━━━━━━\n\n",
+        "track_rose": "📈 subió",
+        "track_fell": "📉 bajó",
+        "track_report_title": "📊 *Reporte por hora — Tus activos*\n",
+        "track_unavailable": "no disponible",
+        "track_remove_usage": "⚠️ Envía el símbolo después del comando. Ejemplo: `/removetrack AAPL`",
+        "track_not_found": "⚠️ *{symbol}* no está en tu lista.",
+        "track_removed": "✅ *{symbol}* eliminado de la lista de seguimiento.",
+        "interest_save_btn": "💾 Guardar",
+        "interest_choose_msg": "📌 *Elige tus intereses (puedes elegir más de uno):*",
+        "currency_rate_header": "💱 *Tasas de cambio vs USD 🇺🇸*\n\n",
+        "currency_local_label": "🏠 {name}",
+        "currency_convert_header": "🔄 *Conversión de {amount} {currency}*\n━━━━━━━━━━━━━━━\n\n",
+        "currency_unsupported": "⚠️ Divisa no compatible: {currency}",
+        "currency_fetch_error": "⚠️ No se pueden obtener las tasas de cambio.",
+        "city_add_success": "✅ Ciudad agregada: *{city}*",
+        "currency_alert_set": "✅ Se te avisará cuando el dólar alcance `{rate}` de tu moneda local.",
+        "currency_alert_invalid": "❌ Envía un número, por ejemplo: 1600",
+        "notif_time_set": "✅ El resumen matinal se enviará a las *{hour}:00* todos los días.",
+        "notif_time_invalid": "❌ Ingresa un número entre 0 y 23 (ejemplo: 8 para las 8 de la mañana)",
     },
 }
 
@@ -4088,7 +5269,7 @@ def broadcast_weather():
             if data.get("cod") == 200:
                 temp = data['main']['temp']
                 desc = data['weather'][0]['description']
-                bot.send_message(uid, f"🌤 الطقس في {province}: {temp}°C\n☁️ {desc}")
+                bot.send_message(uid, t(lang, "broadcast_weather_msg").format(city=province, temp=temp, desc=desc))
         except Exception as e:
             notify_admin_error(f"خطأ في بث الطقس لـ {uid}: {e}")
 
@@ -4205,27 +5386,19 @@ def send_my_stats(uid):
     user = users.get(str(uid))
     if not user:
         return
-    name = user.get("name", "مستخدم")
-    lang = user.get("lang", "—")
+    lang = user.get("lang", "English 🇬🇧")
+    name = user.get("name", t(lang, "my_stats_user"))
     province = user.get("province", "—")
     sent_news = user.get("sent_news", set())
     referrals = user.get("referrals", [])
-    is_prem = "⭐ نعم" if is_premium(uid) else "❌ لا"
-    notif = "🔔 مفعّلة" if user.get("notifications", True) else "🔕 متوقفة"
+    is_prem = t(lang, "my_stats_prem_yes") if is_premium(uid) else t(lang, "my_stats_prem_no")
+    notif = t(lang, "my_stats_notif_on") if user.get("notifications", True) else t(lang, "my_stats_notif_off")
     join_date = user.get("join_date", "—")
     kws = user_keywords.get(str(uid), [])
-
-    msg = (
-        f"📈 *إحصائياتك الشخصية*\n━━━━━━━━━━━━━━━\n\n"
-        f"👤 الاسم: *{name}*\n"
-        f"🌍 اللغة: *{lang}*\n"
-        f"🏙 المدينة: *{province}*\n"
-        f"📅 تاريخ الانضمام: *{join_date}*\n\n"
-        f"📰 أخبار استلمتها: *{len(sent_news)}*\n"
-        f"🎁 دعوات أرسلتها: *{len(referrals)}*\n"
-        f"🔑 كلمات مفتاحية: *{len(kws)}*\n"
-        f"⭐ اشتراك مميز: *{is_prem}*\n"
-        f"🔔 الإشعارات: *{notif}*\n"
+    msg = t(lang, "my_stats_header").format(
+        name=name, lang=lang, city=province, join=join_date,
+        news=len(sent_news), refs=len(referrals), kws=len(kws),
+        prem=is_prem, notif=notif
     )
     bot.send_message(uid, msg, parse_mode="Markdown")
 
@@ -4238,13 +5411,13 @@ def send_3day_forecast(uid):
     lang_code = LANG_CODES.get(lang, "en")
     province = user.get("province", "")
     if not province:
-        bot.send_message(uid, "⚠️ لم يتم تحديد مدينتك بعد.")
+        bot.send_message(uid, t(lang, "no_city"))
         return
     try:
         url = f"https://api.openweathermap.org/data/2.5/forecast?q={province}&appid={WEATHER_KEY}&units=metric&lang={lang_code}&cnt=24"
         data = requests.get(url, timeout=10).json()
         if str(data.get("cod")) != "200":
-            bot.send_message(uid, f"⚠️ لم يتم العثور على بيانات الطقس لمدينة: {province}")
+            bot.send_message(uid, t(lang, "city_not_found").format(city=province))
             return
         days = {}
         for item in data["list"]:
@@ -4254,7 +5427,7 @@ def send_3day_forecast(uid):
             days[date]["temps"].append(item["main"]["temp"])
             days[date]["descs"].append(item["weather"][0]["description"])
             days[date]["icons"].append(item["weather"][0]["id"])
-        msg = f"📅 *توقعات الطقس لـ 3 أيام — {province}*\n━━━━━━━━━━━━━━━\n\n"
+        msg = t(lang, "forecast_3day_header").format(city=province)
         day_names = list(days.items())[:3]
         for date, info in day_names:
             min_t = round(min(info["temps"]))
@@ -4266,27 +5439,30 @@ def send_3day_forecast(uid):
             msg += f"   ☁️ {desc.capitalize()}\n\n"
         bot.send_message(uid, msg, parse_mode="Markdown")
     except Exception as e:
-        bot.send_message(uid, "⚠️ لا يمكن جلب توقعات الطقس حالياً.")
+        bot.send_message(uid, t(lang, "weather_error"))
         notify_admin_error(f"خطأ في توقعات 3 أيام لـ {uid}: {e}")
 
 # ======== ترتيب أفضل الداعين ========
 def send_top_referrers(uid):
+    user = users.get(str(uid))
+    lang = user.get("lang", "English 🇬🇧") if user else "English 🇬🇧"
     referral_counts = []
     for user_id, info in users.items():
         refs = info.get("referrals", [])
         if refs:
-            name = info.get("name", "مستخدم")
+            name = info.get("name", t(lang, "my_stats_user"))
             referral_counts.append((name, len(refs)))
     referral_counts.sort(key=lambda x: x[1], reverse=True)
     top = referral_counts[:10]
     if not top:
-        bot.send_message(uid, "📊 لا توجد دعوات بعد، كن أول من يدعو أصدقاءه! 🎯")
+        bot.send_message(uid, t(lang, "top_referrers_empty"))
         return
     medals = ["🥇", "🥈", "🥉"] + ["4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣", "🔟"]
-    msg = "🏆 *أفضل الداعين*\n━━━━━━━━━━━━━━━\n\n"
+    invite_word = t(lang, "top_referrers_invite")
+    msg = t(lang, "top_referrers_header")
     for i, (name, count) in enumerate(top):
         medal = medals[i] if i < len(medals) else f"{i+1}."
-        msg += f"{medal} *{name}* — {count} دعوة\n"
+        msg += f"{medal} *{name}* — {count} {invite_word}\n"
     bot.send_message(uid, msg, parse_mode="Markdown")
 
 # ======== تنظيف البيانات التلقائي (Auto-Clean) ========
@@ -4358,7 +5534,7 @@ def send_daily_summary(uid):
     lang = user.get("lang", "English 🇬🇧")
     feeds = RSS.get(lang, [])
     if not feeds:
-        bot.send_message(uid, "⚠️ لا توجد مصادر أخبار لهذه اللغة حالياً.")
+        bot.send_message(uid, t(lang, "no_source"))
         return
     headlines = []
     for feed_url in feeds[:3]:
@@ -4372,10 +5548,10 @@ def send_daily_summary(uid):
         except Exception as e:
             notify_admin_error(f"خطأ في ملخص اليوم ({feed_url}): {e}")
     if not headlines:
-        bot.send_message(uid, "⚠️ لا توجد أخبار متاحة الآن، حاول لاحقاً.")
+        bot.send_message(uid, t(lang, "no_news"))
         return
     today = datetime.date.today().strftime("%Y-%m-%d")
-    msg = f"📋 *ملخص أخبار اليوم — {today}*\n━━━━━━━━━━━━━━━\n\n"
+    msg = t(lang, "daily_summary_header").format(date=today)
     for i, title in enumerate(headlines[:10], 1):
         msg += f"{i}. {title}\n\n"
     msg += f"━━━━━━━━━━━━━━━\n{BOT_SIGNATURE}"
@@ -4383,28 +5559,35 @@ def send_daily_summary(uid):
 
 # ======== أسعار العملات الرقمية ========
 def send_crypto_prices(uid):
+    user = users.get(str(uid))
+    lang = user.get("lang", "English 🇬🇧") if user else "English 🇬🇧"
     try:
-        url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tether,binancecoin,solana,ripple,dogecoin,cardano,tron,litecoin&vs_currencies=usd&include_24hr_change=true"
+        url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,tether,binancecoin,solana,ripple,dogecoin,cardano,tron,litecoin,the-open-network,notcoin,pepe,dogwifcoin,bittensor&vs_currencies=usd&include_24hr_change=true"
         r = requests.get(url, timeout=10).json()
         crypto_names = {
-            "bitcoin": ("₿ بيتكوين", "BTC"),
-            "ethereum": ("⟠ إيثيريوم", "ETH"),
-            "tether": ("💵 تيثر", "USDT"),
-            "binancecoin": ("🟡 بينانس", "BNB"),
-            "solana": ("◎ سولانا", "SOL"),
-            "ripple": ("〇 ريبل", "XRP"),
-            "dogecoin": ("🐶 دوجكوين", "DOGE"),
-            "cardano": ("🔵 كاردانو", "ADA"),
-            "tron": ("🔴 ترون", "TRX"),
-            "litecoin": ("🥈 لايتكوين", "LTC"),
+            "bitcoin":          ("₿ Bitcoin",  "BTC"),
+            "ethereum":         ("⟠ Ethereum", "ETH"),
+            "tether":           ("💵 Tether",   "USDT"),
+            "binancecoin":      ("🟡 BNB",      "BNB"),
+            "solana":           ("◎ Solana",    "SOL"),
+            "ripple":           ("〇 XRP",       "XRP"),
+            "dogecoin":         ("🐶 Dogecoin", "DOGE"),
+            "cardano":          ("🔵 Cardano",  "ADA"),
+            "tron":             ("🔴 TRON",     "TRX"),
+            "litecoin":         ("🥈 Litecoin", "LTC"),
+            "the-open-network": ("💎 TON",      "TON"),
+            "notcoin":          ("🎮 NOT",      "NOT"),
+            "pepe":             ("🐸 PEPE",     "PEPE"),
+            "dogwifcoin":       ("🐕 WIF",      "WIF"),
+            "bittensor":        ("🧠 TAO",      "TAO"),
         }
-        msg = "💎 *أسعار العملات الرقمية*\n━━━━━━━━━━━━━━━\n\n"
+        msg = t(lang, "crypto_header")
         for coin_id, (name, symbol) in crypto_names.items():
             data = r.get(coin_id, {})
             price = data.get("usd", "—")
             change = data.get("usd_24h_change", None)
             if isinstance(price, (int, float)):
-                price_str = f"${price:,.4f}" if price < 1 else f"${price:,.2f}"
+                price_str = f"${price:,.6f}" if price < 0.01 else (f"${price:,.4f}" if price < 1 else f"${price:,.2f}")
             else:
                 price_str = "—"
             if change is not None:
@@ -4413,10 +5596,10 @@ def send_crypto_prices(uid):
             else:
                 change_str = ""
             msg += f"{name} ({symbol})\n   💲 {price_str}  {change_str}\n\n"
-        msg += "━━━━━━━━━━━━━━━\n🔄 البيانات من CoinGecko"
+        msg += t(lang, "crypto_footer")
         bot.send_message(uid, msg, parse_mode="Markdown")
     except Exception as e:
-        bot.send_message(uid, "⚠️ لا يمكن جلب أسعار العملات الرقمية الآن، حاول لاحقاً.")
+        bot.send_message(uid, t(lang, "crypto_error"))
         notify_admin_error(f"خطأ في أسعار الكريبتو: {e}")
 
 # ======== أوقات الصلاة ========
@@ -4424,9 +5607,10 @@ def send_prayer_times(uid):
     user = users.get(str(uid))
     if not user:
         return
+    lang = user.get("lang", "English 🇬🇧")
     province = user.get("province", "")
     if not province:
-        bot.send_message(uid, "⚠️ لم يتم تحديد مدينتك. اضغط على تغيير الإعدادات وأعد الإعداد.")
+        bot.send_message(uid, t(lang, "prayer_no_city"))
         return
     try:
         today = datetime.date.today()
@@ -4436,29 +5620,21 @@ def send_prayer_times(uid):
             url2 = f"https://api.aladhan.com/v1/timingsByCity?city={province}&country=&method=4&date={today}"
             r = requests.get(url2, timeout=10).json()
         if r.get("code") != 200:
-            bot.send_message(uid, f"⚠️ لا يمكن جلب أوقات الصلاة لمدينة: {province}\nتأكد من اسم المدينة باللغة الإنجليزية في إعداداتك.")
+            bot.send_message(uid, t(lang, "prayer_city_error").format(city=province))
             return
         timings = r["data"]["timings"]
         date_info = r["data"]["date"]["readable"]
         hijri = r["data"]["date"]["hijri"]
         hijri_str = f"{hijri['day']} {hijri['month']['ar']} {hijri['year']} هـ"
-        msg = (
-            f"🕌 *أوقات الصلاة في {province}*\n"
-            f"📅 {date_info}\n"
-            f"🗓 {hijri_str}\n"
-            f"━━━━━━━━━━━━━━━\n\n"
-            f"🌅 الفجر:     `{timings['Fajr']}`\n"
-            f"☀️ الشروق:   `{timings['Sunrise']}`\n"
-            f"🌞 الظهر:    `{timings['Dhuhr']}`\n"
-            f"🌇 العصر:    `{timings['Asr']}`\n"
-            f"🌆 المغرب:   `{timings['Maghrib']}`\n"
-            f"🌙 العشاء:   `{timings['Isha']}`\n"
-            f"━━━━━━━━━━━━━━━\n"
-            f"🔄 البيانات من Aladhan API"
+        msg = t(lang, "prayer_header").format(
+            city=province, date=date_info, hijri=hijri_str,
+            fajr=timings['Fajr'], sunrise=timings['Sunrise'],
+            dhuhr=timings['Dhuhr'], asr=timings['Asr'],
+            maghrib=timings['Maghrib'], isha=timings['Isha']
         )
         bot.send_message(uid, msg, parse_mode="Markdown")
     except Exception as e:
-        bot.send_message(uid, "⚠️ لا يمكن جلب أوقات الصلاة الآن، حاول لاحقاً.")
+        bot.send_message(uid, t(lang, "prayer_error"))
         notify_admin_error(f"خطأ في أوقات الصلاة لـ {uid}: {e}")
 
 # ======== إحصائيات الدعوات (رابط الدعوة) ========
@@ -4466,73 +5642,54 @@ def send_referral_stats(uid):
     user = users.get(str(uid))
     if not user:
         return
+    lang = user.get("lang", "English 🇬🇧")
     referrals = user.get("referrals", [])
     ref_count = len(referrals)
     invite_link = f"https://t.me/{BOT_USERNAME}?start=ref_{uid}"
-    msg = (
-        f"🎁 *نظام الدعوات*\n━━━━━━━━━━━━━━━\n\n"
-        f"🔗 *رابط دعوتك الخاص:*\n"
-        f"`{invite_link}`\n\n"
-        f"👥 *إجمالي من دعوتهم:* `{ref_count}` شخص\n\n"
-        f"━━━━━━━━━━━━━━━\n"
-        f"📤 شارك الرابط مع أصدقائك وعائلتك!\n"
-        f"كل شخص ينضم عبر رابطك سيُحتسب لك. 🎯"
-    )
+    msg = t(lang, "referral_header").format(link=invite_link, count=ref_count)
     markup = types.InlineKeyboardMarkup()
-    share_text = f"📰 اكتشف بوت الأخبار والطقس العراقي!\n\n{invite_link}"
-    share_url = f"https://t.me/share/url?url={invite_link}&text=انضم+معي+في+بوت+الأخبار+العراقي+%40{BOT_USERNAME}"
-    markup.add(types.InlineKeyboardButton("📤 مشاركة الرابط", url=share_url))
+    share_url = f"https://t.me/share/url?url={invite_link}&text=@{BOT_USERNAME}"
+    markup.add(types.InlineKeyboardButton(t(lang, "referral_share_btn"), url=share_url))
     bot.send_message(uid, msg, parse_mode="Markdown", reply_markup=markup)
 
 # ======== انشر البوت ========
 def send_share_bot(uid):
+    user = users.get(str(uid))
+    lang = user.get("lang", "English 🇬🇧") if user else "English 🇬🇧"
     invite_link = f"https://t.me/{BOT_USERNAME}"
-    msg = (
-        f"📢 *انشر البوت وساعدنا بالوصول لأكثر مستخدمين!*\n\n"
-        f"🔗 *رابط البوت:*\n"
-        f"@{BOT_USERNAME}\n\n"
-        f"📌 أو عبر الرابط:\n"
-        f"`{invite_link}`\n\n"
-        f"━━━━━━━━━━━━━━━\n"
-        f"💡 شارك البوت مع أصدقائك للحصول على:\n"
-        f"📰 آخر الأخبار العراقية والعالمية\n"
-        f"🌤 حالة الطقس الفورية\n"
-        f"💱 أسعار العملات\n"
-        f"🕌 أوقات الصلاة\n"
-        f"💎 أسعار العملات الرقمية"
-    )
+    msg = t(lang, "share_bot_header").format(username=BOT_USERNAME, link=invite_link)
     markup = types.InlineKeyboardMarkup()
-    share_url = f"https://t.me/share/url?url={invite_link}&text=اشترك+في+بوت+الأخبار+العراقي+%40{BOT_USERNAME}+لأحدث+الأخبار+والطقس"
+    share_url = f"https://t.me/share/url?url={invite_link}&text=@{BOT_USERNAME}"
     markup.add(
-        types.InlineKeyboardButton("📤 مشاركة البوت", url=share_url),
-        types.InlineKeyboardButton("🔗 فتح البوت", url=invite_link)
+        types.InlineKeyboardButton(t(lang, "share_bot_btn"), url=share_url),
+        types.InlineKeyboardButton(t(lang, "open_bot_btn"), url=invite_link)
     )
     bot.send_message(uid, msg, parse_mode="Markdown", reply_markup=markup)
 
 # ======== إحصائيات البوت العامة ========
 def send_public_stats(uid):
+    user = users.get(str(uid))
+    lang = user.get("lang", "English 🇬🇧") if user else "English 🇬🇧"
     total = stats.get("total_users", len(users))
     today = str(datetime.date.today())
     today_count = stats.get("daily_users", {}).get(today, 0)
     active = sum(1 for u in users.values() if "province" in u)
     premium_count = len(stats.get("premium_users", []))
     top_langs = sorted(stats.get("languages_count", {}).items(), key=lambda x: x[1], reverse=True)[:5]
-    msg = (
-        f"📊 *إحصائيات البوت*\n━━━━━━━━━━━━━━━\n\n"
-        f"👥 إجمالي المستخدمين: *{total}*\n"
-        f"✅ مستخدمون نشطون: *{active}*\n"
-        f"🆕 انضموا اليوم: *{today_count}*\n"
-        f"⭐ مشتركون مميزون: *{premium_count}*\n\n"
+    msg = t(lang, "public_stats_header").format(
+        total=total, active=active, today=today_count, premium=premium_count
     )
     if top_langs:
-        msg += "🌍 *أكثر اللغات استخداماً:*\n"
+        msg += t(lang, "public_stats_langs")
         for lang_name, count in top_langs:
             msg += f"  • {lang_name}: {count}\n"
-    msg += f"\n━━━━━━━━━━━━━━━\n🤖 @{BOT_USERNAME}"
+    msg += t(lang, "public_stats_footer").format(username=BOT_USERNAME)
     bot.send_message(uid, msg, parse_mode="Markdown")
 
 # ======== دولار السوق الموازية ========
 def send_dollar_parallel(uid):
+    user = users.get(str(uid))
+    lang = user.get("lang", "English 🇬🇧") if user else "English 🇬🇧"
     rate = None
     source_note = ""
     try:
@@ -4542,7 +5699,7 @@ def send_dollar_parallel(uid):
         sell = data.get("sell") or data.get("price") or data.get("usd_sell")
         buy = data.get("buy") or data.get("usd_buy")
         if sell:
-            rate = f"بيع: `{sell}` دينار\nشراء: `{buy or '-'}` دينار"
+            rate = f"{t(lang, 'dollar_sell')}: `{sell}` IQD\n{t(lang, 'dollar_buy')}: `{buy or '-'}` IQD"
             source_note = "dolarsoft.com"
     except:
         pass
@@ -4552,23 +5709,15 @@ def send_dollar_parallel(uid):
             r = requests.get("https://api.exchangerate-api.com/v4/latest/USD", timeout=10)
             iqd = r.json().get("rates", {}).get("IQD", None)
             if iqd:
-                rate = f"السعر: `{int(iqd):,}` دينار\n_(السعر الرسمي — قد يختلف عن السوق)_"
+                rate = t(lang, "dollar_official").format(price=f"{int(iqd):,}")
                 source_note = "exchangerate-api.com"
         except:
             pass
     if not rate:
-        bot.send_message(uid, "⚠️ تعذّر جلب سعر الدولار حالياً. حاول لاحقاً.")
+        bot.send_message(uid, t(lang, "dollar_error"))
         return
     now = datetime.datetime.now().strftime("%H:%M - %d/%m/%Y")
-    msg = (
-        f"💵 *سعر الدولار مقابل الدينار العراقي*\n\n"
-        f"🏪 السوق الموازية:\n"
-        f"{rate}\n\n"
-        f"⏰ آخر تحديث: `{now}`\n"
-        f"📡 المصدر: {source_note}\n\n"
-        f"━━━━━━━━━━━━━━\n"
-        f"🤖 @{BOT_USERNAME}"
-    )
+    msg = t(lang, "dollar_header").format(rate=rate, time=now, source=source_note, username=BOT_USERNAME)
     bot.send_message(uid, msg, parse_mode="Markdown")
 
 # ======== ملخص أسبوعي نصي ========
@@ -4579,9 +5728,9 @@ def send_weekly_summary_text(uid):
     lang = user.get("lang", "English 🇬🇧")
     feeds = RSS.get(lang, [])
     if not feeds:
-        bot.send_message(uid, "⚠️ لا توجد مصادر أخبار متاحة لهذه اللغة.")
+        bot.send_message(uid, t(lang, "no_source"))
         return
-    bot.send_message(uid, "⏳ جاري جمع أبرز أخبار الأسبوع...")
+    bot.send_message(uid, t(lang, "weekly_summary_text_wait"))
     headlines = []
     seen_titles = set()
     cutoff = datetime.datetime.now() - datetime.timedelta(days=7)
@@ -4609,30 +5758,146 @@ def send_weekly_summary_text(uid):
         if len(headlines) >= 25:
             break
     if not headlines:
-        bot.send_message(uid, "⚠️ لا توجد أخبار كافية هذا الأسبوع.")
+        bot.send_message(uid, t(lang, "no_weekly"))
         return
     week_start = (datetime.datetime.now() - datetime.timedelta(days=6)).strftime("%d/%m")
     week_end = datetime.datetime.now().strftime("%d/%m/%Y")
-    lines = [f"📆 *ملخص أخبار الأسبوع*\n📅 {week_start} — {week_end}\n━━━━━━━━━━━━━━\n"]
+    lines = [t(lang, "weekly_summary_text_header").format(start=week_start, end=week_end)]
     for i, title in enumerate(headlines, 1):
         lines.append(f"{i}. {title}")
-    lines.append(f"\n━━━━━━━━━━━━━━\n🤖 @{BOT_USERNAME}")
+    lines.append(t(lang, "public_stats_footer").format(username=BOT_USERNAME))
     full_msg = "\n".join(lines)
     if len(full_msg) > 4000:
         full_msg = full_msg[:3990] + "\n..."
     bot.send_message(uid, full_msg, parse_mode="Markdown")
 
-# ======== تتبع العملات والأسهم ========
+# ======== تتبع العملات والأسهم والسلع والمؤشرات ========
 CRYPTO_IDS = {
-    "BTC": "bitcoin", "ETH": "ethereum", "BNB": "binancecoin",
-    "USDT": "tether", "XRP": "ripple", "ADA": "cardano",
-    "SOL": "solana", "DOGE": "dogecoin", "DOT": "polkadot",
-    "MATIC": "matic-network", "LTC": "litecoin", "AVAX": "avalanche-2",
-    "SHIB": "shiba-inu", "TRX": "tron", "LINK": "chainlink"
+    # العملات الرئيسية
+    "BTC": "bitcoin",
+    "ETH": "ethereum",
+    "BNB": "binancecoin",
+    "USDT": "tether",
+    "USDC": "usd-coin",
+    "XRP": "ripple",
+    "ADA": "cardano",
+    "SOL": "solana",
+    "DOGE": "dogecoin",
+    "DOT": "polkadot",
+    "MATIC": "matic-network",
+    "LTC": "litecoin",
+    "AVAX": "avalanche-2",
+    "SHIB": "shiba-inu",
+    "TRX": "tron",
+    "LINK": "chainlink",
+    "TON": "the-open-network",
+    "UNI": "uniswap",
+    "ATOM": "cosmos",
+    "XLM": "stellar",
+    "ALGO": "algorand",
+    "VET": "vechain",
+    "FIL": "filecoin",
+    "HBAR": "hedera-hashgraph",
+    "ICP": "internet-computer",
+    "APT": "aptos",
+    "ARB": "arbitrum",
+    "OP": "optimism",
+    "MKR": "maker",
+    "AAVE": "aave",
+    "CRV": "curve-dao-token",
+    "FTM": "fantom",
+    "NEAR": "near",
+    "SUI": "sui",
+    "SEI": "sei-network",
+    "PEPE": "pepe",
+    "WIF": "dogwifcoin",
+    "BONK": "bonk",
+    "FLOKI": "floki",
+    "NOT": "notcoin",
+    "DOGS": "dogs-coin",
+    "HMSTR": "hamster-kombat",
+    "TAO": "bittensor",
+    "RENDER": "render-token",
+    "INJ": "injective-protocol",
+    "PYTH": "pyth-network",
+    "JUP": "jupiter-exchange-solana",
+    "POPCAT": "popcat",
+    "BRETT": "based-brett",
+    "TRUMP": "maga",
+    "PENGU": "pudgy-penguins",
 }
-FIAT_CURRENCIES = {"USD", "EUR", "GBP", "IQD", "SAR", "AED", "TRY", "JPY", "CNY", "KWD", "EGP", "JOD"}
+
+FIAT_CURRENCIES = {
+    "USD", "EUR", "GBP", "IQD", "SAR", "AED", "TRY",
+    "JPY", "CNY", "KWD", "EGP", "JOD", "IRR", "PKR",
+    "INR", "BRL", "RUB", "MXN", "CAD", "AUD", "CHF",
+    "SEK", "NOK", "DKK", "SGD", "HKD", "QAR", "BHD",
+    "OMR", "MAD", "TND", "DZD", "LYD", "SYP", "YER",
+    "UAH", "PLN", "CZK", "HUF", "RON", "IDR", "MYR",
+    "THB", "PHP", "VND", "ZAR", "NGN",
+}
+
+# أسهم شهيرة وسلع — تُجلب من Yahoo Finance
+YAHOO_SYMBOLS = {
+    # أسهم التكنولوجيا الكبرى
+    "AAPL": "Apple",
+    "MSFT": "Microsoft",
+    "GOOGL": "Google",
+    "AMZN": "Amazon",
+    "NVDA": "NVIDIA",
+    "META": "Meta",
+    "TSLA": "Tesla",
+    "AMD": "AMD",
+    "INTC": "Intel",
+    "NFLX": "Netflix",
+    "ORCL": "Oracle",
+    "IBM": "IBM",
+    "QCOM": "Qualcomm",
+    "AVGO": "Broadcom",
+    "CRM": "Salesforce",
+    # أسهم أخرى
+    "JPM": "JPMorgan",
+    "BAC": "Bank of America",
+    "WMT": "Walmart",
+    "KO": "Coca-Cola",
+    "PEP": "PepsiCo",
+    "DIS": "Disney",
+    "BABA": "Alibaba",
+    "TSM": "TSMC",
+    "NKE": "Nike",
+    "PYPL": "PayPal",
+    "UBER": "Uber",
+    "SPOT": "Spotify",
+    "SNAP": "Snap",
+    "X": "X (Twitter)",
+    "COIN": "Coinbase",
+    "HOOD": "Robinhood",
+    # سلع
+    "GC=F": "Gold",
+    "SI=F": "Silver",
+    "CL=F": "Oil (WTI)",
+    "BZ=F": "Oil (Brent)",
+    "NG=F": "Natural Gas",
+    "HG=F": "Copper",
+    "PL=F": "Platinum",
+    "PA=F": "Palladium",
+    # مؤشرات
+    "^GSPC": "S&P 500",
+    "^IXIC": "NASDAQ",
+    "^DJI": "Dow Jones",
+    "^FTSE": "FTSE 100",
+    "^N225": "Nikkei 225",
+    "^HSI": "Hang Seng",
+}
+
+def get_asset_label(symbol):
+    """اسم وصفي للرمز إن وُجد."""
+    if symbol in YAHOO_SYMBOLS:
+        return f"{symbol} ({YAHOO_SYMBOLS[symbol]})"
+    return symbol
 
 def fetch_asset_price(symbol):
+    """جلب سعر أي أصل: عملة رقمية / فيات / سهم / سلعة / مؤشر."""
     if symbol in CRYPTO_IDS:
         try:
             cg_id = CRYPTO_IDS[symbol]
@@ -4651,82 +5916,141 @@ def fetch_asset_price(symbol):
             return float(rate) if rate else None
         except:
             return None
+    # أسهم وسلع ومؤشرات عبر Yahoo Finance
     try:
+        encoded = requests.utils.quote(symbol, safe='')
         r = requests.get(
-            f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}?interval=1d&range=1d",
-            headers={"User-Agent": "Mozilla/5.0"},
+            f"https://query1.finance.yahoo.com/v8/finance/chart/{encoded}?interval=1d&range=1d",
+            headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"},
             timeout=10
         ).json()
-        closes = r["chart"]["result"][0]["indicators"]["quote"][0]["close"]
-        price = next((p for p in reversed(closes) if p is not None), None)
-        return float(price) if price else None
+        result = r.get("chart", {}).get("result")
+        if result:
+            closes = result[0]["indicators"]["quote"][0].get("close", [])
+            price = next((p for p in reversed(closes) if p is not None), None)
+            return float(price) if price else None
     except:
-        return None
+        pass
+    return None
 
 def format_asset_price(symbol, price):
+    """تنسيق عرض السعر حسب حجمه."""
+    label = get_asset_label(symbol)
     if price is None:
-        return f"{symbol}: غير متوفر"
-    if price >= 1000:
-        return f"{symbol}: `{price:,.2f}`"
+        return f"❓ {label}: غير متوفر"
+    if price >= 10000:
+        return f"`{label}`: `${price:,.0f}`"
     elif price >= 1:
-        return f"{symbol}: `{price:.4f}`"
+        return f"`{label}`: `${price:,.2f}`"
+    elif price >= 0.0001:
+        return f"`{label}`: `${price:.6f}`"
     else:
-        return f"{symbol}: `{price:.8f}`"
+        return f"`{label}`: `${price:.8f}`"
 
 def start_track_asset(uid):
     user_data = tracked_assets.get(str(uid), {})
     assets = user_data.get("assets", [])
     last_prices = user_data.get("last_prices", {})
-    msg = "📌 *تتبع العملات والأسهم*\n\n"
+
+    msg = "📌 *تتبع العملات والأسهم والسلع*\n━━━━━━━━━━━━━━━\n\n"
+
     if assets:
         msg += "📋 *قائمتك الحالية:*\n"
         for sym in assets:
             p = last_prices.get(sym)
             msg += f"  • {format_asset_price(sym, p)}\n"
-        msg += "\n"
+        msg += f"\n({len(assets)}/20 رمز)\n\n"
+
     msg += (
-        "➕ *لإضافة رمز جديد:* أرسل اسمه\n"
-        "مثال: `AAPL` `TSLA` `BTC` `EUR` `GOLD`\n\n"
-        "❌ *لحذف رمز:* أرسل `/removetrack AAPL`\n"
-        "📋 *لعرض قائمتك:* أرسل `/mytrack`"
+        "➕ *لإضافة رمز:* أرسل اسمه مباشرة\n\n"
+        "💎 *عملات رقمية:*\n"
+        "`BTC` `ETH` `SOL` `BNB` `XRP` `DOGE`\n"
+        "`TON` `TRX` `ADA` `MATIC` `LINK` `UNI`\n"
+        "`SHIB` `PEPE` `WIF` `BONK` `NOT` ...\n\n"
+        "💱 *عملات فيات:*\n"
+        "`USD` `EUR` `GBP` `IQD` `SAR` `AED`\n"
+        "`TRY` `IRR` `KWD` `EGP` `INR` `RUB` ...\n\n"
+        "📈 *أسهم:*\n"
+        "`AAPL` `TSLA` `NVDA` `MSFT` `AMZN`\n"
+        "`META` `GOOGL` `AMD` `NFLX` `BABA` ...\n\n"
+        "🏅 *سلع ومؤشرات:*\n"
+        "`GC=F` (ذهب)  `SI=F` (فضة)\n"
+        "`CL=F` (نفط WTI)  `BZ=F` (نفط برنت)\n"
+        "`^GSPC` (S&P500)  `^IXIC` (NASDAQ)\n\n"
+        "🔔 *ستصلك تنبيهات فورية عند تغير ±1% وتقرير ساعي بأسعارك.*\n\n"
+        "❌ لحذف رمز: `/removetrack AAPL`\n"
+        "📋 لعرض قائمتك: `/mytrack`"
     )
     user_states[uid] = "tracking_asset"
     bot.send_message(uid, msg, parse_mode="Markdown")
 
 def check_asset_tracking():
+    """يعمل كل ساعة: يرسل تقريراً شاملاً + تنبيهات التغيرات الكبيرة."""
     for uid_str, data in list(tracked_assets.items()):
         assets = data.get("assets", [])
+        if not assets:
+            continue
         last_prices = data.get("last_prices", {})
         changed = False
+        report_lines = []
+        alerts = []
+
         for symbol in assets:
             try:
                 new_price = fetch_asset_price(symbol)
                 if new_price is None:
+                    report_lines.append(f"❓ {get_asset_label(symbol)}: غير متوفر")
                     continue
                 old_price = last_prices.get(symbol)
                 if old_price and old_price > 0:
                     change_pct = ((new_price - old_price) / old_price) * 100
-                    if abs(change_pct) >= 2.0:
+                    arrow = "📈" if change_pct >= 0 else "📉"
+                    report_lines.append(
+                        f"{arrow} {format_asset_price(symbol, new_price)}  `{change_pct:+.2f}%`"
+                    )
+                    if abs(change_pct) >= 1.0:
                         direction = "📈 ارتفع" if change_pct > 0 else "📉 انخفض"
-                        try:
-                            bot.send_message(
-                                int(uid_str),
-                                f"🔔 *تنبيه تغير السعر*\n\n"
-                                f"💱 *{symbol}*\n"
-                                f"{direction} بنسبة `{change_pct:+.2f}%`\n\n"
-                                f"السعر القديم: `{old_price:.4f}`\n"
-                                f"السعر الجديد: `{new_price:.4f}`\n\n"
-                                f"🤖 @{BOT_USERNAME}",
-                                parse_mode="Markdown"
-                            )
-                        except:
-                            pass
+                        alerts.append(
+                            f"{direction} *{get_asset_label(symbol)}* بنسبة `{change_pct:+.2f}%`\n"
+                            f"   السعر: `${new_price:,.4f}` (كان `${old_price:,.4f}`)"
+                        )
+                else:
+                    report_lines.append(f"🔹 {format_asset_price(symbol, new_price)}")
                 tracked_assets[uid_str]["last_prices"][symbol] = new_price
                 changed = True
             except:
                 continue
+
         if changed:
             save_tracked_assets()
+
+        # إرسال التنبيهات الفورية للتغيرات الكبيرة
+        if alerts:
+            alert_msg = (
+                f"🚨 *تنبيهات أسعارك*\n━━━━━━━━━━━━━━━\n\n"
+                + "\n\n".join(alerts)
+                + f"\n\n🤖 @{BOT_USERNAME}"
+            )
+            try:
+                bot.send_message(int(uid_str), alert_msg, parse_mode="Markdown")
+            except:
+                pass
+
+        # إرسال التقرير الساعي الشامل
+        if report_lines:
+            import datetime as _dt
+            now_str = _dt.datetime.now().strftime("%H:%M — %d/%m/%Y")
+            report_msg = (
+                f"📊 *تقرير ساعي — أصولك المتتبعة*\n"
+                f"🕐 {now_str}\n"
+                f"━━━━━━━━━━━━━━━\n\n"
+                + "\n".join(report_lines)
+                + f"\n\n━━━━━━━━━━━━━━━\n🤖 @{BOT_USERNAME}"
+            )
+            try:
+                bot.send_message(int(uid_str), report_msg, parse_mode="Markdown")
+            except:
+                pass
 
 @bot.message_handler(commands=["mytrack"])
 def cmd_mytrack(m):
@@ -4776,7 +6100,7 @@ scheduler.add_job(check_weather_alerts, 'interval', hours=6)
 scheduler.add_job(check_currency_alerts, 'interval', hours=3)
 scheduler.add_job(check_keyword_alerts, 'interval', minutes=15)
 scheduler.add_job(auto_clean_sent_news, 'interval', hours=24)
-scheduler.add_job(check_asset_tracking, 'interval', minutes=30)
+scheduler.add_job(check_asset_tracking, 'interval', hours=1)
 scheduler.add_job(lambda: save_json(USERS_FILE, users), 'interval', minutes=10)
 scheduler.add_job(broadcast_to_channels, 'interval', minutes=2)
 scheduler.start()
