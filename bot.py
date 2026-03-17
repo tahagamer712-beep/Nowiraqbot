@@ -1243,7 +1243,101 @@ def update_stats(action, uid=None, country=None, lang=None, button=None):
 
 # ======== دوال المميز ========
 def is_premium(uid):
-    return int(uid) in stats.get("premium_users", [])
+    uid_int = int(uid)
+    if uid_int in stats.get("premium_users", []):
+        return True
+    user = users.get(str(uid), {})
+    expiry = user.get("ref_premium_expiry")
+    if expiry:
+        try:
+            expiry_dt = datetime.datetime.fromisoformat(expiry)
+            if datetime.datetime.now() < expiry_dt:
+                return True
+            else:
+                users[str(uid)].pop("ref_premium_expiry", None)
+        except:
+            pass
+    return False
+
+def has_feature(uid, feature):
+    if is_premium(uid):
+        return True
+    user = users.get(str(uid), {})
+    return feature in user.get("unlocked_features", [])
+
+# ======== ميزات الإحالة ========
+REFERRAL_FEATURES = {
+    "prem_7day":           "📅 توقعات طقس 7 أيام",
+    "prem_hourly":         "⚡ أخبار فورية كل ساعة",
+    "prem_addcity":        "🏙 إضافة مدينة إضافية",
+    "prem_mycities":       "🗂 عرض مدنك المحفوظة",
+    "prem_interests":      "🎯 أخبار حسب اهتماماتك",
+    "prem_currency_alert": "💱 تنبيه سعر العملة",
+    "prem_currency_table": "📊 جدول العملات الكامل",
+    "prem_notif_time":     "🕐 وقت إشعار مخصص",
+    "prem_weekly":         "📋 ملخص أسبوعي",
+    "prem_keywords":       "🔑 تنبيه كلمات مفتاحية",
+}
+REFERRAL_MILESTONES = [5, 10, 15, 20, 25]
+
+def check_referral_rewards(referrer_id, new_member_name=""):
+    uid_str = str(referrer_id)
+    user = users.get(uid_str)
+    if not user:
+        return
+    ref_count = len(user.get("referrals", []))
+    rewarded = user.setdefault("rewarded_milestones", [])
+    for milestone in REFERRAL_MILESTONES:
+        if ref_count >= milestone and milestone not in rewarded:
+            rewarded.append(milestone)
+            users[uid_str]["rewarded_milestones"] = rewarded
+            save_json(USERS_FILE, users)
+            if milestone == 25:
+                expiry = datetime.datetime.now() + datetime.timedelta(days=30)
+                users[uid_str]["ref_premium_expiry"] = expiry.isoformat()
+                save_json(USERS_FILE, users)
+                try:
+                    bot.send_message(
+                        referrer_id,
+                        "🎊 *تهانينا! وصلت إلى 25 دعوة!*\n\n"
+                        "🌟 حصلت على *اشتراك مميز كامل لمدة شهر* مجاناً!\n"
+                        "━━━━━━━━━━━━━━\n"
+                        "📅 الاشتراك ساري لمدة 30 يوم\n"
+                        "✨ استمتع بجميع الميزات المميزة!",
+                        parse_mode="Markdown"
+                    )
+                except:
+                    pass
+            else:
+                try:
+                    bot.send_message(
+                        referrer_id,
+                        f"🎉 *تهانينا! وصلت إلى {milestone} دعوة!*\n\n"
+                        f"🎁 ربحت *ميزة مميزة مجانية* — اختر الميزة التي تريدها:",
+                        parse_mode="Markdown"
+                    )
+                    send_feature_choice_menu(referrer_id)
+                except:
+                    pass
+            break
+
+def send_feature_choice_menu(uid):
+    user = users.get(str(uid), {})
+    unlocked = user.get("unlocked_features", [])
+    markup = types.InlineKeyboardMarkup(row_width=1)
+    for feat_key, feat_name in REFERRAL_FEATURES.items():
+        if feat_key not in unlocked:
+            markup.add(types.InlineKeyboardButton(feat_name, callback_data=f"ref_feature_{feat_key}"))
+    if not markup.keyboard:
+        bot.send_message(uid, "✅ لقد فتحت جميع الميزات المتاحة بالفعل!")
+        return
+    bot.send_message(uid,
+        "🎁 *اختر ميزة مميزة واحدة تريد فتحها:*\n"
+        "━━━━━━━━━━━━━━\n"
+        "الميزة المختارة ستكون متاحة لك دائماً مجاناً.",
+        parse_mode="Markdown",
+        reply_markup=markup
+    )
 
 # ======== لوحة تحكم الأدمن ========
 def admin_panel(uid):
@@ -1294,6 +1388,30 @@ def stop_command(message):
         save_json(USERS_FILE, users)
     bot.send_message(uid, "🔕 تم إيقاف الإشعارات. أرسل /start للرجوع.")
 
+@bot.callback_query_handler(func=lambda c: c.data.startswith("ref_feature_"))
+def ref_feature_callback(call):
+    uid = call.from_user.id
+    data = call.data
+    bot.answer_callback_query(call.id)
+    feat_key = data.replace("ref_feature_", "")
+    if feat_key not in REFERRAL_FEATURES:
+        return
+    user = users.get(str(uid), {})
+    unlocked = user.setdefault("unlocked_features", [])
+    if feat_key in unlocked:
+        bot.send_message(uid, "⚠️ هذه الميزة مفتوحة لديك بالفعل.")
+        return
+    unlocked.append(feat_key)
+    users[str(uid)]["unlocked_features"] = unlocked
+    save_json(USERS_FILE, users)
+    feat_name = REFERRAL_FEATURES[feat_key]
+    bot.send_message(uid,
+        f"✅ *تم فتح الميزة بنجاح!*\n\n"
+        f"🎁 *{feat_name}*\n\n"
+        f"يمكنك استخدامها الآن من قائمة ⭐ المميز",
+        parse_mode="Markdown"
+    )
+
 @bot.callback_query_handler(func=lambda c: c.data.startswith("prem_") or c.data.startswith("req_premium_") or c.data.startswith("interest_"))
 def premium_callbacks(call):
     uid = call.from_user.id
@@ -1321,8 +1439,20 @@ def premium_callbacks(call):
         bot.send_message(uid, "✅ تم إرسال طلبك للإدارة. سيتم التواصل معك قريباً.")
         return
 
-    if not is_premium(uid):
-        bot.send_message(uid, "⭐ هذه الميزة للمشتركين المميزين فقط.")
+    if not has_feature(uid, data):
+        ref_count = len(users.get(str(uid), {}).get("referrals", []))
+        next_milestone = next((m for m in REFERRAL_MILESTONES if m > ref_count), None)
+        remaining = (next_milestone - ref_count) if next_milestone else 0
+        bot.send_message(uid,
+            "⭐ *هذه الميزة للمشتركين المميزين فقط.*\n\n"
+            "💡 *يمكنك الحصول عليها مجاناً:*\n"
+            "• دعوة 5 أصدقاء ← ميزة مجانية\n"
+            "• دعوة 10 أصدقاء ← ميزتان مجانيتان\n"
+            "• دعوة 25 صديق ← اشتراك مميز كامل شهر!\n\n"
+            + (f"📊 دعواتك: `{ref_count}` — تحتاج `{remaining}` دعوة للمكافأة القادمة\n\n" if next_milestone else f"📊 دعواتك: `{ref_count}`\n\n")
+            + "🔗 رابط دعوتك في قائمة *دعواتي*",
+            parse_mode="Markdown"
+        )
         return
 
     if data == "prem_7day":
@@ -3086,10 +3216,20 @@ def start(message):
             users[str(referrer_id)].setdefault("referrals", [])
             if uid not in users[str(referrer_id)]["referrals"]:
                 users[str(referrer_id)]["referrals"].append(uid)
-            try:
-                bot.send_message(referrer_id, f"🎉 انضم شخص جديد عبر رابطك!\n👤 الاسم: {message.from_user.first_name}\n👥 إجمالي دعواتك: {len(users[str(referrer_id)]['referrals'])}")
-            except:
-                pass
+                ref_total = len(users[str(referrer_id)]["referrals"])
+                next_m = next((m for m in REFERRAL_MILESTONES if m > ref_total), None)
+                progress_txt = f"\n🎯 تحتاج {next_m - ref_total} دعوة أخرى للمكافأة القادمة!" if next_m else "\n🏆 وصلت لأعلى مستوى!"
+                try:
+                    bot.send_message(referrer_id,
+                        f"🎉 *انضم شخص جديد عبر رابطك!*\n"
+                        f"👤 الاسم: {message.from_user.first_name}\n"
+                        f"👥 إجمالي دعواتك: `{ref_total}`"
+                        f"{progress_txt}",
+                        parse_mode="Markdown"
+                    )
+                except:
+                    pass
+                check_referral_rewards(referrer_id, message.from_user.first_name)
         save_json(USERS_FILE, users)
         update_stats("new_user", uid=uid)
         all_admins = [ADMIN_ID] + extra_admins
@@ -5646,10 +5786,51 @@ def send_referral_stats(uid):
     referrals = user.get("referrals", [])
     ref_count = len(referrals)
     invite_link = f"https://t.me/{BOT_USERNAME}?start=ref_{uid}"
-    msg = t(lang, "referral_header").format(link=invite_link, count=ref_count)
+    unlocked = user.get("unlocked_features", [])
+    rewarded = user.get("rewarded_milestones", [])
+    ref_premium_expiry = user.get("ref_premium_expiry", "")
+
+    progress_lines = ""
+    for milestone in REFERRAL_MILESTONES:
+        if milestone == 25:
+            label = "🌟 اشتراك مميز كامل شهر"
+        else:
+            label = f"🎁 ميزة مميزة مجانية"
+        if milestone in rewarded:
+            status = "✅"
+        elif ref_count >= milestone:
+            status = "🔓"
+        else:
+            remaining = milestone - ref_count
+            status = f"🔒 ({remaining} متبقية)"
+        progress_lines += f"{status} {milestone} دعوة ← {label}\n"
+
+    unlocked_names = "\n".join(f"  ✨ {REFERRAL_FEATURES.get(f, f)}" for f in unlocked) if unlocked else "  لا توجد بعد"
+
+    expiry_txt = ""
+    if ref_premium_expiry:
+        try:
+            expiry_dt = datetime.datetime.fromisoformat(ref_premium_expiry)
+            if datetime.datetime.now() < expiry_dt:
+                days_left = (expiry_dt - datetime.datetime.now()).days
+                expiry_txt = f"\n🌟 *اشتراك مميز كامل:* ينتهي بعد {days_left} يوم\n"
+        except:
+            pass
+
+    msg = (
+        f"🎁 *نظام الدعوات والمكافآت*\n"
+        f"━━━━━━━━━━━━━━\n"
+        f"👥 دعواتك: `{ref_count}` شخص\n"
+        f"🔗 رابطك:\n`{invite_link}`\n"
+        f"{expiry_txt}"
+        f"\n📊 *مستويات المكافآت:*\n{progress_lines}"
+        f"\n🔓 *ميزاتك المفتوحة:*\n{unlocked_names}\n"
+        f"━━━━━━━━━━━━━━\n"
+        f"💡 شارك رابطك وكلما زادت دعواتك زادت مكافآتك!"
+    )
     markup = types.InlineKeyboardMarkup()
-    share_url = f"https://t.me/share/url?url={invite_link}&text=@{BOT_USERNAME}"
-    markup.add(types.InlineKeyboardButton(t(lang, "referral_share_btn"), url=share_url))
+    share_url = f"https://t.me/share/url?url={invite_link}&text=📱 جرب بوت الأخبار @{BOT_USERNAME}"
+    markup.add(types.InlineKeyboardButton("📤 مشاركة رابط الدعوة", url=share_url))
     bot.send_message(uid, msg, parse_mode="Markdown", reply_markup=markup)
 
 # ======== انشر البوت ========
