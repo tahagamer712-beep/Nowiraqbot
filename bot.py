@@ -21,7 +21,7 @@ ADMIN_ID = int(os.environ.get("ADMIN_ID", "5149213983"))
 bot = telebot.TeleBot(BOT_TOKEN)
 
   # ======== SQLite للمستخدمين ========
-  DB_FILE = "bot_data.db"
+DB_FILE = "bot_data.db"
   _db_lock = threading.Lock()
 
   def _init_db():
