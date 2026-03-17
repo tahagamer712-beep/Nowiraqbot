@@ -3368,7 +3368,7 @@ def start(message):
             users[str(referrer_id)].setdefault("referrals", [])
             if uid not in users[str(referrer_id)]["referrals"]:
                 users[str(referrer_id)]["referrals"].append(uid)
-                ref_total = len(users[str(referrer_id)][�"referrals"])
+                ref_total = len(users[str(referrer_id)]["referrals"])
                 next_m = next((m for m in REFERRAL_MILESTONES if m > ref_total), None)
                 progress_txt = f"\n🎯 تحتاج {next_m - ref_total} دعوة أخرى للمكافأة القادمة!" if next_m else "\n🏆 وصلت لأعلى مستوى!"
                 try:
