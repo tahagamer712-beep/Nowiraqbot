@@ -3302,7 +3302,8 @@ def make_news_share_markup(link, title=""):
     share_text = f"📰 {title[:100]}\n\n🔗 {link}\n\nعبر @{BOT_USERNAME}" if title else f"🔗 {link}\n\nعبر @{BOT_USERNAME}"
     share_url = f"https://t.me/share/url?url={urllib.parse.quote(link, safe='')}&text={urllib.parse.quote(share_text, safe='')}"
     bot_link = f"https://t.me/{BOT_USERNAME}"
-    bot_share_url = f"https://t.me/share/url?url={urllib.parse.quote(bot_link, safe='')}&text={urllib.parse.quote(f'📰 بوت الأخبار والطقس @{BOT_USERNAME}\nآخر أخبار العالم والطقس والعملات على مدار الساعة!', safe='')}"
+    bot_share_text = f"📰 بوت الأخبار والطقس @{BOT_USERNAME}\nآخر أخبار العالم والطقس والعملات على مدار الساعة!"
+    bot_share_url = f"https://t.me/share/url?url={urllib.parse.quote(bot_link, safe='')}&text={urllib.parse.quote(bot_share_text, safe='')}"
     if link:
         markup.add(
             types.InlineKeyboardButton("🔗 فتح الخبر", url=link),
