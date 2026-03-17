@@ -2308,7 +2308,7 @@ def broadcast_to_channels():
                     feed = rss_cache.get(feed_url)
                     if not feed:
                         continue
-                    for item in feed.entries[:10]:
+                    for item in feed.entries[:20]:
                         if not hasattr(item, 'link') or not hasattr(item, 'title'):
                             continue
                         link = getattr(item, 'link', '')
@@ -3241,7 +3241,7 @@ def broadcast_premium_instant_news():
                     feed = rss_cache.get(feed_url)
                     if not feed:
                         continue
-                    for item in feed.entries[:3]:
+                    for item in feed.entries[:5]:
                         if not hasattr(item, 'link') or item.link in sent:
                             continue
                         if not news_matches_interests(item.title, interests):
@@ -3980,7 +3980,7 @@ MSGS = {
         "track_stocks_label": "📈 *Stocks:*\n",
         "track_commodities_label": "🏅 *Commodities & Indices:*\n",
         "track_alert_hint": "🔔 *You will receive instant alerts on ±1% change and an hourly price report.*\n\n",
-        "track_remove_hint": "❌ To remove a symbol: `/removetrack AAPL`\n",
+        "track_remove_hint": "❌ To remov�e a symbol: `/removetrack AAPL`\n",
         "track_list_hint": "📋 To view your list: `/mytrack`",
         "track_empty": "📌 Tracking list is empty.\nTap *Track Asset* to add symbols.",
         "track_list_header": "📌 *Your tracked assets:*\n━━━━━━━━━━━━━━\n",
@@ -4090,7 +4090,7 @@ MSGS = {
         "premium_btn_addcity": "🏙 Добавить город",
         "premium_btn_mycities": "📋 Мои сохранённые города",
         "premium_btn_interests": "📌 Мои интересы",
-        "premium_btn_currency_alert": "💱 Оповещение о валюте",
+        "premium_btn_curre�ncy_alert": "💱 Оповещение о валюте",
         "premium_btn_currency_table": "📊 Таблица валют",
         "premium_btn_notif_time": "🕐 Время уведомлений",
         "premium_btn_weekly": "📰 Еженедельная сводка",
@@ -4206,7 +4206,7 @@ MSGS = {
         "dollar_official": "نرخ: `{price}` IQD\n_(نرخ رسمی — ممکن است با بازار متفاوت باشد)_",
         "dollar_error": "⚠️ دریافت نرخ دلار ممکن نیست. بعداً امتحان کنید.",
         "weekly_summary_header": "📰 *خلاصه هفتگی — برترین {count} خبر*\n━━━━━━━━━━━━━━━\n\n",
-        "weekly_summary_text_header": "📆 *خلاصه اخبار هفته*\n📅 {start} — {end}\n━━━━━━━━━━━━━━\n",
+        "weekly�_summary_text_header": "📆 *خلاصه اخبار هفته*\n📅 {start} — {end}\n━━━━━━━━━━━━━━\n",
         "weekly_summary_text_wait": "⏳ در حال جمع‌آوری اخبار برتر هفته...",
         "weekly_summary_text_no_source": "⚠️ منبع خبری برای این زبان موجود نیست.",
         "weekly_summary_text_no_news": "⚠️ اخبار کافی این هفته وجود ندارد.",
@@ -4322,7 +4322,7 @@ MSGS = {
         "my_stats_notif_off": "🔕 बंद",
         "my_stats_user": "उपयोगकर्ता",
         "daily_summary_header": "📋 *आज के समाचार का सारांश — {date}*\n━━━━━━━━━━━━━━━\n\n",
-        "daily_summary_no_source": "⚠️ इस भाषा के लिए कोई समाचार स्रोत नहीं।",
+        "daily_summary_no_source": "⚠️ इस भाषा के लिए को�ई समाचार स्रोत नहीं।",
         "daily_summary_no_news": "⚠️ अभी कोई समाचार उपलब्ध नहीं, बाद में प्रयास करें।",
         "top_referrers_header": "🏆 *शीर्ष रेफरर्स*\n━━━━━━━━━━━━━━━\n\n",
         "top_referrers_empty": "📊 अभी कोई रेफरल नहीं — पहले बनें! 🎯",
@@ -4436,7 +4436,7 @@ MSGS = {
         "prayer_error": "⚠️ Não foi possível obter horários de oração, tente mais tarde.",
         "referral_header": "🎁 *Sistema de Indicação*\n━━━━━━━━━━━━━━━\n\n🔗 *Seu link de indicação:*\n`{link}`\n\n👥 *Total indicados:* `{count}` pessoas\n\n━━━━━━━━━━━━━━━\n📤 Compartilhe com amigos e família!\nCada pessoa que entrar pelo seu link conta. 🎯",
         "referral_share_btn": "📤 Compartilhar Link",
-        "share_bot_header": "📢 *Compartilhe o bot e ajude-nos a crescer!*\n\n🔗 *Link do bot:*\n@{username}\n\n📌 Ou via link:\n`{link}`\n\n━━━━━━━━━━━━━━━\n💡 Compartilhe com amigos para receber:\n📰 Últimas notícias\n🌤 Tempo ao vivo\n💱 Taxas de câmbio\n🕌 Horários de oração\n💎 Preços de cripto",
+        "share_bot_header": "📢 *Compartilhe o bot e ajude-nos a crescer!*\n\n🔗 *Link do bot:*\n@{username}\n\n📌 Ou via link:\n`{link}`\n\n━━━━━━━━━━━━━━━\n💡 Compartilhe com amigos para receber:\n📰 Últimas notícias\n🌤 Tempo ao vivo\n💱 Taxas de câmbio\n🕌 Horários de oração\n💎 P�reços de cripto",
         "share_bot_btn": "📤 Compartilhar Bot",
         "open_bot_btn": "🔗 Abrir Bot",
         "public_stats_header": "📊 *Estatísticas do Bot*\n━━━━━━━━━━━━━━━\n\n👥 Total de usuários: *{total}*\n✅ Usuários ativos: *{active}*\n🆕 Entraram hoje: *{today}*\n⭐ Assinantes premium: *{premium}*\n\n",
@@ -4556,7 +4556,7 @@ MSGS = {
         "wind_NW": "↖️ KB",
         "crypto_header": "💎 *Kripto Para Fiyatları*\n━━━━━━━━━━━━━━━\n\n",
         "crypto_footer": "━━━━━━━━━━━━━━━\n🔄 CoinGecko'dan veri",
-        "crypto_error": "⚠️ Şu an kripto fiyatları alınamıyor, daha sonra deneyin.",
+        "crypto_error": "⚠️ Şu an kripto fiyatları alınamıyor, daha sonra dene�yin.",
         "prayer_header": "🕌 *{city} Namaz Vakitleri*\n📅 {date}\n🗓 {hijri}\n━━━━━━━━━━━━━━━\n\n🌅 İmsak:   `{fajr}`\n☀️ Güneş:   `{sunrise}`\n🌞 Öğle:    `{dhuhr}`\n🌇 İkindi:  `{asr}`\n🌆 Akşam:   `{maghrib}`\n🌙 Yatsı:   `{isha}`\n━━━━━━━━━━━━━━━\n🔄 Aladhan API'den veri",
         "prayer_no_city": "⚠️ Şehriniz ayarlanmamış. Ayarlara gidin.",
         "prayer_city_error": "⚠️ {city} için namaz vakitleri alınamıyor.",
@@ -4663,7 +4663,7 @@ MSGS = {
         "no_city": "⚠️ آپ کا شہر ابھی تک سیٹ نہیں ہوا۔",
         "city_not_found": "⚠️ {city} کے لیے موسم کا ڈیٹا نہیں ملا۔",
         "weather_header": "{emoji} *{city} میں موسم*\n━━━━━━━━━━━━━━━\n\n🌡 *درجہ حرارت:* {temp}°C\n🤔 *محسوس ہوتا ہے:* {feels}°C\n🔼 زیادہ: {temp_max}°C  |  🔽 کم: {temp_min}°C\n\n☁️ *حالت:* {desc}\n🌫 *بادل:* {clouds}%\n👁 *مرئیت:* {visibility_km} کمی\n\n💧 *نمی:* {humidity}%\n🌀 *دباؤ:* {pressure} hPa\n☀️ *UV انڈیکس:* {uvi}\n\n💨 *ہوا:* {wind_speed} م/س | {wind_dir}\n💨 *جھونکے:* {wind_gust} م/س\n\n🌅 *طلوع آفتاب:* {sunrise}  |  🌇 *غروب آفتاب:* {sunset}\n━━━━━━━━━━━━━━━",
-        "forecast_3day_header": "📅 *3 روزہ موسم کی پیشگوئی — {city}*\n━━━━━━━━━━━━━━━\n\n",
+        "forecast_3day_header": "📅 *3 رو�زہ موسم کی پیشگوئی — {city}*\n━━━━━━━━━━━━━━━\n\n",
         "forecast_7day_header": "🌤 *7 روزہ موسم کی پیشگوئی — {city}*\n\n",
         "hourly_header": "🕐 *ہر 3 گھنٹے کا موسم — {city}*\n━━━━━━━━━━━━━━━\n\n",
         "wind_unit": "م/س",
@@ -4780,7 +4780,7 @@ MSGS = {
         "weather_error": "⚠️ Wetterdaten können nicht abgerufen werden.",
         "forecast_error": "⚠️ Stundenvorhersage kann nicht abgerufen werden.",
         "no_weekly": "⚠️ Keine Nachrichten für wöchentliche Zusammenfassung.",
-        "currency_error": "⚠️ Wechselkurse können nicht abgerufen werden.",
+        "currency_error": "⚠️ Wechselkurse können nicht abgerufen werden.",�
         "search_prompt": "🔍 Suchbegriff eingeben:",
         "label_breaking": "🚨 Eilmeldung",
         "label_news": "🚨 Nachricht",
@@ -4887,7 +4887,7 @@ MSGS = {
         "currency_convert_header": "🔄 *Umrechnung von {amount} {currency}*\n━━━━━━━━━━━━━━━\n\n",
         "currency_unsupported": "⚠️ Nicht unterstützte Währung: {currency}",
         "currency_fetch_error": "⚠️ Wechselkurse können nicht abgerufen werden.",
-        "city_add_success": "✅ Stadt hinzugefügt: *{city}*",
+        "city_add_success": "✅ Sta�dt hinzugefügt: *{city}*",
         "currency_alert_set": "✅ Sie werden benachrichtigt, wenn der Dollar `{rate}` Ihrer Lokalwährung erreicht.",
         "currency_alert_invalid": "❌ Senden Sie eine Zahl, z. B.: 1600",
         "notif_time_set": "✅ Die Morgenzusammenfassung wird täglich um *{hour}:00* Uhr gesendet.",
@@ -4997,7 +4997,7 @@ MSGS = {
         "track_alert_hint": "🔔 *При зміні ±1% ви отримаєте миттєві сповіщення та щогодинний звіт.*\n\n",
         "track_remove_hint": "❌ Видалити символ: `/removetrack AAPL`\n",
         "track_list_hint": "📋 Переглянути список: `/mytrack`",
-        "track_empty": "📌 Список відстеження порожній.\nНатисніть *Відстежити актив*, щоб додати символи.",
+        "track_empty": "📌 Список відст�еження порожній.\nНатисніть *Відстежити актив*, щоб додати символи.",
         "track_list_header": "📌 *Ваші відстежувані активи:*\n━━━━━━━━━━━━━━\n",
         "track_alert_title": "🚨 *Цінові сповіщення*\n━━━━━━━━━━━━━━━\n\n",
         "track_rose": "📈 зріс",
@@ -5104,7 +5104,7 @@ MSGS = {
         "premium_btn_7day": "🌤 Previsioni 7 giorni",
         "premium_btn_hourly": "🕐 Meteo ogni 3 ore",
         "premium_btn_addcity": "🏙 Aggiungi Città",
-        "premium_btn_mycities": "📋 Le mie città salvate",
+        "prem�ium_btn_mycities": "📋 Le mie città salvate",
         "premium_btn_interests": "📌 I miei interessi",
         "premium_btn_currency_alert": "💱 Avviso valuta",
         "premium_btn_currency_table": "📊 Tabella valute",
@@ -5213,7 +5213,7 @@ MSGS = {
         "daily_summary_header": "📋 *Resumen de Noticias de Hoy — {date}*\n━━━━━━━━━━━━━━━\n\n",
         "daily_summary_no_source": "⚠️ No hay fuentes de noticias para este idioma.",
         "daily_summary_no_news": "⚠️ No hay noticias disponibles ahora, inténtalo más tarde.",
-        "top_referrers_header": "🏆 *Mejores Referidores*\n━━━━━━━━━━━━━━━\n\n",
+        "top_r�eferrers_header": "🏆 *Mejores Referidores*\n━━━━━━━━━━━━━━━\n\n",
         "top_referrers_empty": "📊 Aún no hay referidos — ¡sé el primero! 🎯",
         "top_referrers_invite": "invitación(es)",
         "dollar_header": "💵 *USD vs Dinar Iraquí*\n\n🏪 Mercado paralelo:\n{rate}\n\n⏰ Última actualización: `{time}`\n📡 Fuente: {source}\n\n━━━━━━━━━━━━━━\n🤖 @{username}",
@@ -5332,7 +5332,7 @@ SETUP_MSGS = {
         "convert_prompt": "🔄 مبلغ و ارز را ارسال کنید، مثال:\n*100 USD*\n*50 EUR*\n*200 IRR*",
         "convert_format_error": "⚠️ فرمت نادرست. مثال: *100 USD*",
         "convert_send_both": "⚠️ مبلغ و ارز را با هم بفرستید. مثال: *100 USD*",
-        "keywords_saved": "✅ {n} کلمه کلیدی ذخیره شد.\n🔔 هنگامی که در اخباری ظاهر شوند اطلاع‌رسانی می‌شوید!",
+        "keywords_saved": "✅ {n} کلمه کلیدی ذخیره شد.\n🔔 هنگامی که در اخباری ظاهر شوند اطلاع�‌رسانی می‌شوید!",
     },
     "हिन्दी 🇮🇳": {
         "choose_country": "🌍 अपना देश चुनें:",
@@ -5461,7 +5461,7 @@ def _cache_summary(link, summary_text):
     key = hashlib.md5(link.encode("utf-8")).hexdigest()[:16]
     if len(_news_summary_cache) > 2000:
         oldest = list(_news_summary_cache.keys())[:500]
-        for k in oldest:
+        for k in oldest:�
             del _news_summary_cache[k]
     _news_summary_cache[key] = summary_text
     return key
@@ -5654,12 +5654,12 @@ def broadcast_news():
                     feed = rss_cache.get(feed_url)
                     if not feed:
                         continue
-                    for item in feed.entries[:10]:
+                    for item in feed.entries[:20]:
                         if not hasattr(item, 'link') or item.link in sent:
                             continue
                         title = getattr(item, 'title', '')
                         if is_blacklisted(title):
-                            continue
+                            �continue
                         sent.add(item.link)
                         changed = True
                         item_sum = getattr(item, 'summary', '') or getattr(item, 'description', '')
@@ -5860,7 +5860,7 @@ def check_keyword_alerts():
             continue
         if int(uid) in banned:
             continue
-        user = users.get(uid)
+        user = users.get(uid�)
         if not user:
             continue
         lang = user.get("lang", "English 🇬🇧")
@@ -6056,7 +6056,7 @@ def send_referral_stats(uid):
         f"\n📊 *مستويات المكافآت:*\n{progress_lines}"
         f"\n🔓 *ميزاتك المفتوحة:*\n{unlocked_names}\n"
         f"━━━━━━━━━━━━━━\n"
-        f"💡 شارك رابطك وكلما زادت دعواتك زادت مكافآتك!"
+        f"💡 شارك رابطك وكلما زادت د�عواتك زادت مكافآتك!"
     )
     markup = types.InlineKeyboardMarkup()
     share_url = f"https://t.me/share/url?url={invite_link}&text=📱 جرب بوت الأخبار @{BOT_USERNAME}"
@@ -6297,7 +6297,7 @@ YAHOO_SYMBOLS = {
     "^IXIC": "NASDAQ",
     "^DJI": "Dow Jones",
     "^FTSE": "FTSE 100",
-    "^N225": "Nikkei 225",
+    "^N225": "Nikkei 2�25",
     "^HSI": "Hang Seng",
 }
 
@@ -6517,7 +6517,7 @@ def _safe_job(fn):
             fn()
         except Exception as e:
             try:
-                bot.send_message(ADMIN_ID, f"\u26a0\ufe0f \u062e\u0637\u0623 \u0641\u064a \u0627\u0644\u0645\u0647\u0645\u0629 {fn.__name__}: {e}")
+                bot.send_me�ssage(ADMIN_ID, f"\u26a0\ufe0f \u062e\u0637\u0623 \u0641\u064a \u0627\u0644\u0645\u0647\u0645\u0629 {fn.__name__}: {e}")
             except Exception:
                 pass
     wrapper.__name__ = fn.__name__
@@ -6731,7 +6731,7 @@ def cmd_settings(message):
 def cmd_setsource(message):
     chat_id = message.chat.id
     user_id = message.from_user.id if message.from_user else None
-    if not user_id or not is_chat_admin(chat_id, user_id):
+    if not user_id or not is_chat_adm�in(chat_id, user_id):
         return
     url = message.text.strip().replace("/setsource", "").strip()
     if not url.startswith("http"):
