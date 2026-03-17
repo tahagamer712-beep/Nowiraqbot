@@ -6,6 +6,7 @@ import atexit
 import os
 import json
 import datetime
+import time
 from apscheduler.schedulers.background import BackgroundScheduler
 
 # ======== مفاتيح البوت ========
@@ -1976,14 +1977,17 @@ def add_channel_step(message):
             if ch["id"] == chat_id:
                 bot.send_message(uid, f"⚠️ هذه القناة/المجموعة مضافة مسبقاً: *{title}*", parse_mode="Markdown")
                 return
-        channels_groups.append({"id": chat_id, "title": title, "type": chat_type, "lang": lang})
+        feeds = RSS.get(lang, RSS.get("العربية 🇮🇶", []))
+        initial_sent = list(prefill_sent_news(feeds))
+        channels_groups.append({"id": chat_id, "title": title, "type": chat_type, "lang": lang, "sent_news": initial_sent})
         save_channels_groups()
         bot.send_message(uid,
             f"✅ تمت الإضافة بنجاح!\n"
             f"📺 *{title}*\n"
             f"🆔 ID: `{chat_id}`\n"
             f"🗣 اللغة: {lang}\n"
-            f"📡 النوع: {chat_type}",
+            f"📡 النوع: {chat_type}\n"
+            f"📰 تم حفظ {len(initial_sent)} خبر موجود — ستصل فقط الأخبار الجديدة من الآن.",
             parse_mode="Markdown"
         )
     except ValueError:
@@ -2012,6 +2016,20 @@ def remove_channel_step(message):
     except Exception as e:
         bot.send_message(uid, f"❌ خطأ: {e}")
 
+def prefill_sent_news(feeds):
+    """جلب روابط الأخبار الحالية من الـ RSS لملء sent_news أولياً (لتجنب بث الأخبار القديمة دفعة واحدة)."""
+    links = set()
+    for feed_url in feeds:
+        try:
+            feed = feedparser.parse(feed_url)
+            for item in feed.entries[:20]:
+                link = getattr(item, 'link', '')
+                if link:
+                    links.add(link)
+        except:
+            pass
+    return links
+
 def broadcast_to_channels():
     if not channels_groups:
         return
@@ -2027,7 +2045,7 @@ def broadcast_to_channels():
         for feed_url in feeds:
             try:
                 feed = feedparser.parse(feed_url)
-                for item in feed.entries[:5]:
+                for item in feed.entries[:10]:
                     if not hasattr(item, 'link') or not hasattr(item, 'title'):
                         continue
                     link = getattr(item, 'link', '')
@@ -2040,9 +2058,11 @@ def broadcast_to_channels():
                     ch["sent_news"] = list(sent)[-500:]
                     ch["news_sent_count"] = ch.get("news_sent_count", 0) + 1
                     changed = True
-                    markup = make_news_share_markup(link, title)
+                    item_summary = getattr(item, 'summary', '') or getattr(item, 'description', '')
+                    markup = make_news_share_markup(link, title, lang, item_summary)
                     try:
-                        bot.send_message(chat_id, format_news_item("🚨 خبر عاجل", title), parse_mode="Markdown", reply_markup=markup)
+                        bot.send_message(chat_id, format_news_item(t(lang, "label_breaking"), title), parse_mode="Markdown", reply_markup=markup)
+                        time.sleep(1)
                     except Exception as e:
                         notify_admin_error(f"خطأ في إرسال للقناة {ch['title']} ({chat_id}): {e}")
             except Exception as e:
@@ -2058,7 +2078,6 @@ def breaking_news_step(message):
     lines = message.text.strip().split("\n")
     news_text = lines[0].strip()
     link = lines[1].strip() if len(lines) > 1 and lines[1].startswith("http") else ""
-    markup = make_news_share_markup(link, news_text) if link else None
     full_msg = f"🚨 *خبر عاجل*\n\n📰 {news_text}{BOT_SIGNATURE}"
     sent_users = 0
     failed_users = 0
@@ -2066,14 +2085,18 @@ def breaking_news_step(message):
         if int(target_uid) in banned:
             continue
         try:
-            bot.send_message(target_uid, full_msg, parse_mode="Markdown", reply_markup=markup)
+            user_lang = users.get(target_uid, {}).get("lang", "English 🇬🇧")
+            user_markup = make_news_share_markup(link, news_text, user_lang) if link else None
+            bot.send_message(target_uid, full_msg, parse_mode="Markdown", reply_markup=user_markup)
             sent_users += 1
         except:
             failed_users += 1
     sent_ch = 0
     for ch in list(channels_groups):
         try:
-            bot.send_message(ch["id"], full_msg, parse_mode="Markdown", reply_markup=markup)
+            ch_lang = ch.get("lang", "العربية 🇮🇶")
+            ch_markup = make_news_share_markup(link, news_text, ch_lang) if link else None
+            bot.send_message(ch["id"], full_msg, parse_mode="Markdown", reply_markup=ch_markup)
             sent_ch += 1
         except:
             pass
@@ -2174,6 +2197,29 @@ def handle_read_open(call):
     read_stats.setdefault("daily", {})[today] = read_stats["daily"].get(today, 0) + 1
     save_read_stats()
     bot.answer_callback_query(call.id)
+
+# ======== معالج زر ملخص الخبر ========
+@bot.callback_query_handler(func=lambda c: c.data.startswith("sum_"))
+def handle_summary_button(call):
+    uid = call.from_user.id
+    user = users.get(str(uid), {})
+    lang = user.get("lang", "English 🇬🇧")
+    lbl = NEWS_SHARE_LABELS.get(lang, NEWS_SHARE_LABELS["English 🇬🇧"])
+    sum_key = call.data[4:]
+    summary_text = _news_summary_cache.get(sum_key)
+    if not summary_text:
+        bot.answer_callback_query(call.id, lbl["no_summary"], show_alert=True)
+        return
+    clean = _clean_html(summary_text)
+    if not clean:
+        bot.answer_callback_query(call.id, lbl["no_summary"], show_alert=True)
+        return
+    MAX_ALERT = 190
+    if len(clean) <= MAX_ALERT:
+        bot.answer_callback_query(call.id, clean, show_alert=True)
+    else:
+        bot.answer_callback_query(call.id)
+        bot.send_message(uid, f"📄 {lbl['summary_btn']}\n\n{clean[:1500]}")
 
 # ======== خطوات إدارة الأدمن ========
 def add_admin_step(message):
@@ -2498,18 +2544,18 @@ def send_main_menu(uid):
     notif_label = btn["notif_on"] if notif_on else btn["notif_off"]
     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     markup.add(
-        btn["weather"], btn.get("forecast", "📅 توقعات 3 أيام"),
-        btn["news"], btn.get("sports", "⚽ رياضة"),
+        btn["weather"], btn["forecast"],
+        btn["news"], btn["sports"],
         btn["mena_politics"], btn["news_cats"],
-        btn["daily_summary"], btn.get("weekly_summary", "📆 ملخص أسبوعي"),
-        btn["currency"], btn.get("dollar_parallel", "💵 دولار السوق"),
-        btn.get("convert", "🔄 محوّل العملات"),
-        btn.get("crypto", "💎 كريبتو"), btn.get("track_asset", "📌 تتبع عملة/سهم"),
-        btn.get("prayer", "🕌 الصلاة"),
-        btn["search"], btn.get("my_stats", "📈 إحصائياتي"),
-        btn.get("referral", "🎁 دعواتي"), btn.get("top_referrers", "🏆 أفضل الداعين"),
-        btn.get("share_bot", "📢 انشر البوت"), btn.get("public_stats", "📊 إحصائيات"),
-        notif_label, btn.get("premium", "⭐ Premium"),
+        btn["daily_summary"], btn["weekly_summary"],
+        btn["currency"], btn["dollar_parallel"],
+        btn["convert"],
+        btn["crypto"], btn["track_asset"],
+        btn["prayer"],
+        btn["search"], btn["my_stats"],
+        btn["referral"], btn["top_referrers"],
+        btn["share_bot"], btn["public_stats"],
+        notif_label, btn["premium"],
         btn["settings"]
     )
     inline_markup = types.InlineKeyboardMarkup()
@@ -2564,12 +2610,13 @@ def search_news(uid, query):
             link = article.get("url", "")
             if title:
                 if link:
-                    markup = make_news_share_markup(link, title)
+                    art_summary = article.get("description", "") or article.get("content", "")
+                    markup = make_news_share_markup(link, title, lang, art_summary)
                     bot.send_message(uid, f"📰 {title}", parse_mode="Markdown", reply_markup=markup)
                 else:
                     bot.send_message(uid, f"📰 {title}", parse_mode="Markdown")
     except Exception as e:
-        bot.send_message(uid, "⚠️ حدث خطأ أثناء البحث.")
+        bot.send_message(uid, t(lang, "search_error"))
         notify_admin_error(f"خطأ في البحث: {e}")
 
 def send_trending_news(uid):
@@ -2588,27 +2635,29 @@ def send_trending_news(uid):
                 try:
                     feed = feedparser.parse(feeds[0])
                     articles_rss = feed.entries[:8]
-                    bot.send_message(uid, "🔥 *الأكثر تداولاً*\n━━━━━━━━━━━━━━━", parse_mode="Markdown")
+                    bot.send_message(uid, t(lang, "trending_header"), parse_mode="Markdown")
                     for item in articles_rss:
                         title = getattr(item, 'title', '')
                         link = getattr(item, 'link', '')
                         if title and link:
-                            markup = make_news_share_markup(link, title)
-                            bot.send_message(uid, format_news_item("🔥", title), parse_mode="Markdown", reply_markup=markup)
+                            item_sum = getattr(item, 'summary', '') or getattr(item, 'description', '')
+                            markup = make_news_share_markup(link, title, lang, item_sum)
+                            bot.send_message(uid, format_news_item(t(lang, "label_trending"), title), parse_mode="Markdown", reply_markup=markup)
                     return
                 except:
                     pass
-            bot.send_message(uid, "⚠️ لا توجد أخبار رائجة الآن، حاول لاحقاً.")
+            bot.send_message(uid, t(lang, "no_trending"))
             return
-        bot.send_message(uid, "🔥 *الأكثر تداولاً*\n━━━━━━━━━━━━━━━", parse_mode="Markdown")
+        bot.send_message(uid, t(lang, "trending_header"), parse_mode="Markdown")
         for article in articles[:8]:
             title = article.get("title", "")
             link = article.get("url", "")
             if title and link:
-                markup = make_news_share_markup(link, title)
-                bot.send_message(uid, format_news_item("🔥", title), parse_mode="Markdown", reply_markup=markup)
+                art_sum = article.get("description", "") or article.get("content", "")
+                markup = make_news_share_markup(link, title, lang, art_sum)
+                bot.send_message(uid, format_news_item(t(lang, "label_trending"), title), parse_mode="Markdown", reply_markup=markup)
     except Exception as e:
-        bot.send_message(uid, "⚠️ حدث خطأ أثناء جلب الأخبار الرائجة.")
+        bot.send_message(uid, t(lang, "no_trending"))
         notify_admin_error(f"خطأ في الأخبار الرائجة: {e}")
 
 def send_premium_upgrade(uid):
@@ -2939,8 +2988,9 @@ def broadcast_premium_instant_news():
                     sent.add(item.link)
                     link = getattr(item, 'link', '')
                     title = getattr(item, 'title', '')
-                    markup = make_news_share_markup(link, title)
-                    bot.send_message(uid, f"⚡ *خبر عاجل فوري*\n\n📰 {title}", parse_mode="Markdown", reply_markup=markup)
+                    item_sum = getattr(item, 'summary', '') or getattr(item, 'description', '')
+                    markup = make_news_share_markup(link, title, lang, item_sum)
+                    bot.send_message(uid, format_news_item(t(lang, "label_breaking"), title), parse_mode="Markdown", reply_markup=markup)
             except Exception as e:
                 notify_admin_error(f"خطأ في الأخبار الفورية للمميز: {e}")
     save_json(USERS_FILE, users)
@@ -3124,9 +3174,9 @@ def handle_selection(m):
                 currency = parts[1].upper()
                 convert_currency_msg(uid, amount, currency)
             except ValueError:
-                bot.send_message(uid, "⚠️ صيغة غير صحيحة. مثال: *100 USD*", parse_mode="Markdown")
+                bot.send_message(uid, st(lang, "convert_format_error"), parse_mode="Markdown")
         else:
-            bot.send_message(uid, "⚠️ أرسل المبلغ والعملة معاً. مثال: *100 USD*", parse_mode="Markdown")
+            bot.send_message(uid, st(lang, "convert_send_both"), parse_mode="Markdown")
         return
 
     if user_states.get(uid) == "tracking_asset":
@@ -3175,7 +3225,7 @@ def handle_selection(m):
                     existing.append(kw)
             user_keywords[str(uid)] = existing[:20]
             save_keywords()
-            bot.send_message(uid, f"✅ تم حفظ {len(new_kws)} كلمة مفتاحية.\n🔔 ستصلك تنبيه عند ظهورها في أي خبر!")
+            bot.send_message(uid, st(lang, "keywords_saved", n=len(new_kws)))
         return
 
     if "province" in user:
@@ -3208,7 +3258,7 @@ def handle_selection(m):
             send_prayer_times(uid)
         elif text == btn["search"]:
             user_states[uid] = "searching"
-            bot.send_message(uid, "🔍 اكتب كلمة البحث:")
+            bot.send_message(uid, t(lang, "search_prompt"))
         elif text == btn.get("referral"):
             send_referral_stats(uid)
         elif text == btn.get("top_referrers"):
@@ -3217,7 +3267,7 @@ def handle_selection(m):
             send_sports_news(uid)
         elif text == btn.get("convert"):
             user_states[uid] = "converting_currency"
-            bot.send_message(uid, "🔄 أرسل المبلغ والعملة، مثال:\n*100 USD*\n*50 EUR*\n*200 IQD*", parse_mode="Markdown")
+            bot.send_message(uid, st(lang, "convert_prompt"), parse_mode="Markdown")
         elif text == btn.get("my_stats"):
             send_my_stats(uid)
         elif text == btn.get("share_bot"):
@@ -3235,9 +3285,9 @@ def handle_selection(m):
             users[str(uid)]["notifications"] = not current
             save_json(USERS_FILE, users)
             if not current:
-                bot.send_message(uid, "🔔 تم تفعيل الإشعارات التلقائية.")
+                bot.send_message(uid, st(lang, "notif_enabled"))
             else:
-                bot.send_message(uid, "🔕 تم إيقاف الإشعارات التلقائية.")
+                bot.send_message(uid, st(lang, "notif_disabled"))
             send_main_menu(uid)
         elif text == btn.get("premium", "⭐ Premium"):
             if is_premium(uid):
@@ -3255,14 +3305,16 @@ def handle_selection(m):
                     bot.send_message(uid, "⚠️ هذه اللغة غير متوفرة بالكامل. اختر لغة أخرى.")
                     return
                 users[str(uid)]["lang"] = val
+                user_feeds = RSS.get(val, [])
+                users[str(uid)]["sent_news"] = prefill_sent_news(user_feeds)
                 save_json(USERS_FILE, users)
                 markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
                 for country in countries[val]:
                     markup.add(country)
-                bot.send_message(uid, "اختر دولتك / Choose your country:", reply_markup=markup)
+                bot.send_message(uid, st(val, "choose_country"), reply_markup=markup)
                 send_usage_hint(uid, val)
                 return
-        bot.send_message(uid, "👇 الرجاء اختيار لغة من القائمة.")
+        bot.send_message(uid, "👇 Please choose a language from the list.")
         return
 
     if "country" not in user:
@@ -3272,9 +3324,9 @@ def handle_selection(m):
             markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
             for prov in countries[lang][text]:
                 markup.add(prov)
-            bot.send_message(uid, "اختر محافظتك / Choose your province:", reply_markup=markup)
+            bot.send_message(uid, st(lang, "choose_province"), reply_markup=markup)
         else:
-            bot.send_message(uid, "👇 الرجاء اختيار دولة من القائمة.")
+            bot.send_message(uid, st(lang, "choose_country_from_list"))
         return
 
     if "province" not in user:
@@ -3285,36 +3337,621 @@ def handle_selection(m):
                 users[str(uid)]["province"] = text
                 save_json(USERS_FILE, users)
                 update_stats("new_user", country=country, lang=lang)
-                bot.send_message(uid, "تم حفظ اختياراتك ✅\nستصلك الأخبار والطقس تلقائيًا كل ساعة.")
+                bot.send_message(uid, st(lang, "settings_saved"))
                 send_main_menu(uid)
             else:
-                bot.send_message(uid, "👇 الرجاء اختيار محافظة من القائمة.")
+                bot.send_message(uid, st(lang, "choose_province_from_list"))
 
 BOT_SIGNATURE = "\n━━━━━━━━━━━━━━\nعبر بوت أخبار العالم\n@Iraqnowbot"
 
-# ======== دوال الأخبار (عنوان فقط — بدون رابط أو مصدر) ========
+# ======== نصوص أزرار مشاركة الأخبار حسب اللغة ========
+NEWS_SHARE_LABELS = {
+    "العربية 🇮🇶": {
+        "open": "🔗 فتح الخبر",
+        "share_news": "📤 شارك الخبر",
+        "share_bot": "🤖 شارك البوت",
+        "via": "عبر",
+        "bot_promo": "بوت الأخبار والطقس\nآخر أخبار العالم والطقس والعملات على مدار الساعة!",
+        "summary_btn": "📄 ملخص الخبر",
+        "no_summary": "⚠️ لا يوجد ملخص متوفر لهذا الخبر."
+    },
+    "English 🇬🇧": {
+        "open": "🔗 Open Article",
+        "share_news": "📤 Share News",
+        "share_bot": "🤖 Share Bot",
+        "via": "via",
+        "bot_promo": "News & Weather Bot\nLatest world news, weather & currency rates 24/7!",
+        "summary_btn": "📄 Article Summary",
+        "no_summary": "⚠️ No summary available for this article."
+    },
+    "Русский 🇷🇺": {
+        "open": "🔗 Открыть статью",
+        "share_news": "📤 Поделиться",
+        "share_bot": "🤖 Поделиться ботом",
+        "via": "через",
+        "bot_promo": "Бот новостей и погоды\nПоследние мировые новости, погода и курсы валют!",
+        "summary_btn": "📄 Краткое содержание",
+        "no_summary": "⚠️ Краткое содержание недоступно."
+    },
+    "فارسی 🇮🇷": {
+        "open": "🔗 باز کردن خبر",
+        "share_news": "📤 اشتراک‌گذاری",
+        "share_bot": "🤖 اشتراک‌گذاری ربات",
+        "via": "از طریق",
+        "bot_promo": "ربات اخبار و آب‌وهوا\nآخرین اخبار جهان، آب‌وهوا و نرخ ارز!",
+        "summary_btn": "📄 خلاصه خبر",
+        "no_summary": "⚠️ خلاصه‌ای برای این خبر موجود نیست."
+    },
+    "हिन्दी 🇮🇳": {
+        "open": "🔗 खबर खोलें",
+        "share_news": "📤 शेयर करें",
+        "share_bot": "🤖 बॉट शेयर करें",
+        "via": "के द्वारा",
+        "bot_promo": "न्यूज़ और मौसम बॉट\nताज़ा खबरें, मौसम और मुद्रा दरें!",
+        "summary_btn": "📄 खबर सारांश",
+        "no_summary": "⚠️ इस खबर का कोई सारांश उपलब्ध नहीं है।"
+    },
+    "Português 🇧🇷": {
+        "open": "🔗 Abrir notícia",
+        "share_news": "📤 Compartilhar",
+        "share_bot": "🤖 Compartilhar bot",
+        "via": "via",
+        "bot_promo": "Bot de Notícias e Clima\nÚltimas notícias, clima e câmbio!",
+        "summary_btn": "📄 Resumo da Notícia",
+        "no_summary": "⚠️ Nenhum resumo disponível para esta notícia."
+    },
+    "Türkçe 🇹🇷": {
+        "open": "🔗 Haberi Aç",
+        "share_news": "📤 Paylaş",
+        "share_bot": "🤖 Botu Paylaş",
+        "via": "ile",
+        "bot_promo": "Haber ve Hava Durumu Botu\nSon haberler, hava durumu ve döviz kurları!",
+        "summary_btn": "📄 Haber Özeti",
+        "no_summary": "⚠️ Bu haber için özet mevcut değil."
+    },
+    "اردو 🇵🇰": {
+        "open": "🔗 خبر کھولیں",
+        "share_news": "📤 شیئر کریں",
+        "share_bot": "🤖 بوٹ شیئر کریں",
+        "via": "کے ذریعے",
+        "bot_promo": "خبر اور موسم بوٹ\nتازہ خبریں، موسم اور کرنسی ریٹ!",
+        "summary_btn": "📄 خبر کا خلاصہ",
+        "no_summary": "⚠️ اس خبر کا کوئی خلاصہ دستیاب نہیں۔"
+    },
+    "Deutsch 🇩🇪": {
+        "open": "🔗 Artikel öffnen",
+        "share_news": "📤 Teilen",
+        "share_bot": "🤖 Bot teilen",
+        "via": "über",
+        "bot_promo": "Nachrichten- und Wetter-Bot\nAktuelle Nachrichten, Wetter und Wechselkurse!",
+        "summary_btn": "📄 Artikel-Zusammenfassung",
+        "no_summary": "⚠️ Keine Zusammenfassung für diesen Artikel verfügbar."
+    },
+    "Українська 🇺🇦": {
+        "open": "🔗 Відкрити статтю",
+        "share_news": "📤 Поділитися",
+        "share_bot": "🤖 Поділитися ботом",
+        "via": "через",
+        "bot_promo": "Бот новин і погоди\nОстанні новини, погода та курси валют!",
+        "summary_btn": "📄 Короткий зміст",
+        "no_summary": "⚠️ Короткий зміст недоступний."
+    },
+    "Italiano 🇮🇹": {
+        "open": "🔗 Apri articolo",
+        "share_news": "📤 Condividi",
+        "share_bot": "🤖 Condividi bot",
+        "via": "tramite",
+        "bot_promo": "Bot Notizie e Meteo\nUltime notizie, meteo e tassi di cambio!",
+        "summary_btn": "📄 Riepilogo Articolo",
+        "no_summary": "⚠️ Nessun riepilogo disponibile per questo articolo."
+    },
+    "Español 🇲🇽": {
+        "open": "🔗 Abrir artículo",
+        "share_news": "📤 Compartir",
+        "share_bot": "🤖 Compartir bot",
+        "via": "vía",
+        "bot_promo": "Bot de Noticias y Clima\n¡Últimas noticias, clima y tipos de cambio!",
+        "summary_btn": "📄 Resumen del Artículo",
+        "no_summary": "⚠️ No hay resumen disponible para este artículo."
+    },
+}
+
+# ======== رسائل النظام المترجمة ========
+MSGS = {
+    "العربية 🇮🇶": {
+        "no_news": "⚠️ لا توجد أخبار جديدة الآن.",
+        "no_results": "⚠️ لا توجد نتائج لهذا البحث.",
+        "search_error": "⚠️ حدث خطأ أثناء البحث.",
+        "no_trending": "⚠️ لا توجد أخبار رائجة الآن، حاول لاحقاً.",
+        "trending_header": "🔥 *الأكثر تداولاً*\n━━━━━━━━━━━━━━━",
+        "sports_header": "⚽ *أخبار الرياضة*\n━━━━━━━━━━━━━━━",
+        "no_sports": "⚠️ لا توجد أخبار رياضية جديدة الآن.",
+        "no_sports_source": "⚠️ لا توجد مصادر رياضية لهذه اللغة.",
+        "no_mena": "⚠️ لا توجد أخبار سياسية جديدة الآن، حاول مرة أخرى لاحقاً.",
+        "no_source": "⚠️ لا توجد مصادر أخبار لهذه اللغة حالياً.",
+        "weather_error": "⚠️ لا يمكن جلب بيانات الطقس حالياً.",
+        "forecast_error": "⚠️ لا يمكن جلب توقعات الساعات.",
+        "no_weekly": "⚠️ لا توجد أخبار لإنشاء الملخص الأسبوعي.",
+        "currency_error": "⚠️ لا يمكن جلب أسعار العملات حالياً.",
+        "search_prompt": "🔍 اكتب كلمة البحث:",
+        "label_breaking": "🚨 خبر عاجل",
+        "label_news": "🚨 خبر",
+        "label_mena": "📰 أخبار الشرق الأوسط السياسية",
+        "label_trending": "🔥",
+        "label_sports": "⚽",
+    },
+    "English 🇬🇧": {
+        "no_news": "⚠️ No new news available right now.",
+        "no_results": "⚠️ No results found for your search.",
+        "search_error": "⚠️ An error occurred while searching.",
+        "no_trending": "⚠️ No trending news right now, try again later.",
+        "trending_header": "🔥 *Trending News*\n━━━━━━━━━━━━━━━",
+        "sports_header": "⚽ *Sports News*\n━━━━━━━━━━━━━━━",
+        "no_sports": "⚠️ No new sports news right now.",
+        "no_sports_source": "⚠️ No sports sources available for this language.",
+        "no_mena": "⚠️ No new political news right now, try again later.",
+        "no_source": "⚠️ No news sources available for this language right now.",
+        "weather_error": "⚠️ Cannot fetch weather data right now.",
+        "forecast_error": "⚠️ Cannot fetch hourly forecast.",
+        "no_weekly": "⚠️ No news available for weekly summary.",
+        "currency_error": "⚠️ Cannot fetch currency rates right now.",
+        "search_prompt": "🔍 Type your search keyword:",
+        "label_breaking": "🚨 Breaking News",
+        "label_news": "🚨 News",
+        "label_mena": "📰 Middle East Political News",
+        "label_trending": "🔥",
+        "label_sports": "⚽",
+    },
+    "Русский 🇷🇺": {
+        "no_news": "⚠️ Новых новостей нет.",
+        "no_results": "⚠️ По вашему запросу ничего не найдено.",
+        "search_error": "⚠️ При поиске произошла ошибка.",
+        "no_trending": "⚠️ Нет трендовых новостей, попробуйте позже.",
+        "trending_header": "🔥 *В тренде*\n━━━━━━━━━━━━━━━",
+        "sports_header": "⚽ *Спортивные новости*\n━━━━━━━━━━━━━━━",
+        "no_sports": "⚠️ Новых спортивных новостей нет.",
+        "no_sports_source": "⚠️ Нет спортивных источников для этого языка.",
+        "no_mena": "⚠️ Новых политических новостей нет, попробуйте позже.",
+        "no_source": "⚠️ Нет источников новостей для этого языка.",
+        "weather_error": "⚠️ Не удаётся получить данные о погоде.",
+        "forecast_error": "⚠️ Не удаётся получить почасовой прогноз.",
+        "no_weekly": "⚠️ Нет новостей для еженедельной сводки.",
+        "currency_error": "⚠️ Не удаётся получить курсы валют.",
+        "search_prompt": "🔍 Введите слово для поиска:",
+        "label_breaking": "🚨 Срочная новость",
+        "label_news": "🚨 Новость",
+        "label_mena": "📰 Ближний Восток",
+        "label_trending": "🔥",
+        "label_sports": "⚽",
+    },
+    "فارسی 🇮🇷": {
+        "no_news": "⚠️ اخبار جدیدی موجود نیست.",
+        "no_results": "⚠️ نتیجه‌ای برای جستجوی شما یافت نشد.",
+        "search_error": "⚠️ خطایی در جستجو رخ داد.",
+        "no_trending": "⚠️ اخبار پرطرفداری موجود نیست، بعداً دوباره امتحان کنید.",
+        "trending_header": "🔥 *پرطرفدارترین*\n━━━━━━━━━━━━━━━",
+        "sports_header": "⚽ *اخبار ورزشی*\n━━━━━━━━━━━━━━━",
+        "no_sports": "⚠️ اخبار ورزشی جدیدی موجود نیست.",
+        "no_sports_source": "⚠️ منبع ورزشی برای این زبان موجود نیست.",
+        "no_mena": "⚠️ اخبار سیاسی جدیدی موجود نیست، بعداً دوباره امتحان کنید.",
+        "no_source": "⚠️ منبع خبری برای این زبان موجود نیست.",
+        "weather_error": "⚠️ دریافت اطلاعات آب‌وهوا ممکن نیست.",
+        "forecast_error": "⚠️ دریافت پیش‌بینی ساعتی ممکن نیست.",
+        "no_weekly": "⚠️ اخباری برای خلاصه هفتگی موجود نیست.",
+        "currency_error": "⚠️ دریافت نرخ ارز ممکن نیست.",
+        "search_prompt": "🔍 کلمه جستجو را بنویسید:",
+        "label_breaking": "🚨 خبر فوری",
+        "label_news": "🚨 خبر",
+        "label_mena": "📰 اخبار سیاسی خاورمیانه",
+        "label_trending": "🔥",
+        "label_sports": "⚽",
+    },
+    "हिन्दी 🇮🇳": {
+        "no_news": "⚠️ अभी कोई नई खबर नहीं है।",
+        "no_results": "⚠️ आपकी खोज का कोई परिणाम नहीं मिला।",
+        "search_error": "⚠️ खोज के दौरान त्रुटि हुई।",
+        "no_trending": "⚠️ अभी कोई ट्रेंडिंग खबर नहीं, बाद में प्रयास करें।",
+        "trending_header": "🔥 *ट्रेंडिंग खबरें*\n━━━━━━━━━━━━━━━",
+        "sports_header": "⚽ *खेल समाचार*\n━━━━━━━━━━━━━━━",
+        "no_sports": "⚠️ अभी कोई नई खेल खबर नहीं।",
+        "no_sports_source": "⚠️ इस भाषा के लिए कोई खेल स्रोत नहीं।",
+        "no_mena": "⚠️ अभी कोई नई राजनीतिक खबर नहीं, बाद में प्रयास करें।",
+        "no_source": "⚠️ इस भाषा के लिए कोई समाचार स्रोत नहीं।",
+        "weather_error": "⚠️ मौसम डेटा प्राप्त नहीं हो सका।",
+        "forecast_error": "⚠️ घंटे की भविष्यवाणी प्राप्त नहीं हो सकी।",
+        "no_weekly": "⚠️ साप्ताहिक सारांश के लिए कोई समाचार नहीं।",
+        "currency_error": "⚠️ मुद्रा दरें अभी प्राप्त नहीं हो सकीं।",
+        "search_prompt": "🔍 खोज शब्द टाइप करें:",
+        "label_breaking": "🚨 ब्रेकिंग न्यूज़",
+        "label_news": "🚨 खबर",
+        "label_mena": "📰 मध्य पूर्व राजनीतिक समाचार",
+        "label_trending": "🔥",
+        "label_sports": "⚽",
+    },
+    "Português 🇧🇷": {
+        "no_news": "⚠️ Nenhuma notícia nova agora.",
+        "no_results": "⚠️ Nenhum resultado encontrado para sua pesquisa.",
+        "search_error": "⚠️ Ocorreu um erro durante a pesquisa.",
+        "no_trending": "⚠️ Sem notícias em alta agora, tente mais tarde.",
+        "trending_header": "🔥 *Em Alta*\n━━━━━━━━━━━━━━━",
+        "sports_header": "⚽ *Notícias Esportivas*\n━━━━━━━━━━━━━━━",
+        "no_sports": "⚠️ Sem novas notícias esportivas agora.",
+        "no_sports_source": "⚠️ Nenhuma fonte esportiva para este idioma.",
+        "no_mena": "⚠️ Sem notícias políticas novas, tente mais tarde.",
+        "no_source": "⚠️ Nenhuma fonte de notícias para este idioma.",
+        "weather_error": "⚠️ Não foi possível obter dados meteorológicos.",
+        "forecast_error": "⚠️ Não foi possível obter previsão por hora.",
+        "no_weekly": "⚠️ Sem notícias para resumo semanal.",
+        "currency_error": "⚠️ Não foi possível obter taxas de câmbio.",
+        "search_prompt": "🔍 Digite a palavra de pesquisa:",
+        "label_breaking": "🚨 Urgente",
+        "label_news": "🚨 Notícia",
+        "label_mena": "📰 Notícias Políticas do Médio Oriente",
+        "label_trending": "🔥",
+        "label_sports": "⚽",
+    },
+    "Türkçe 🇹🇷": {
+        "no_news": "⚠️ Şu an yeni haber yok.",
+        "no_results": "⚠️ Aramanız için sonuç bulunamadı.",
+        "search_error": "⚠️ Arama sırasında hata oluştu.",
+        "no_trending": "⚠️ Şu an trend haber yok, daha sonra deneyin.",
+        "trending_header": "🔥 *Trend Haberler*\n━━━━━━━━━━━━━━━",
+        "sports_header": "⚽ *Spor Haberleri*\n━━━━━━━━━━━━━━━",
+        "no_sports": "⚠️ Şu an yeni spor haberi yok.",
+        "no_sports_source": "⚠️ Bu dil için spor kaynağı yok.",
+        "no_mena": "⚠️ Şu an yeni siyasi haber yok, daha sonra deneyin.",
+        "no_source": "⚠️ Bu dil için haber kaynağı yok.",
+        "weather_error": "⚠️ Hava durumu verisi alınamıyor.",
+        "forecast_error": "⚠️ Saatlik tahmin alınamıyor.",
+        "no_weekly": "⚠️ Haftalık özet için haber yok.",
+        "currency_error": "⚠️ Döviz kurları alınamıyor.",
+        "search_prompt": "🔍 Arama kelimesini yazın:",
+        "label_breaking": "🚨 Son Dakika",
+        "label_news": "🚨 Haber",
+        "label_mena": "📰 Orta Doğu Siyasi Haberleri",
+        "label_trending": "🔥",
+        "label_sports": "⚽",
+    },
+    "اردو 🇵🇰": {
+        "no_news": "⚠️ ابھی کوئی نئی خبر نہیں۔",
+        "no_results": "⚠️ آپ کی تلاش کا کوئی نتیجہ نہیں ملا۔",
+        "search_error": "⚠️ تلاش کے دوران خرابی ہوئی۔",
+        "no_trending": "⚠️ ابھی کوئی ٹرینڈنگ خبر نہیں، بعد میں کوشش کریں۔",
+        "trending_header": "🔥 *ٹرینڈنگ خبریں*\n━━━━━━━━━━━━━━━",
+        "sports_header": "⚽ *کھیل کی خبریں*\n━━━━━━━━━━━━━━━",
+        "no_sports": "⚠️ ابھی کوئی نئی کھیل کی خبر نہیں۔",
+        "no_sports_source": "⚠️ اس زبان کے لیے کوئی کھیل ذریعہ نہیں۔",
+        "no_mena": "⚠️ ابھی کوئی نئی سیاسی خبر نہیں، بعد میں کوشش کریں۔",
+        "no_source": "⚠️ اس زبان کے لیے کوئی خبر ذریعہ نہیں۔",
+        "weather_error": "⚠️ موسم کا ڈیٹا حاصل نہیں ہو سکا۔",
+        "forecast_error": "⚠️ گھنٹہ وار پیشگوئی حاصل نہیں ہو سکی۔",
+        "no_weekly": "⚠️ ہفتہ وار خلاصے کے لیے کوئی خبر نہیں۔",
+        "currency_error": "⚠️ کرنسی ریٹ حاصل نہیں ہو سکے۔",
+        "search_prompt": "🔍 تلاش کا لفظ لکھیں:",
+        "label_breaking": "🚨 بریکنگ نیوز",
+        "label_news": "🚨 خبر",
+        "label_mena": "📰 مشرق وسطیٰ سیاسی خبریں",
+        "label_trending": "🔥",
+        "label_sports": "⚽",
+    },
+    "Deutsch 🇩🇪": {
+        "no_news": "⚠️ Derzeit keine neuen Nachrichten.",
+        "no_results": "⚠️ Keine Ergebnisse für Ihre Suche gefunden.",
+        "search_error": "⚠️ Fehler bei der Suche.",
+        "no_trending": "⚠️ Derzeit keine Trend-Nachrichten, versuchen Sie es später.",
+        "trending_header": "🔥 *Trending*\n━━━━━━━━━━━━━━━",
+        "sports_header": "⚽ *Sportnachrichten*\n━━━━━━━━━━━━━━━",
+        "no_sports": "⚠️ Derzeit keine neuen Sportnachrichten.",
+        "no_sports_source": "⚠️ Keine Sportquellen für diese Sprache.",
+        "no_mena": "⚠️ Derzeit keine neuen politischen Nachrichten.",
+        "no_source": "⚠️ Keine Nachrichtenquellen für diese Sprache.",
+        "weather_error": "⚠️ Wetterdaten können nicht abgerufen werden.",
+        "forecast_error": "⚠️ Stundenvorhersage kann nicht abgerufen werden.",
+        "no_weekly": "⚠️ Keine Nachrichten für wöchentliche Zusammenfassung.",
+        "currency_error": "⚠️ Wechselkurse können nicht abgerufen werden.",
+        "search_prompt": "🔍 Suchbegriff eingeben:",
+        "label_breaking": "🚨 Eilmeldung",
+        "label_news": "🚨 Nachricht",
+        "label_mena": "📰 Nahost-Politiknachrichten",
+        "label_trending": "🔥",
+        "label_sports": "⚽",
+    },
+    "Українська 🇺🇦": {
+        "no_news": "⚠️ Зараз немає нових новин.",
+        "no_results": "⚠️ За вашим запитом нічого не знайдено.",
+        "search_error": "⚠️ Під час пошуку сталася помилка.",
+        "no_trending": "⚠️ Немає трендових новин, спробуйте пізніше.",
+        "trending_header": "🔥 *У тренді*\n━━━━━━━━━━━━━━━",
+        "sports_header": "⚽ *Спортивні новини*\n━━━━━━━━━━━━━━━",
+        "no_sports": "⚠️ Нових спортивних новин немає.",
+        "no_sports_source": "⚠️ Немає спортивних джерел для цієї мови.",
+        "no_mena": "⚠️ Нових політичних новин немає, спробуйте пізніше.",
+        "no_source": "⚠️ Немає джерел новин для цієї мови.",
+        "weather_error": "⚠️ Не вдається отримати дані про погоду.",
+        "forecast_error": "⚠️ Не вдається отримати погодинний прогноз.",
+        "no_weekly": "⚠️ Немає новин для тижневого підсумку.",
+        "currency_error": "⚠️ Не вдається отримати курси валют.",
+        "search_prompt": "🔍 Введіть слово для пошуку:",
+        "label_breaking": "🚨 Термінова новина",
+        "label_news": "🚨 Новина",
+        "label_mena": "📰 Близький Схід",
+        "label_trending": "🔥",
+        "label_sports": "⚽",
+    },
+    "Italiano 🇮🇹": {
+        "no_news": "⚠️ Nessuna notizia nuova al momento.",
+        "no_results": "⚠️ Nessun risultato trovato per la tua ricerca.",
+        "search_error": "⚠️ Si è verificato un errore durante la ricerca.",
+        "no_trending": "⚠️ Nessuna notizia di tendenza ora, riprova più tardi.",
+        "trending_header": "🔥 *In Tendenza*\n━━━━━━━━━━━━━━━",
+        "sports_header": "⚽ *Notizie Sportive*\n━━━━━━━━━━━━━━━",
+        "no_sports": "⚠️ Nessuna nuova notizia sportiva al momento.",
+        "no_sports_source": "⚠️ Nessuna fonte sportiva per questa lingua.",
+        "no_mena": "⚠️ Nessuna nuova notizia politica, riprova più tardi.",
+        "no_source": "⚠️ Nessuna fonte di notizie per questa lingua.",
+        "weather_error": "⚠️ Impossibile recuperare i dati meteo.",
+        "forecast_error": "⚠️ Impossibile recuperare le previsioni orarie.",
+        "no_weekly": "⚠️ Nessuna notizia per il riepilogo settimanale.",
+        "currency_error": "⚠️ Impossibile recuperare i tassi di cambio.",
+        "search_prompt": "🔍 Inserisci la parola di ricerca:",
+        "label_breaking": "🚨 Notizia Flash",
+        "label_news": "🚨 Notizia",
+        "label_mena": "📰 Notizie Politiche del Medio Oriente",
+        "label_trending": "🔥",
+        "label_sports": "⚽",
+    },
+    "Español 🇲🇽": {
+        "no_news": "⚠️ No hay noticias nuevas ahora.",
+        "no_results": "⚠️ No se encontraron resultados para tu búsqueda.",
+        "search_error": "⚠️ Se produjo un error durante la búsqueda.",
+        "no_trending": "⚠️ No hay noticias en tendencia ahora, inténtalo más tarde.",
+        "trending_header": "🔥 *En Tendencia*\n━━━━━━━━━━━━━━━",
+        "sports_header": "⚽ *Noticias Deportivas*\n━━━━━━━━━━━━━━━",
+        "no_sports": "⚠️ No hay noticias deportivas nuevas ahora.",
+        "no_sports_source": "⚠️ No hay fuentes deportivas para este idioma.",
+        "no_mena": "⚠️ No hay noticias políticas nuevas, inténtalo más tarde.",
+        "no_source": "⚠️ No hay fuentes de noticias para este idioma.",
+        "weather_error": "⚠️ No se pueden obtener datos del tiempo.",
+        "forecast_error": "⚠️ No se puede obtener el pronóstico por hora.",
+        "no_weekly": "⚠️ No hay noticias para el resumen semanal.",
+        "currency_error": "⚠️ No se pueden obtener las tasas de cambio.",
+        "search_prompt": "🔍 Escribe la palabra de búsqueda:",
+        "label_breaking": "🚨 Última Hora",
+        "label_news": "🚨 Noticia",
+        "label_mena": "📰 Noticias Políticas del Medio Oriente",
+        "label_trending": "🔥",
+        "label_sports": "⚽",
+    },
+}
+
+def t(lang, key):
+    """ترجمة رسالة نظام حسب لغة المستخدم مع الرجوع للإنجليزية إذا لم توجد."""
+    return MSGS.get(lang, MSGS["English 🇬🇧"]).get(key, MSGS["English 🇬🇧"].get(key, ""))
+
+# ======== رسائل الإعداد والتفاعل المترجمة ========
+SETUP_MSGS = {
+    "العربية 🇮🇶": {
+        "choose_country": "🌍 اختر دولتك:",
+        "choose_province": "🏙 اختر محافظتك:",
+        "settings_saved": "✅ تم حفظ اختياراتك\nستصلك الأخبار والطقس تلقائيًا كل ساعة.",
+        "choose_country_from_list": "👇 الرجاء اختيار دولة من القائمة.",
+        "choose_province_from_list": "👇 الرجاء اختيار محافظة من القائمة.",
+        "notif_enabled": "🔔 تم تفعيل الإشعارات التلقائية.",
+        "notif_disabled": "🔕 تم إيقاف الإشعارات التلقائية.",
+        "convert_prompt": "🔄 أرسل المبلغ والعملة، مثال:\n*100 USD*\n*50 EUR*\n*200 IQD*",
+        "convert_format_error": "⚠️ صيغة غير صحيحة. مثال: *100 USD*",
+        "convert_send_both": "⚠️ أرسل المبلغ والعملة معاً. مثال: *100 USD*",
+        "keywords_saved": "✅ تم حفظ {n} كلمة مفتاحية.\n🔔 ستصلك تنبيه عند ظهورها في أي خبر!",
+    },
+    "English 🇬🇧": {
+        "choose_country": "🌍 Choose your country:",
+        "choose_province": "🏙 Choose your city/province:",
+        "settings_saved": "✅ Your settings have been saved!\nYou'll receive news and weather automatically every hour.",
+        "choose_country_from_list": "👇 Please select a country from the list.",
+        "choose_province_from_list": "👇 Please select a city from the list.",
+        "notif_enabled": "🔔 Automatic notifications have been enabled.",
+        "notif_disabled": "🔕 Automatic notifications have been disabled.",
+        "convert_prompt": "🔄 Send the amount and currency, example:\n*100 USD*\n*50 EUR*\n*200 GBP*",
+        "convert_format_error": "⚠️ Invalid format. Example: *100 USD*",
+        "convert_send_both": "⚠️ Send the amount and currency together. Example: *100 USD*",
+        "keywords_saved": "✅ {n} keyword(s) saved.\n🔔 You'll be alerted when they appear in any news!",
+    },
+    "Русский 🇷🇺": {
+        "choose_country": "🌍 Выберите страну:",
+        "choose_province": "🏙 Выберите город/регион:",
+        "settings_saved": "✅ Ваши настройки сохранены!\nВы будете получать новости и погоду автоматически каждый час.",
+        "choose_country_from_list": "👇 Пожалуйста, выберите страну из списка.",
+        "choose_province_from_list": "👇 Пожалуйста, выберите город из списка.",
+        "notif_enabled": "🔔 Автоматические уведомления включены.",
+        "notif_disabled": "🔕 Автоматические уведомления отключены.",
+        "convert_prompt": "🔄 Отправьте сумму и валюту, например:\n*100 USD*\n*50 EUR*\n*200 RUB*",
+        "convert_format_error": "⚠️ Неверный формат. Пример: *100 USD*",
+        "convert_send_both": "⚠️ Отправьте сумму и валюту вместе. Пример: *100 USD*",
+        "keywords_saved": "✅ Сохранено {n} ключевых слов.\n🔔 Вы получите уведомление, когда они появятся в новостях!",
+    },
+    "فارسی 🇮🇷": {
+        "choose_country": "🌍 کشور خود را انتخاب کنید:",
+        "choose_province": "🏙 استان/شهر خود را انتخاب کنید:",
+        "settings_saved": "✅ تنظیمات شما ذخیره شد!\nاخبار و آب‌وهوا هر ساعت برایتان ارسال می‌شود.",
+        "choose_country_from_list": "👇 لطفاً یک کشور از لیست انتخاب کنید.",
+        "choose_province_from_list": "👇 لطفاً یک شهر از لیست انتخاب کنید.",
+        "notif_enabled": "🔔 اعلان‌های خودکار فعال شد.",
+        "notif_disabled": "🔕 اعلان‌های خودکار غیرفعال شد.",
+        "convert_prompt": "🔄 مبلغ و ارز را ارسال کنید، مثال:\n*100 USD*\n*50 EUR*\n*200 IRR*",
+        "convert_format_error": "⚠️ فرمت نادرست. مثال: *100 USD*",
+        "convert_send_both": "⚠️ مبلغ و ارز را با هم بفرستید. مثال: *100 USD*",
+        "keywords_saved": "✅ {n} کلمه کلیدی ذخیره شد.\n🔔 هنگامی که در اخباری ظاهر شوند اطلاع‌رسانی می‌شوید!",
+    },
+    "हिन्दी 🇮🇳": {
+        "choose_country": "🌍 अपना देश चुनें:",
+        "choose_province": "🏙 अपना शहर/राज्य चुनें:",
+        "settings_saved": "✅ आपकी सेटिंग सेव हो गई!\nआपको हर घंटे स्वचालित रूप से समाचार और मौसम मिलेगा।",
+        "choose_country_from_list": "👇 कृपया सूची से एक देश चुनें।",
+        "choose_province_from_list": "👇 कृपया सूची से एक शहर चुनें।",
+        "notif_enabled": "🔔 स्वचालित सूचनाएं सक्रिय की गईं।",
+        "notif_disabled": "🔕 स्वचालित सूचनाएं बंद की गईं।",
+        "convert_prompt": "🔄 राशि और मुद्रा भेजें, उदाहरण:\n*100 USD*\n*50 EUR*\n*200 INR*",
+        "convert_format_error": "⚠️ गलत प्रारूप। उदाहरण: *100 USD*",
+        "convert_send_both": "⚠️ राशि और मुद्रा एक साथ भेजें। उदाहरण: *100 USD*",
+        "keywords_saved": "✅ {n} कीवर्ड सेव किए गए।\n🔔 जब भी वे किसी खबर में आएंगे आपको अलर्ट मिलेगा!",
+    },
+    "Português 🇧🇷": {
+        "choose_country": "🌍 Escolha seu país:",
+        "choose_province": "🏙 Escolha sua cidade/estado:",
+        "settings_saved": "✅ Suas configurações foram salvas!\nVocê receberá notícias e clima automaticamente a cada hora.",
+        "choose_country_from_list": "👇 Por favor, selecione um país da lista.",
+        "choose_province_from_list": "👇 Por favor, selecione uma cidade da lista.",
+        "notif_enabled": "🔔 Notificações automáticas ativadas.",
+        "notif_disabled": "🔕 Notificações automáticas desativadas.",
+        "convert_prompt": "🔄 Envie o valor e a moeda, exemplo:\n*100 USD*\n*50 EUR*\n*200 BRL*",
+        "convert_format_error": "⚠️ Formato inválido. Exemplo: *100 USD*",
+        "convert_send_both": "⚠️ Envie o valor e a moeda juntos. Exemplo: *100 USD*",
+        "keywords_saved": "✅ {n} palavra(s)-chave salva(s).\n🔔 Você será alertado quando aparecerem em qualquer notícia!",
+    },
+    "Türkçe 🇹🇷": {
+        "choose_country": "🌍 Ülkenizi seçin:",
+        "choose_province": "🏙 Şehrinizi seçin:",
+        "settings_saved": "✅ Ayarlarınız kaydedildi!\nHer saat otomatik olarak haber ve hava durumu alacaksınız.",
+        "choose_country_from_list": "👇 Lütfen listeden bir ülke seçin.",
+        "choose_province_from_list": "👇 Lütfen listeden bir şehir seçin.",
+        "notif_enabled": "🔔 Otomatik bildirimler etkinleştirildi.",
+        "notif_disabled": "🔕 Otomatik bildirimler devre dışı bırakıldı.",
+        "convert_prompt": "🔄 Tutarı ve para birimini gönderin, örnek:\n*100 USD*\n*50 EUR*\n*200 TRY*",
+        "convert_format_error": "⚠️ Geçersiz format. Örnek: *100 USD*",
+        "convert_send_both": "⚠️ Tutarı ve para birimini birlikte gönderin. Örnek: *100 USD*",
+        "keywords_saved": "✅ {n} anahtar kelime kaydedildi.\n🔔 Herhangi bir haberde göründüklerinde uyarılacaksınız!",
+    },
+    "اردو 🇵🇰": {
+        "choose_country": "🌍 اپنا ملک منتخب کریں:",
+        "choose_province": "🏙 اپنا شہر منتخب کریں:",
+        "settings_saved": "✅ آپ کی ترتیبات محفوظ ہو گئیں!\nآپ کو ہر گھنٹے خودکار طور پر خبریں اور موسم ملے گا۔",
+        "choose_country_from_list": "👇 براہ کرم فہرست سے ایک ملک منتخب کریں۔",
+        "choose_province_from_list": "👇 براہ کرم فہرست سے ایک شہر منتخب کریں۔",
+        "notif_enabled": "🔔 خودکار اطلاعات فعال ہو گئیں۔",
+        "notif_disabled": "🔕 خودکار اطلاعات بند ہو گئیں۔",
+        "convert_prompt": "🔄 رقم اور کرنسی بھیجیں، مثال:\n*100 USD*\n*50 EUR*\n*200 PKR*",
+        "convert_format_error": "⚠️ غلط فارمیٹ۔ مثال: *100 USD*",
+        "convert_send_both": "⚠️ رقم اور کرنسی ایک ساتھ بھیجیں۔ مثال: *100 USD*",
+        "keywords_saved": "✅ {n} مطلوبہ الفاظ محفوظ ہوئے۔\n🔔 جب کسی خبر میں آئیں گے آپ کو اطلاع ملے گی!",
+    },
+    "Deutsch 🇩🇪": {
+        "choose_country": "🌍 Wählen Sie Ihr Land:",
+        "choose_province": "🏙 Wählen Sie Ihre Stadt:",
+        "settings_saved": "✅ Ihre Einstellungen wurden gespeichert!\nSie erhalten stündlich automatisch Nachrichten und Wetter.",
+        "choose_country_from_list": "👇 Bitte wählen Sie ein Land aus der Liste.",
+        "choose_province_from_list": "👇 Bitte wählen Sie eine Stadt aus der Liste.",
+        "notif_enabled": "🔔 Automatische Benachrichtigungen wurden aktiviert.",
+        "notif_disabled": "🔕 Automatische Benachrichtigungen wurden deaktiviert.",
+        "convert_prompt": "🔄 Betrag und Währung senden, Beispiel:\n*100 USD*\n*50 EUR*\n*200 CHF*",
+        "convert_format_error": "⚠️ Ungültiges Format. Beispiel: *100 USD*",
+        "convert_send_both": "⚠️ Betrag und Währung zusammen senden. Beispiel: *100 USD*",
+        "keywords_saved": "✅ {n} Schlüsselwörter gespeichert.\n🔔 Sie werden benachrichtigt, wenn sie in Nachrichten erscheinen!",
+    },
+    "Українська 🇺🇦": {
+        "choose_country": "🌍 Виберіть свою країну:",
+        "choose_province": "🏙 Виберіть своє місто:",
+        "settings_saved": "✅ Ваші налаштування збережено!\nВи будете автоматично отримувати новини і погоду кожну годину.",
+        "choose_country_from_list": "👇 Будь ласка, виберіть країну зі списку.",
+        "choose_province_from_list": "👇 Будь ласка, виберіть місто зі списку.",
+        "notif_enabled": "🔔 Автоматичні сповіщення увімкнено.",
+        "notif_disabled": "🔕 Автоматичні сповіщення вимкнено.",
+        "convert_prompt": "🔄 Надішліть суму та валюту, наприклад:\n*100 USD*\n*50 EUR*\n*200 UAH*",
+        "convert_format_error": "⚠️ Невірний формат. Приклад: *100 USD*",
+        "convert_send_both": "⚠️ Надішліть суму і валюту разом. Приклад: *100 USD*",
+        "keywords_saved": "✅ Збережено {n} ключових слів.\n🔔 Ви будете повідомлені, коли вони з'являться в новинах!",
+    },
+    "Italiano 🇮🇹": {
+        "choose_country": "🌍 Scegli il tuo paese:",
+        "choose_province": "🏙 Scegli la tua città:",
+        "settings_saved": "✅ Le tue impostazioni sono state salvate!\nRiceverai notizie e meteo automaticamente ogni ora.",
+        "choose_country_from_list": "👇 Per favore seleziona un paese dall'elenco.",
+        "choose_province_from_list": "👇 Per favore seleziona una città dall'elenco.",
+        "notif_enabled": "🔔 Notifiche automatiche attivate.",
+        "notif_disabled": "🔕 Notifiche automatiche disattivate.",
+        "convert_prompt": "🔄 Invia l'importo e la valuta, esempio:\n*100 USD*\n*50 EUR*\n*200 CHF*",
+        "convert_format_error": "⚠️ Formato non valido. Esempio: *100 USD*",
+        "convert_send_both": "⚠️ Invia importo e valuta insieme. Esempio: *100 USD*",
+        "keywords_saved": "✅ {n} parola/e chiave salvata/e.\n🔔 Sarai avvisato quando appariranno in qualsiasi notizia!",
+    },
+    "Español 🇲🇽": {
+        "choose_country": "🌍 Elige tu país:",
+        "choose_province": "🏙 Elige tu ciudad:",
+        "settings_saved": "✅ ¡Tu configuración ha sido guardada!\nRecibirás noticias y clima automáticamente cada hora.",
+        "choose_country_from_list": "👇 Por favor selecciona un país de la lista.",
+        "choose_province_from_list": "👇 Por favor selecciona una ciudad de la lista.",
+        "notif_enabled": "🔔 Las notificaciones automáticas han sido activadas.",
+        "notif_disabled": "🔕 Las notificaciones automáticas han sido desactivadas.",
+        "convert_prompt": "🔄 Envía el monto y la moneda, ejemplo:\n*100 USD*\n*50 EUR*\n*200 MXN*",
+        "convert_format_error": "⚠️ Formato no válido. Ejemplo: *100 USD*",
+        "convert_send_both": "⚠️ Envía el monto y la moneda juntos. Ejemplo: *100 USD*",
+        "keywords_saved": "✅ Se guardaron {n} palabras clave.\n🔔 ¡Serás alertado cuando aparezcan en cualquier noticia!",
+    },
+}
+
+def st(lang, key, **kwargs):
+    """ترجمة رسائل الإعداد والتفاعل حسب لغة المستخدم."""
+    text = SETUP_MSGS.get(lang, SETUP_MSGS["English 🇬🇧"]).get(
+        key, SETUP_MSGS["English 🇬🇧"].get(key, "")
+    )
+    if kwargs:
+        try:
+            text = text.format(**kwargs)
+        except Exception:
+            pass
+    return text
+
+# ======== cache مؤقت لملخصات الأخبار ========
+import hashlib
+_news_summary_cache = {}
+
+def _cache_summary(link, summary_text):
+    """تخزين ملخص الخبر مع مفتاح MD5 مختصر."""
+    key = hashlib.md5(link.encode("utf-8")).hexdigest()[:16]
+    if len(_news_summary_cache) > 2000:
+        oldest = list(_news_summary_cache.keys())[:500]
+        for k in oldest:
+            del _news_summary_cache[k]
+    _news_summary_cache[key] = summary_text
+    return key
+
+def _clean_html(text):
+    """إزالة وسوم HTML من الملخص."""
+    import re
+    text = re.sub(r'<[^>]+>', '', text or '')
+    text = text.replace('&nbsp;', ' ').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>').replace('&quot;', '"').replace('&#39;', "'")
+    return text.strip()
+
+# ======== دوال الأخبار ========
 def format_news_item(prefix, title):
     return f"{prefix}\n\n📰 {title}{BOT_SIGNATURE}"
 
-def make_news_share_markup(link, title=""):
+def make_news_share_markup(link, title="", lang="English 🇬🇧", summary=""):
     import urllib.parse
+    lbl = NEWS_SHARE_LABELS.get(lang, NEWS_SHARE_LABELS["English 🇬🇧"])
     markup = types.InlineKeyboardMarkup(row_width=2)
-    share_text = f"📰 {title[:100]}\n\n🔗 {link}\n\nعبر @{BOT_USERNAME}" if title else f"🔗 {link}\n\nعبر @{BOT_USERNAME}"
+    via_text = lbl["via"]
+    share_text = f"📰 {title[:100]}\n\n🔗 {link}\n\n{via_text} @{BOT_USERNAME}" if title else f"🔗 {link}\n\n{via_text} @{BOT_USERNAME}"
     share_url = f"https://t.me/share/url?url={urllib.parse.quote(link, safe='')}&text={urllib.parse.quote(share_text, safe='')}"
     bot_link = f"https://t.me/{BOT_USERNAME}"
-    bot_share_text = f"📰 بوت الأخبار والطقس @{BOT_USERNAME}\nآخر أخبار العالم والطقس والعملات على مدار الساعة!"
+    bot_share_text = f"@{BOT_USERNAME}\n{lbl['bot_promo']}"
     bot_share_url = f"https://t.me/share/url?url={urllib.parse.quote(bot_link, safe='')}&text={urllib.parse.quote(bot_share_text, safe='')}"
     if link:
         markup.add(
-            types.InlineKeyboardButton("🔗 فتح الخبر", url=link),
-            types.InlineKeyboardButton("📤 شارك الخبر", url=share_url)
+            types.InlineKeyboardButton(lbl["open"], url=link),
+            types.InlineKeyboardButton(lbl["share_news"], url=share_url)
         )
     else:
         markup.add(
-            types.InlineKeyboardButton("📤 شارك الخبر", url=share_url)
+            types.InlineKeyboardButton(lbl["share_news"], url=share_url)
+        )
+    clean_summary = _clean_html(summary)
+    if clean_summary and link:
+        sum_key = _cache_summary(link, clean_summary)
+        markup.add(
+            types.InlineKeyboardButton(lbl["summary_btn"], callback_data=f"sum_{sum_key}")
         )
     markup.add(
-        types.InlineKeyboardButton(f"🤖 شارك البوت @{BOT_USERNAME}", url=bot_share_url)
+        types.InlineKeyboardButton(f"{lbl['share_bot']} @{BOT_USERNAME}", url=bot_share_url)
     )
     return markup
 
@@ -3325,7 +3962,7 @@ def send_hourly_news(uid):
     lang = user.get("lang", "English 🇬🇧")
     feeds = RSS.get(lang, [])
     if not feeds:
-        bot.send_message(uid, "⚠️ لا توجد مصادر أخبار لهذه اللغة حالياً.")
+        bot.send_message(uid, t(lang, "no_source"))
         return
     sent = user.setdefault("sent_news", set())
     count = 0
@@ -3336,13 +3973,14 @@ def send_hourly_news(uid):
                 if not hasattr(item, 'link') or item.link in sent:
                     continue
                 sent.add(item.link)
-                markup = make_news_share_markup(item.link, getattr(item, 'title', ''))
-                bot.send_message(uid, format_news_item("🚨 خبر", item.title), parse_mode="Markdown", reply_markup=markup)
+                item_sum = getattr(item, 'summary', '') or getattr(item, 'description', '')
+                markup = make_news_share_markup(item.link, getattr(item, 'title', ''), lang, item_sum)
+                bot.send_message(uid, format_news_item(t(lang, "label_news"), item.title), parse_mode="Markdown", reply_markup=markup)
                 count += 1
         except Exception as e:
             notify_admin_error(f"خطأ في RSS ({feed_url}): {e}")
     if count == 0:
-        bot.send_message(uid, "⚠️ لا توجد أخبار جديدة الآن.")
+        bot.send_message(uid, t(lang, "no_news"))
     else:
         save_json(USERS_FILE, users)
 
@@ -3353,7 +3991,7 @@ def send_all_news(uid):
     lang = user.get("lang", "English 🇬🇧")
     feeds = RSS.get(lang, [])
     if not feeds:
-        bot.send_message(uid, "⚠️ لا توجد مصادر أخبار لهذه اللغة حالياً.")
+        bot.send_message(uid, t(lang, "no_source"))
         return
     sent = user.setdefault("sent_news", set())
     count = 0
@@ -3364,13 +4002,14 @@ def send_all_news(uid):
                 if not hasattr(item, 'link') or item.link in sent:
                     continue
                 sent.add(item.link)
-                markup = make_news_share_markup(item.link, getattr(item, 'title', ''))
-                bot.send_message(uid, format_news_item("🚨 خبر عاجل", item.title), parse_mode="Markdown", reply_markup=markup)
+                item_sum = getattr(item, 'summary', '') or getattr(item, 'description', '')
+                markup = make_news_share_markup(item.link, getattr(item, 'title', ''), lang, item_sum)
+                bot.send_message(uid, format_news_item(t(lang, "label_breaking"), item.title), parse_mode="Markdown", reply_markup=markup)
                 count += 1
         except Exception as e:
             notify_admin_error(f"خطأ في RSS ({feed_url}): {e}")
     if count == 0:
-        bot.send_message(uid, "⚠️ لا توجد أخبار جديدة الآن.")
+        bot.send_message(uid, t(lang, "no_news"))
     else:
         save_json(USERS_FILE, users)
 
@@ -3394,8 +4033,9 @@ def send_mena_politics(uid):
                 if link in sent:
                     continue
                 sent.add(link)
-                markup = make_news_share_markup(link, title)
-                bot.send_message(uid, format_news_item("📰 أخبار الشرق الأوسط السياسية", title), parse_mode="Markdown", reply_markup=markup)
+                item_sum = getattr(item, 'summary', '') or getattr(item, 'description', '')
+                markup = make_news_share_markup(link, title, lang, item_sum)
+                bot.send_message(uid, format_news_item(t(lang, "label_mena"), title), parse_mode="Markdown", reply_markup=markup)
                 headlines_sent.append(title)
                 count += 1
                 if count >= 10:
@@ -3417,8 +4057,9 @@ def send_mena_politics(uid):
                     title_lower = title.lower()
                     if any(kw.lower() in title_lower for kw in MENA_KEYWORDS):
                         sent.add(link)
-                        markup = make_news_share_markup(link, title)
-                        bot.send_message(uid, format_news_item("📰 أخبار الشرق الأوسط السياسية", title), parse_mode="Markdown", reply_markup=markup)
+                        item_sum = getattr(item, 'summary', '') or getattr(item, 'description', '')
+                        markup = make_news_share_markup(link, title, lang, item_sum)
+                        bot.send_message(uid, format_news_item(t(lang, "label_mena"), title), parse_mode="Markdown", reply_markup=markup)
                         count += 1
                         if count >= 5:
                             break
@@ -3427,7 +4068,7 @@ def send_mena_politics(uid):
             if count >= 5:
                 break
     if count == 0:
-        bot.send_message(uid, "⚠️ لا توجد أخبار سياسية جديدة الآن، حاول مرة أخرى لاحقاً.")
+        bot.send_message(uid, t(lang, "no_news"))
     else:
         save_json(USERS_FILE, users)
 
@@ -3465,15 +4106,20 @@ def broadcast_news():
         for feed_url in feeds:
             try:
                 feed = feedparser.parse(feed_url)
-                for item in feed.entries[:5]:
+                for item in feed.entries[:10]:
                     if not hasattr(item, 'link') or item.link in sent:
                         continue
                     title = getattr(item, 'title', '')
                     if is_blacklisted(title):
                         continue
                     sent.add(item.link)
-                    markup = make_news_share_markup(item.link, title)
-                    bot.send_message(uid, format_news_item("🚨 خبر عاجل", title), parse_mode="Markdown", reply_markup=markup)
+                    item_sum = getattr(item, 'summary', '') or getattr(item, 'description', '')
+                    markup = make_news_share_markup(item.link, title, lang, item_sum)
+                    try:
+                        bot.send_message(uid, format_news_item(t(lang, "label_breaking"), title), parse_mode="Markdown", reply_markup=markup)
+                        time.sleep(0.5)
+                    except Exception as e:
+                        notify_admin_error(f"خطأ في إرسال خبر للمستخدم {uid}: {e}")
             except Exception as e:
                 notify_admin_error(f"خطأ في RSS ({feed_url}): {e}")
     save_json(USERS_FILE, users)
@@ -3486,11 +4132,11 @@ def send_sports_news(uid):
     lang = user.get("lang", "English 🇬🇧")
     feeds = SPORTS_RSS.get(lang, SPORTS_RSS.get("English 🇬🇧", []))
     if not feeds:
-        bot.send_message(uid, "⚠️ لا توجد مصادر رياضية لهذه اللغة.")
+        bot.send_message(uid, t(lang, "no_sports_source"))
         return
     sent = user.setdefault("sent_news", set())
     count = 0
-    bot.send_message(uid, "⚽ *أخبار الرياضة*\n━━━━━━━━━━━━━━━", parse_mode="Markdown")
+    bot.send_message(uid, t(lang, "sports_header"), parse_mode="Markdown")
     for feed_url in feeds:
         try:
             feed = feedparser.parse(feed_url)
@@ -3498,8 +4144,9 @@ def send_sports_news(uid):
                 if not hasattr(item, 'link') or item.link in sent:
                     continue
                 sent.add(item.link)
-                markup = make_news_share_markup(item.link, getattr(item, 'title', ''))
-                bot.send_message(uid, format_news_item("⚽", item.title), parse_mode="Markdown", reply_markup=markup)
+                item_sum = getattr(item, 'summary', '') or getattr(item, 'description', '')
+                markup = make_news_share_markup(item.link, getattr(item, 'title', ''), lang, item_sum)
+                bot.send_message(uid, format_news_item(t(lang, "label_sports"), item.title), parse_mode="Markdown", reply_markup=markup)
                 count += 1
                 if count >= 8:
                     break
@@ -3508,7 +4155,7 @@ def send_sports_news(uid):
         if count >= 8:
             break
     if count == 0:
-        bot.send_message(uid, "⚠️ لا توجد أخبار رياضية جديدة الآن.")
+        bot.send_message(uid, t(lang, "no_sports"))
     else:
         save_json(USERS_FILE, users)
 
@@ -4122,8 +4769,8 @@ def cmd_removetrack(m):
 # ======== الجدولة ========
 scheduler = BackgroundScheduler()
 scheduler.add_job(broadcast_weather, 'interval', hours=1)
-scheduler.add_job(broadcast_news, 'interval', minutes=5)
-scheduler.add_job(broadcast_premium_instant_news, 'interval', minutes=5)
+scheduler.add_job(broadcast_news, 'interval', minutes=2)
+scheduler.add_job(broadcast_premium_instant_news, 'interval', minutes=2)
 scheduler.add_job(send_morning_summary, 'interval', hours=1)
 scheduler.add_job(check_weather_alerts, 'interval', hours=6)
 scheduler.add_job(check_currency_alerts, 'interval', hours=3)
@@ -4131,7 +4778,7 @@ scheduler.add_job(check_keyword_alerts, 'interval', minutes=15)
 scheduler.add_job(auto_clean_sent_news, 'interval', hours=24)
 scheduler.add_job(check_asset_tracking, 'interval', minutes=30)
 scheduler.add_job(lambda: save_json(USERS_FILE, users), 'interval', minutes=10)
-scheduler.add_job(broadcast_to_channels, 'interval', minutes=5)
+scheduler.add_job(broadcast_to_channels, 'interval', minutes=2)
 scheduler.start()
 atexit.register(lambda: scheduler.shutdown(wait=False))
 
@@ -4176,13 +4823,16 @@ def on_bot_chat_member_update(update):
         title = chat.title or str(chat_id)
         already = any(ch["id"] == chat_id for ch in channels_groups)
         if not already:
+            default_lang = "العربية 🇮🇶"
+            auto_feeds = RSS.get(default_lang, [])
+            initial_sent = list(prefill_sent_news(auto_feeds))
             channels_groups.append({
                 "id": chat_id,
                 "title": title,
                 "type": chat_type,
-                "lang": "العربية 🇮🇶",
+                "lang": default_lang,
                 "city": "",
-                "sent_news": []
+                "sent_news": initial_sent
             })
             save_channels_groups()
         try:
