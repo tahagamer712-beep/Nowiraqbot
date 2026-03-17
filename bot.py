@@ -3561,7 +3561,7 @@ def handle_selection(m):
             start_track_asset(uid)
         elif text in (btn["notif_on"], btn["notif_off"]):
             current = users[str(uid)].get("notifications", True)
-         �   users[str(uid)]["notifications"] = not current
+         users[str(uid)]["notifications"] = not current
             _db_save_all_users(users)
             if not current:
                 bot.send_message(uid, st(lang, "notif_enabled"))
