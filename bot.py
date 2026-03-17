@@ -1263,7 +1263,21 @@ def has_feature(uid, feature):
     if is_premium(uid):
         return True
     user = users.get(str(uid), {})
-    return feature in user.get("unlocked_features", [])
+    if feature not in user.get("unlocked_features", []):
+        return False
+    expiry_map = user.get("unlocked_features_expiry", {})
+    expiry_str = expiry_map.get(feature)
+    if expiry_str:
+        try:
+            expiry_dt = datetime.datetime.fromisoformat(expiry_str)
+            if datetime.datetime.now() >= expiry_dt:
+                users[str(uid)]["unlocked_features"] = [f for f in user.get("unlocked_features", []) if f != feature]
+                users[str(uid)].get("unlocked_features_expiry", {}).pop(feature, None)
+                save_json(USERS_FILE, users)
+                return False
+        except:
+            pass
+    return True
 
 # ======== ميزات الإحالة ========
 REFERRAL_FEATURES = {
@@ -1313,7 +1327,8 @@ def check_referral_rewards(referrer_id, new_member_name=""):
                     bot.send_message(
                         referrer_id,
                         f"🎉 *تهانينا! وصلت إلى {milestone} دعوة!*\n\n"
-                        f"🎁 ربحت *ميزة مميزة مجانية* — اختر الميزة التي تريدها:",
+                        f"🎁 ربحت *ميزة مميزة مجانية لمدة شهر واحد* — اختر الميزة التي تريدها:\n\n"
+                        f"📅 الميزة ستبقى مفعّلة لمدة *30 يوماً* من تاريخ الاختيار.",
                         parse_mode="Markdown"
                     )
                     send_feature_choice_menu(referrer_id)
@@ -1334,7 +1349,7 @@ def send_feature_choice_menu(uid):
     bot.send_message(uid,
         "🎁 *اختر ميزة مميزة واحدة تريد فتحها:*\n"
         "━━━━━━━━━━━━━━\n"
-        "الميزة المختارة ستكون متاحة لك دائماً مجاناً.",
+        "📅 الميزة المختارة ستكون متاحة لمدة *شهر واحد* فقط.",
         parse_mode="Markdown",
         reply_markup=markup
     )
@@ -1399,15 +1414,26 @@ def ref_feature_callback(call):
     user = users.get(str(uid), {})
     unlocked = user.setdefault("unlocked_features", [])
     if feat_key in unlocked:
-        bot.send_message(uid, "⚠️ هذه الميزة مفتوحة لديك بالفعل.")
+        expiry_map = user.get("unlocked_features_expiry", {})
+        expiry_str = expiry_map.get(feat_key, "")
+        try:
+            expiry_dt = datetime.datetime.fromisoformat(expiry_str)
+            days_left = max(0, (expiry_dt - datetime.datetime.now()).days)
+            bot.send_message(uid, f"⚠️ هذه الميزة مفتوحة لديك بالفعل وتنتهي بعد {days_left} يوم.")
+        except:
+            bot.send_message(uid, "⚠️ هذه الميزة مفتوحة لديك بالفعل.")
         return
     unlocked.append(feat_key)
+    expiry = datetime.datetime.now() + datetime.timedelta(days=30)
     users[str(uid)]["unlocked_features"] = unlocked
+    users[str(uid)].setdefault("unlocked_features_expiry", {})[feat_key] = expiry.isoformat()
     save_json(USERS_FILE, users)
     feat_name = REFERRAL_FEATURES[feat_key]
+    expiry_str = expiry.strftime("%Y-%m-%d")
     bot.send_message(uid,
         f"✅ *تم فتح الميزة بنجاح!*\n\n"
         f"🎁 *{feat_name}*\n\n"
+        f"📅 *مدة الميزة:* شهر واحد (تنتهي {expiry_str})\n\n"
         f"يمكنك استخدامها الآن من قائمة ⭐ المميز",
         parse_mode="Markdown"
     )
@@ -1446,8 +1472,8 @@ def premium_callbacks(call):
         bot.send_message(uid,
             "⭐ *هذه الميزة للمشتركين المميزين فقط.*\n\n"
             "💡 *يمكنك الحصول عليها مجاناً:*\n"
-            "• دعوة 5 أصدقاء ← ميزة مجانية\n"
-            "• دعوة 10 أصدقاء ← ميزتان مجانيتان\n"
+            "• دعوة 5 أصدقاء ← ميزة مجانية لمدة شهر\n"
+            "• دعوة 10 أصدقاء ← ميزتان مجانيتان (كل منهما شهر)\n"
             "• دعوة 25 صديق ← اشتراك مميز كامل شهر!\n\n"
             + (f"📊 دعواتك: `{ref_count}` — تحتاج `{remaining}` دعوة للمكافأة القادمة\n\n" if next_milestone else f"📊 دعواتك: `{ref_count}`\n\n")
             + "🔗 رابط دعوتك في قائمة *دعواتي*",
@@ -2701,25 +2727,25 @@ def send_currency(uid):
     try:
         r = requests.get("https://api.exchangerate-api.com/v4/latest/USD", timeout=10).json()
         rates = r.get("rates", {})
-        local_rate = rates.get(local_code, "غير متوفر")
+        local_rate = rates.get(local_code, t(lang, "track_unavailable"))
         eur = rates.get("EUR", "-")
         gbp = rates.get("GBP", "-")
         iqd = rates.get("IQD", "-")
         try_rate = rates.get("TRY", "-")
         sar = rates.get("SAR", "-")
         msg = (
-            f"💱 *أسعار الصرف مقابل الدولار 🇺🇸*\n\n"
-            f"🏠 {local_name}: `{local_rate}`\n"
+            f"{t(lang, 'currency_rate_header')}"
+            f"{t(lang, 'currency_local_label').format(name=local_name)}: `{local_rate}`\n"
             f"━━━━━━━━━━━━━━\n"
-            f"🇪🇺 اليورو: `{eur}`\n"
-            f"🇬🇧 الجنيه الإسترليني: `{gbp}`\n"
-            f"🇮🇶 الدينار العراقي: `{iqd}`\n"
-            f"🇹🇷 الليرة التركية: `{try_rate}`\n"
-            f"🇸🇦 الريال السعودي: `{sar}`\n"
+            f"{t(lang, 'currency_eur')}: `{eur}`\n"
+            f"{t(lang, 'currency_gbp')}: `{gbp}`\n"
+            f"{t(lang, 'currency_iqd')}: `{iqd}`\n"
+            f"{t(lang, 'currency_try')}: `{try_rate}`\n"
+            f"{t(lang, 'currency_sar')}: `{sar}`\n"
         )
         bot.send_message(uid, msg, parse_mode="Markdown")
     except Exception as e:
-        bot.send_message(uid, "⚠️ لا يمكن جلب أسعار العملات حالياً.")
+        bot.send_message(uid, t(lang, "currency_error"))
         notify_admin_error(f"خطأ في أسعار العملات: {e}")
 
 # ======== بحث في الأخبار (عنوان فقط — بدون رابط أو مصدر) ========
@@ -2732,9 +2758,9 @@ def search_news(uid, query):
         r = requests.get(url, timeout=10).json()
         articles = r.get("articles", [])
         if not articles:
-            bot.send_message(uid, "⚠️ لا توجد نتائج لهذا البحث.")
+            bot.send_message(uid, t(lang, "search_no_results") or t(lang, "no_results"))
             return
-        bot.send_message(uid, f"🔍 *نتائج البحث عن: {query}*", parse_mode="Markdown")
+        bot.send_message(uid, t(lang, "search_results_header").format(query=query), parse_mode="Markdown")
         for article in articles[:5]:
             title = article.get("title", "")
             link = article.get("url", "")
@@ -3678,6 +3704,46 @@ MSGS = {
         "premium_btn_keywords": "🔑 كلمات مفتاحية",
         "premium_subscribe_btn": "⭐ طلب الاشتراك المميز",
         "broadcast_weather_msg": "🌤 الطقس في {city}: {temp}°C\n☁️ {desc}",
+        "track_header": "📌 *تتبع العملات والأسهم والسلع*\n━━━━━━━━━━━━━━━\n\n",
+        "track_current_list": "📋 *قائمتك الحالية:*\n",
+        "track_count": "\n({count}/20 رمز)\n\n",
+        "track_add_hint": "➕ *لإضافة رمز:* أرسل اسمه مباشرة\n\n",
+        "track_crypto_label": "💎 *عملات رقمية:*\n",
+        "track_fiat_label": "💱 *عملات فيات:*\n",
+        "track_stocks_label": "📈 *أسهم:*\n",
+        "track_commodities_label": "🏅 *سلع ومؤشرات:*\n",
+        "track_alert_hint": "🔔 *ستصلك تنبيهات فورية عند تغير ±1% وتقرير ساعي بأسعارك.*\n\n",
+        "track_remove_hint": "❌ لحذف رمز: `/removetrack AAPL`\n",
+        "track_list_hint": "📋 لعرض قائمتك: `/mytrack`",
+        "track_empty": "📌 قائمة التتبع فارغة.\nاضغط *تتبع عملة/سهم* لإضافة رموز.",
+        "track_list_header": "📌 *رموزك المتتبعة:*\n━━━━━━━━━━━━━━\n",
+        "track_alert_title": "🚨 *تنبيهات أسعارك*\n━━━━━━━━━━━━━━━\n\n",
+        "track_rose": "📈 ارتفع",
+        "track_fell": "📉 انخفض",
+        "track_report_title": "📊 *تقرير ساعي — أصولك المتتبعة*\n",
+        "track_unavailable": "غير متوفر",
+        "track_remove_usage": "⚠️ حدد الرمز. مثال: `/removetrack AAPL`",
+        "track_not_found": "⚠️ *{symbol}* غير موجود في قائمتك.",
+        "track_removed": "✅ تم حذف *{symbol}* من قائمة التتبع.",
+        "interest_save_btn": "💾 حفظ",
+        "interest_choose_msg": "📌 *اختر اهتماماتك (يمكن اختيار أكثر من واحد):*",
+        "currency_rate_header": "💱 *أسعار الصرف مقابل الدولار 🇺🇸*\n\n",
+        "currency_local_label": "🏠 {name}",
+        "currency_convert_header": "🔄 *تحويل {amount} {currency}*\n━━━━━━━━━━━━━━━\n\n",
+        "currency_unsupported": "⚠️ عملة غير مدعومة: {currency}",
+        "currency_fetch_error": "⚠️ لا يمكن جلب أسعار العملات.",
+        "city_add_success": "✅ تمت إضافة المدينة: *{city}*",
+        "currency_alert_set": "✅ ستصلك تنبيهات عندما يصل الدولار إلى `{rate}` من عملتك.",
+        "currency_alert_invalid": "❌ أدخل رقماً، مثال: 1600",
+        "notif_time_set": "✅ سيُرسل الملخص الصباحي في الساعة *{hour}:00* يومياً.",
+        "notif_time_invalid": "❌ أدخل رقماً من 0 إلى 23 (مثال: 8 للساعة 8 صباحاً)",
+        "currency_eur": "🇪🇺 اليورو",
+        "currency_gbp": "🇬🇧 الجنيه الإسترليني",
+        "currency_iqd": "🇮🇶 الدينار العراقي",
+        "currency_try": "🇹🇷 الليرة التركية",
+        "currency_sar": "🇸🇦 الريال السعودي",
+        "search_results_header": "🔍 *نتائج البحث عن: {query}*",
+        "search_no_results": "⚠️ لا توجد نتائج لهذا البحث.",
     },
     "English 🇬🇧": {
         "no_news": "⚠️ No new news available right now.",
@@ -3772,6 +3838,45 @@ MSGS = {
         "premium_btn_keywords": "🔑 Keywords",
         "premium_subscribe_btn": "⭐ Request Premium Subscription",
         "broadcast_weather_msg": "🌤 Weather in {city}: {temp}°C\n☁️ {desc}",
+        "currency_eur": "🇪🇺 Euro",
+        "currency_gbp": "🇬🇧 British Pound",
+        "currency_iqd": "🇮🇶 Iraqi Dinar",
+        "currency_try": "🇹🇷 Turkish Lira",
+        "currency_sar": "🇸🇦 Saudi Riyal",
+        "search_results_header": "🔍 *Search results for: {query}*",
+        "search_no_results": "⚠️ No results found for this search.",
+        "track_header": "📌 *Track Assets — Crypto, Forex, Stocks & Commodities*\n━━━━━━━━━━━━━━━\n\n",
+        "track_current_list": "📋 *Your current list:*\n",
+        "track_count": "\n({count}/20 symbols)\n\n",
+        "track_add_hint": "➕ *Add a symbol:* send its name directly\n\n",
+        "track_crypto_label": "💎 *Crypto:*\n",
+        "track_fiat_label": "💱 *Fiat Currencies:*\n",
+        "track_stocks_label": "📈 *Stocks:*\n",
+        "track_commodities_label": "🏅 *Commodities & Indices:*\n",
+        "track_alert_hint": "🔔 *You will receive instant alerts on ±1% change and an hourly price report.*\n\n",
+        "track_remove_hint": "❌ To remove a symbol: `/removetrack AAPL`\n",
+        "track_list_hint": "📋 To view your list: `/mytrack`",
+        "track_empty": "📌 Tracking list is empty.\nTap *Track Asset* to add symbols.",
+        "track_list_header": "📌 *Your tracked assets:*\n━━━━━━━━━━━━━━\n",
+        "track_alert_title": "🚨 *Price Alerts*\n━━━━━━━━━━━━━━━\n\n",
+        "track_rose": "📈 rose",
+        "track_fell": "📉 fell",
+        "track_report_title": "📊 *Hourly Report — Your Tracked Assets*\n",
+        "track_unavailable": "unavailable",
+        "track_remove_usage": "⚠️ Specify the symbol. Example: `/removetrack AAPL`",
+        "track_not_found": "⚠️ *{symbol}* not found in your list.",
+        "track_removed": "✅ *{symbol}* removed from your tracking list.",
+        "interest_save_btn": "💾 Save",
+        "interest_choose_msg": "📌 *Choose your interests (multiple allowed):*",
+        "currency_rate_header": "💱 *Exchange Rates vs USD 🇺🇸*\n\n",
+        "currency_local_label": "🏠 {name}",
+        "currency_convert_header": "🔄 *Convert {amount} {currency}*\n━━━━━━━━━━━━━━━\n\n",
+        "currency_unsupported": "⚠️ Unsupported currency: {currency}",
+        "currency_fetch_error": "⚠️ Unable to fetch exchange rates.",
+        "currency_alert_set": "✅ You will be notified when USD reaches `{rate}` of your currency.",
+        "currency_alert_invalid": "❌ Enter a number, e.g.: 1600",
+        "notif_time_set": "✅ Morning summary will be sent at *{hour}:00* daily.",
+        "notif_time_invalid": "❌ Enter a number from 0 to 23 (e.g.: 8 for 8 AM)",
     },
     "Русский 🇷🇺": {
         "no_news": "⚠️ Новых новостей нет.",
@@ -5795,7 +5900,7 @@ def send_referral_stats(uid):
         if milestone == 25:
             label = "🌟 اشتراك مميز كامل شهر"
         else:
-            label = f"🎁 ميزة مميزة مجانية"
+            label = "🎁 ميزة مميزة مجانية (لمدة شهر)"
         if milestone in rewarded:
             status = "✅"
         elif ref_count >= milestone:
@@ -5805,7 +5910,18 @@ def send_referral_stats(uid):
             status = f"🔒 ({remaining} متبقية)"
         progress_lines += f"{status} {milestone} دعوة ← {label}\n"
 
-    unlocked_names = "\n".join(f"  ✨ {REFERRAL_FEATURES.get(f, f)}" for f in unlocked) if unlocked else "  لا توجد بعد"
+    expiry_map = user.get("unlocked_features_expiry", {})
+    unlocked_lines = []
+    for f in unlocked:
+        feat_name = REFERRAL_FEATURES.get(f, f)
+        expiry_str = expiry_map.get(f, "")
+        try:
+            expiry_dt = datetime.datetime.fromisoformat(expiry_str)
+            days_left = max(0, (expiry_dt - datetime.datetime.now()).days)
+            unlocked_lines.append(f"  ✨ {feat_name} — ينتهي بعد {days_left} يوم")
+        except:
+            unlocked_lines.append(f"  ✨ {feat_name}")
+    unlocked_names = "\n".join(unlocked_lines) if unlocked_lines else "  لا توجد بعد"
 
     expiry_txt = ""
     if ref_premium_expiry:
@@ -5826,7 +5942,8 @@ def send_referral_stats(uid):
         f"\n📊 *مستويات المكافآت:*\n{progress_lines}"
         f"\n🔓 *ميزاتك المفتوحة:*\n{unlocked_names}\n"
         f"━━━━━━━━━━━━━━\n"
-        f"💡 شارك رابطك وكلما زادت دعواتك زادت مكافآتك!"
+        f"💡 شارك رابطك وكلما زادت دعواتك زادت مكافآتك!\n"
+        f"📅 *ملاحظة:* الميزات المفتوحة عبر الدعوات تنتهي بعد شهر واحد."
     )
     markup = types.InlineKeyboardMarkup()
     share_url = f"https://t.me/share/url?url={invite_link}&text=📱 جرب بوت الأخبار @{BOT_USERNAME}"
@@ -6132,36 +6249,37 @@ def start_track_asset(uid):
     user_data = tracked_assets.get(str(uid), {})
     assets = user_data.get("assets", [])
     last_prices = user_data.get("last_prices", {})
+    user = users.get(str(uid), {})
+    lang = user.get("lang", "English 🇬🇧")
 
-    msg = "📌 *تتبع العملات والأسهم والسلع*\n━━━━━━━━━━━━━━━\n\n"
+    msg = t(lang, "track_header")
 
     if assets:
-        msg += "📋 *قائمتك الحالية:*\n"
+        msg += t(lang, "track_current_list")
         for sym in assets:
             p = last_prices.get(sym)
             msg += f"  • {format_asset_price(sym, p)}\n"
-        msg += f"\n({len(assets)}/20 رمز)\n\n"
+        msg += t(lang, "track_count").format(count=len(assets))
 
-    msg += (
-        "➕ *لإضافة رمز:* أرسل اسمه مباشرة\n\n"
-        "💎 *عملات رقمية:*\n"
-        "`BTC` `ETH` `SOL` `BNB` `XRP` `DOGE`\n"
-        "`TON` `TRX` `ADA` `MATIC` `LINK` `UNI`\n"
-        "`SHIB` `PEPE` `WIF` `BONK` `NOT` ...\n\n"
-        "💱 *عملات فيات:*\n"
-        "`USD` `EUR` `GBP` `IQD` `SAR` `AED`\n"
-        "`TRY` `IRR` `KWD` `EGP` `INR` `RUB` ...\n\n"
-        "📈 *أسهم:*\n"
-        "`AAPL` `TSLA` `NVDA` `MSFT` `AMZN`\n"
-        "`META` `GOOGL` `AMD` `NFLX` `BABA` ...\n\n"
-        "🏅 *سلع ومؤشرات:*\n"
-        "`GC=F` (ذهب)  `SI=F` (فضة)\n"
-        "`CL=F` (نفط WTI)  `BZ=F` (نفط برنت)\n"
-        "`^GSPC` (S&P500)  `^IXIC` (NASDAQ)\n\n"
-        "🔔 *ستصلك تنبيهات فورية عند تغير ±1% وتقرير ساعي بأسعارك.*\n\n"
-        "❌ لحذف رمز: `/removetrack AAPL`\n"
-        "📋 لعرض قائمتك: `/mytrack`"
-    )
+    msg += t(lang, "track_add_hint")
+    msg += t(lang, "track_crypto_label")
+    msg += "`BTC` `ETH` `SOL` `BNB` `XRP` `DOGE`\n"
+    msg += "`TON` `TRX` `ADA` `MATIC` `LINK` `UNI`\n"
+    msg += "`SHIB` `PEPE` `WIF` `BONK` `NOT` ...\n\n"
+    msg += t(lang, "track_fiat_label")
+    msg += "`USD` `EUR` `GBP` `IQD` `SAR` `AED`\n"
+    msg += "`TRY` `IRR` `KWD` `EGP` `INR` `RUB` ...\n\n"
+    msg += t(lang, "track_stocks_label")
+    msg += "`AAPL` `TSLA` `NVDA` `MSFT` `AMZN`\n"
+    msg += "`META` `GOOGL` `AMD` `NFLX` `BABA` ...\n\n"
+    msg += t(lang, "track_commodities_label")
+    msg += "`GC=F` (Gold)  `SI=F` (Silver)\n"
+    msg += "`CL=F` (WTI)  `BZ=F` (Brent)\n"
+    msg += "`^GSPC` (S&P500)  `^IXIC` (NASDAQ)\n\n"
+    msg += t(lang, "track_alert_hint")
+    msg += t(lang, "track_remove_hint")
+    msg += t(lang, "track_list_hint")
+
     user_states[uid] = "tracking_asset"
     bot.send_message(uid, msg, parse_mode="Markdown")
 
@@ -6176,11 +6294,14 @@ def check_asset_tracking():
         report_lines = []
         alerts = []
 
+        user = users.get(uid_str, {})
+        lang = user.get("lang", "English 🇬🇧")
+
         for symbol in assets:
             try:
                 new_price = fetch_asset_price(symbol)
                 if new_price is None:
-                    report_lines.append(f"❓ {get_asset_label(symbol)}: غير متوفر")
+                    report_lines.append(f"❓ {get_asset_label(symbol)}: {t(lang, 'track_unavailable')}")
                     continue
                 old_price = last_prices.get(symbol)
                 if old_price and old_price > 0:
@@ -6190,7 +6311,7 @@ def check_asset_tracking():
                         f"{arrow} {format_asset_price(symbol, new_price)}  `{change_pct:+.2f}%`"
                     )
                     if abs(change_pct) >= 1.0:
-                        direction = "📈 ارتفع" if change_pct > 0 else "📉 انخفض"
+                        direction = t(lang, "track_rose") if change_pct > 0 else t(lang, "track_fell")
                         alerts.append(
                             f"{direction} *{get_asset_label(symbol)}* بنسبة `{change_pct:+.2f}%`\n"
                             f"   السعر: `${new_price:,.4f}` (كان `${old_price:,.4f}`)"
@@ -6208,7 +6329,7 @@ def check_asset_tracking():
         # إرسال التنبيهات الفورية للتغيرات الكبيرة
         if alerts:
             alert_msg = (
-                f"🚨 *تنبيهات أسعارك*\n━━━━━━━━━━━━━━━\n\n"
+                t(lang, "track_alert_title")
                 + "\n\n".join(alerts)
                 + f"\n\n🤖 @{BOT_USERNAME}"
             )
@@ -6222,8 +6343,8 @@ def check_asset_tracking():
             import datetime as _dt
             now_str = _dt.datetime.now().strftime("%H:%M — %d/%m/%Y")
             report_msg = (
-                f"📊 *تقرير ساعي — أصولك المتتبعة*\n"
-                f"🕐 {now_str}\n"
+                t(lang, "track_report_title")
+                + f"🕐 {now_str}\n"
                 f"━━━━━━━━━━━━━━━\n\n"
                 + "\n".join(report_lines)
                 + f"\n\n━━━━━━━━━━━━━━━\n🤖 @{BOT_USERNAME}"
@@ -6236,13 +6357,15 @@ def check_asset_tracking():
 @bot.message_handler(commands=["mytrack"])
 def cmd_mytrack(m):
     uid = m.from_user.id
+    user = users.get(str(uid), {})
+    lang = user.get("lang", "English 🇬🇧")
     data = tracked_assets.get(str(uid), {})
     assets = data.get("assets", [])
     if not assets:
-        bot.send_message(uid, "📌 قائمة التتبع فارغة.\nاضغط زر *تتبع عملة/سهم* لإضافة رموز.", parse_mode="Markdown")
+        bot.send_message(uid, t(lang, "track_empty"), parse_mode="Markdown")
         return
     last_prices = data.get("last_prices", {})
-    msg = "📌 *قائمة أصولك المتتبعة:*\n━━━━━━━━━━━━━━\n"
+    msg = t(lang, "track_list_header")
     for sym in assets:
         price = fetch_asset_price(sym)
         if price:
@@ -6255,21 +6378,23 @@ def cmd_mytrack(m):
 @bot.message_handler(commands=["removetrack"])
 def cmd_removetrack(m):
     uid = m.from_user.id
+    user = users.get(str(uid), {})
+    lang = user.get("lang", "English 🇬🇧")
     parts = m.text.strip().split()
     if len(parts) < 2:
-        bot.send_message(uid, "⚠️ أرسل الرمز بعد الأمر. مثال: `/removetrack AAPL`", parse_mode="Markdown")
+        bot.send_message(uid, t(lang, "track_remove_usage"), parse_mode="Markdown")
         return
     symbol = parts[1].upper()
     data = tracked_assets.get(str(uid), {})
     assets = data.get("assets", [])
     if symbol not in assets:
-        bot.send_message(uid, f"⚠️ *{symbol}* غير موجودة في قائمتك.", parse_mode="Markdown")
+        bot.send_message(uid, t(lang, "track_not_found").format(symbol=symbol), parse_mode="Markdown")
         return
     assets.remove(symbol)
     tracked_assets[str(uid)]["assets"] = assets
     tracked_assets[str(uid)]["last_prices"].pop(symbol, None)
     save_tracked_assets()
-    bot.send_message(uid, f"✅ تم حذف *{symbol}* من قائمة التتبع.", parse_mode="Markdown")
+    bot.send_message(uid, t(lang, "track_removed").format(symbol=symbol), parse_mode="Markdown")
 
 # ======== الجدولة ========
 scheduler = BackgroundScheduler()
