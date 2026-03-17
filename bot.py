@@ -1299,6 +1299,7 @@ def check_referral_rewards(referrer_id, new_member_name=""):
     user = users.get(uid_str)
     if not user:
         return
+    lang = user.get("lang", "English 🇬🇧")
     ref_count = len(user.get("referrals", []))
     rewarded = user.setdefault("rewarded_milestones", [])
     for milestone in REFERRAL_MILESTONES:
@@ -1313,11 +1314,7 @@ def check_referral_rewards(referrer_id, new_member_name=""):
                 try:
                     bot.send_message(
                         referrer_id,
-                        "🎊 *تهانينا! وصلت إلى 25 دعوة!*\n\n"
-                        "🌟 حصلت على *اشتراك مميز كامل لمدة شهر* مجاناً!\n"
-                        "━━━━━━━━━━━━━━\n"
-                        "📅 الاشتراك ساري لمدة 30 يوم\n"
-                        "✨ استمتع بجميع الميزات المميزة!",
+                        t(lang, "ref_congrats_25"),
                         parse_mode="Markdown"
                     )
                 except:
@@ -1326,9 +1323,7 @@ def check_referral_rewards(referrer_id, new_member_name=""):
                 try:
                     bot.send_message(
                         referrer_id,
-                        f"🎉 *تهانينا! وصلت إلى {milestone} دعوة!*\n\n"
-                        f"🎁 ربحت *ميزة مميزة مجانية لمدة شهر واحد* — اختر الميزة التي تريدها:\n\n"
-                        f"📅 الميزة ستبقى مفعّلة لمدة *30 يوماً* من تاريخ الاختيار.",
+                        t(lang, "ref_congrats_milestone").format(milestone=milestone),
                         parse_mode="Markdown"
                     )
                     send_feature_choice_menu(referrer_id)
@@ -1338,18 +1333,18 @@ def check_referral_rewards(referrer_id, new_member_name=""):
 
 def send_feature_choice_menu(uid):
     user = users.get(str(uid), {})
+    lang = user.get("lang", "English 🇬🇧")
     unlocked = user.get("unlocked_features", [])
     markup = types.InlineKeyboardMarkup(row_width=1)
-    for feat_key, feat_name in REFERRAL_FEATURES.items():
+    for feat_key in REFERRAL_FEATURES:
         if feat_key not in unlocked:
-            markup.add(types.InlineKeyboardButton(feat_name, callback_data=f"ref_feature_{feat_key}"))
+            btn_label = t(lang, f"premium_btn_{feat_key.replace('prem_', '')}")
+            markup.add(types.InlineKeyboardButton(btn_label, callback_data=f"ref_feature_{feat_key}"))
     if not markup.keyboard:
-        bot.send_message(uid, "✅ لقد فتحت جميع الميزات المتاحة بالفعل!")
+        bot.send_message(uid, t(lang, "ref_all_unlocked"))
         return
     bot.send_message(uid,
-        "🎁 *اختر ميزة مميزة واحدة تريد فتحها:*\n"
-        "━━━━━━━━━━━━━━\n"
-        "📅 الميزة المختارة ستكون متاحة لمدة *شهر واحد* فقط.",
+        t(lang, "ref_choose_feature"),
         parse_mode="Markdown",
         reply_markup=markup
     )
@@ -1412,6 +1407,7 @@ def ref_feature_callback(call):
     if feat_key not in REFERRAL_FEATURES:
         return
     user = users.get(str(uid), {})
+    lang = user.get("lang", "English 🇬🇧")
     unlocked = user.setdefault("unlocked_features", [])
     if feat_key in unlocked:
         expiry_map = user.get("unlocked_features_expiry", {})
@@ -1419,22 +1415,19 @@ def ref_feature_callback(call):
         try:
             expiry_dt = datetime.datetime.fromisoformat(expiry_str)
             days_left = max(0, (expiry_dt - datetime.datetime.now()).days)
-            bot.send_message(uid, f"⚠️ هذه الميزة مفتوحة لديك بالفعل وتنتهي بعد {days_left} يوم.")
+            bot.send_message(uid, t(lang, "ref_feature_already_expiry").format(days=days_left))
         except:
-            bot.send_message(uid, "⚠️ هذه الميزة مفتوحة لديك بالفعل.")
+            bot.send_message(uid, t(lang, "ref_feature_already"))
         return
     unlocked.append(feat_key)
     expiry = datetime.datetime.now() + datetime.timedelta(days=30)
     users[str(uid)]["unlocked_features"] = unlocked
     users[str(uid)].setdefault("unlocked_features_expiry", {})[feat_key] = expiry.isoformat()
     save_json(USERS_FILE, users)
-    feat_name = REFERRAL_FEATURES[feat_key]
+    feat_name = t(lang, f"premium_btn_{feat_key.replace('prem_', '')}")
     expiry_str = expiry.strftime("%Y-%m-%d")
     bot.send_message(uid,
-        f"✅ *تم فتح الميزة بنجاح!*\n\n"
-        f"🎁 *{feat_name}*\n\n"
-        f"📅 *مدة الميزة:* شهر واحد (تنتهي {expiry_str})\n\n"
-        f"يمكنك استخدامها الآن من قائمة ⭐ المميز",
+        t(lang, "ref_feature_unlocked_msg").format(feat_name=feat_name, expiry_date=expiry_str),
         parse_mode="Markdown"
     )
 
@@ -1466,19 +1459,22 @@ def premium_callbacks(call):
         return
 
     if not has_feature(uid, data):
-        ref_count = len(users.get(str(uid), {}).get("referrals", []))
+        user_data = users.get(str(uid), {})
+        lang = user_data.get("lang", "English 🇬🇧")
+        ref_count = len(user_data.get("referrals", []))
         next_milestone = next((m for m in REFERRAL_MILESTONES if m > ref_count), None)
         remaining = (next_milestone - ref_count) if next_milestone else 0
-        bot.send_message(uid,
-            "⭐ *هذه الميزة للمشتركين المميزين فقط.*\n\n"
-            "💡 *يمكنك الحصول عليها مجاناً:*\n"
-            "• دعوة 5 أصدقاء ← ميزة مجانية لمدة شهر\n"
-            "• دعوة 10 أصدقاء ← ميزتان مجانيتان (كل منهما شهر)\n"
-            "• دعوة 25 صديق ← اشتراك مميز كامل شهر!\n\n"
-            + (f"📊 دعواتك: `{ref_count}` — تحتاج `{remaining}` دعوة للمكافأة القادمة\n\n" if next_milestone else f"📊 دعواتك: `{ref_count}`\n\n")
-            + "🔗 رابط دعوتك في قائمة *دعواتي*",
-            parse_mode="Markdown"
+        if next_milestone:
+            progress_line = t(lang, "ref_premium_progress_remaining").format(count=ref_count, remaining=remaining)
+        else:
+            progress_line = t(lang, "ref_premium_progress_max").format(count=ref_count)
+        msg = (
+            t(lang, "ref_premium_only_intro") + "\n"
+            + t(lang, "ref_premium_only_hints") + "\n\n"
+            + progress_line + "\n\n"
+            + t(lang, "ref_premium_link_hint")
         )
+        bot.send_message(uid, msg, parse_mode="Markdown")
         return
 
     if data == "prem_7day":
@@ -3744,6 +3740,31 @@ MSGS = {
         "currency_sar": "🇸🇦 الريال السعودي",
         "search_results_header": "🔍 *نتائج البحث عن: {query}*",
         "search_no_results": "⚠️ لا توجد نتائج لهذا البحث.",
+        "ref_congrats_25": "🎊 *تهانينا! وصلت إلى 25 دعوة!*\n\n🌟 حصلت على *اشتراك مميز كامل لمدة شهر* مجاناً!\n━━━━━━━━━━━━━━\n📅 الاشتراك ساري لمدة 30 يوم\n✨ استمتع بجميع الميزات المميزة!",
+        "ref_congrats_milestone": "🎉 *تهانينا! وصلت إلى {milestone} دعوة!*\n\n🎁 ربحت *ميزة مميزة مجانية لمدة شهر واحد* — اختر الميزة التي تريدها:\n\n📅 الميزة ستبقى مفعّلة لمدة *30 يوماً* من تاريخ الاختيار.",
+        "ref_all_unlocked": "✅ لقد فتحت جميع الميزات المتاحة بالفعل!",
+        "ref_choose_feature": "🎁 *اختر ميزة مميزة واحدة تريد فتحها:*\n━━━━━━━━━━━━━━\n📅 الميزة المختارة ستكون متاحة لمدة *شهر واحد* فقط.",
+        "ref_feature_already_expiry": "⚠️ هذه الميزة مفتوحة لديك بالفعل وتنتهي بعد {days} يوم.",
+        "ref_feature_already": "⚠️ هذه الميزة مفتوحة لديك بالفعل.",
+        "ref_feature_unlocked_msg": "✅ *تم فتح الميزة بنجاح!*\n\n🎁 *{feat_name}*\n\n📅 *مدة الميزة:* شهر واحد (تنتهي {expiry_date})\n\nيمكنك استخدامها الآن من قائمة ⭐ المميز",
+        "ref_premium_only_intro": "⭐ *هذه الميزة للمشتركين المميزين فقط.*\n\n💡 *يمكنك الحصول عليها مجاناً:*",
+        "ref_premium_only_hints": "• دعوة 5 أصدقاء ← ميزة مجانية لمدة شهر\n• دعوة 10 أصدقاء ← ميزتان مجانيتان (كل منهما شهر)\n• دعوة 25 صديق ← اشتراك مميز كامل شهر!",
+        "ref_premium_progress_remaining": "📊 دعواتك: `{count}` — تحتاج `{remaining}` دعوة للمكافأة القادمة",
+        "ref_premium_progress_max": "📊 دعواتك: `{count}`",
+        "ref_premium_link_hint": "🔗 رابط دعوتك في قائمة *دعواتي*",
+        "ref_stats_title": "🎁 *نظام الدعوات والمكافآت*",
+        "ref_stats_count": "👥 دعواتك: `{count}` شخص",
+        "ref_stats_link": "🔗 رابطك:",
+        "ref_premium_full_expiry": "🌟 *اشتراك مميز كامل:* ينتهي بعد {days} يوم",
+        "ref_stats_milestones_header": "📊 *مستويات المكافآت:*",
+        "ref_milestone_25_label": "🌟 اشتراك مميز كامل شهر",
+        "ref_milestone_label": "🎁 ميزة مميزة مجانية (لمدة شهر)",
+        "ref_milestone_remaining": "🔒 ({remaining} متبقية)",
+        "ref_feature_expires": "ينتهي بعد {days} يوم",
+        "ref_stats_none": "  لا توجد بعد",
+        "ref_stats_unlocked_header": "🔓 *ميزاتك المفتوحة:*",
+        "ref_stats_footer": "💡 شارك رابطك وكلما زادت دعواتك زادت مكافآتك!\n📅 *ملاحظة:* الميزات المفتوحة عبر الدعوات تنتهي بعد شهر واحد.",
+        "ref_share_btn": "📤 مشاركة رابط الدعوة",
     },
     "English 🇬🇧": {
         "no_news": "⚠️ No new news available right now.",
@@ -3877,6 +3898,31 @@ MSGS = {
         "currency_alert_invalid": "❌ Enter a number, e.g.: 1600",
         "notif_time_set": "✅ Morning summary will be sent at *{hour}:00* daily.",
         "notif_time_invalid": "❌ Enter a number from 0 to 23 (e.g.: 8 for 8 AM)",
+        "ref_congrats_25": "🎊 *Congratulations! You reached 25 referrals!*\n\n🌟 You've earned a *full premium subscription for 1 month* for free!\n━━━━━━━━━━━━━━\n📅 Subscription valid for 30 days\n✨ Enjoy all premium features!",
+        "ref_congrats_milestone": "🎉 *Congratulations! You reached {milestone} referrals!*\n\n🎁 You've won a *free premium feature for 1 month* — choose the feature you want:\n\n📅 The feature will remain active for *30 days* from the date of selection.",
+        "ref_all_unlocked": "✅ You have already unlocked all available features!",
+        "ref_choose_feature": "🎁 *Choose one premium feature to unlock:*\n━━━━━━━━━━━━━━\n📅 The chosen feature will be available for *1 month* only.",
+        "ref_feature_already_expiry": "⚠️ This feature is already active and expires in {days} days.",
+        "ref_feature_already": "⚠️ This feature is already active.",
+        "ref_feature_unlocked_msg": "✅ *Feature unlocked successfully!*\n\n🎁 *{feat_name}*\n\n📅 *Duration:* 1 month (expires {expiry_date})\n\nYou can use it now from the ⭐ Premium menu",
+        "ref_premium_only_intro": "⭐ *This feature is for premium subscribers only.*\n\n💡 *You can get it for free:*",
+        "ref_premium_only_hints": "• Invite 5 friends ← free feature for 1 month\n• Invite 10 friends ← 2 free features (1 month each)\n• Invite 25 friends ← full premium for 1 month!",
+        "ref_premium_progress_remaining": "📊 Your referrals: `{count}` — need `{remaining}` more for next reward",
+        "ref_premium_progress_max": "📊 Your referrals: `{count}`",
+        "ref_premium_link_hint": "🔗 Your referral link in *My Referrals*",
+        "ref_stats_title": "🎁 *Referral & Rewards System*",
+        "ref_stats_count": "👥 Your referrals: `{count}` people",
+        "ref_stats_link": "🔗 Your link:",
+        "ref_premium_full_expiry": "🌟 *Full Premium:* expires in {days} days",
+        "ref_stats_milestones_header": "📊 *Reward Levels:*",
+        "ref_milestone_25_label": "🌟 Full premium subscription for 1 month",
+        "ref_milestone_label": "🎁 Free premium feature (1 month)",
+        "ref_milestone_remaining": "🔒 ({remaining} left)",
+        "ref_feature_expires": "expires in {days} days",
+        "ref_stats_none": "  None yet",
+        "ref_stats_unlocked_header": "🔓 *Your Unlocked Features:*",
+        "ref_stats_footer": "💡 Share your link — more referrals = more rewards!\n📅 *Note:* Features unlocked via referrals expire after 1 month.",
+        "ref_share_btn": "📤 Share Referral Link",
     },
     "Русский 🇷🇺": {
         "no_news": "⚠️ Новых новостей нет.",
@@ -4004,6 +4050,31 @@ MSGS = {
         "currency_alert_invalid": "❌ Введите число, например: 1600",
         "notif_time_set": "✅ Утренняя сводка будет отправляться в *{hour}:00* ежедневно.",
         "notif_time_invalid": "❌ Введите число от 0 до 23 (например: 8 для 8 утра)",
+        "ref_congrats_25": "🎊 *Поздравляем! Вы достигли 25 приглашений!*\n\n🌟 Вы получили *полный премиум на 1 месяц* бесплатно!\n━━━━━━━━━━━━━━\n📅 Подписка действует 30 дней\n✨ Наслаждайтесь всеми премиум-функциями!",
+        "ref_congrats_milestone": "🎉 *Поздравляем! Вы достигли {milestone} приглашений!*\n\n🎁 Вы выиграли *бесплатную премиум-функцию на 1 месяц* — выберите функцию:\n\n📅 Функция будет активна *30 дней* с момента выбора.",
+        "ref_all_unlocked": "✅ Вы уже открыли все доступные функции!",
+        "ref_choose_feature": "🎁 *Выберите одну премиум-функцию для разблокировки:*\n━━━━━━━━━━━━━━\n📅 Выбранная функция будет доступна только *1 месяц*.",
+        "ref_feature_already_expiry": "⚠️ Эта функция уже активна и истекает через {days} дней.",
+        "ref_feature_already": "⚠️ Эта функция уже активна.",
+        "ref_feature_unlocked_msg": "✅ *Функция успешно разблокирована!*\n\n🎁 *{feat_name}*\n\n📅 *Срок:* 1 месяц (истекает {expiry_date})\n\nВы можете использовать её в меню ⭐ Премиум",
+        "ref_premium_only_intro": "⭐ *Эта функция только для премиум-подписчиков.*\n\n💡 *Вы можете получить её бесплатно:*",
+        "ref_premium_only_hints": "• Пригласите 5 друзей ← бесплатная функция на 1 месяц\n• Пригласите 10 друзей ← 2 бесплатные функции (по 1 месяцу каждая)\n• Пригласите 25 друзей ← полный премиум на 1 месяц!",
+        "ref_premium_progress_remaining": "📊 Ваши приглашения: `{count}` — нужно ещё `{remaining}` для следующей награды",
+        "ref_premium_progress_max": "📊 Ваши приглашения: `{count}`",
+        "ref_premium_link_hint": "🔗 Ваша реферальная ссылка в *Мои приглашения*",
+        "ref_stats_title": "🎁 *Система рефералов и наград*",
+        "ref_stats_count": "👥 Ваши приглашения: `{count}` чел.",
+        "ref_stats_link": "🔗 Ваша ссылка:",
+        "ref_premium_full_expiry": "🌟 *Полный премиум:* истекает через {days} дней",
+        "ref_stats_milestones_header": "📊 *Уровни наград:*",
+        "ref_milestone_25_label": "🌟 Полная премиум-подписка на 1 месяц",
+        "ref_milestone_label": "🎁 Бесплатная премиум-функция (1 месяц)",
+        "ref_milestone_remaining": "🔒 (осталось {remaining})",
+        "ref_feature_expires": "истекает через {days} дней",
+        "ref_stats_none": "  Нет пока",
+        "ref_stats_unlocked_header": "🔓 *Ваши разблокированные функции:*",
+        "ref_stats_footer": "💡 Делитесь ссылкой — больше рефералов = больше наград!\n📅 *Примечание:* Функции, разблокированные через рефералов, истекают через 1 месяц.",
+        "ref_share_btn": "📤 Поделиться реферальной ссылкой",
     },
     "فارسی 🇮🇷": {
         "no_news": "⚠️ اخبار جدیدی موجود نیست.",
@@ -4131,6 +4202,31 @@ MSGS = {
         "currency_alert_invalid": "❌ یک عدد ارسال کنید، مثلاً: 1600",
         "notif_time_set": "✅ خلاصه صبحگاهی روزانه در ساعت *{hour}:00* ارسال می‌شود.",
         "notif_time_invalid": "❌ عددی بین ۰ تا ۲۳ وارد کنید (مثال: ۸ برای ساعت ۸ صبح)",
+        "ref_congrats_25": "🎊 *تبریک! به 25 دعوت رسیدید!*\n\n🌟 یک *اشتراک پریمیوم کامل 1 ماهه* رایگان دریافت کردید!\n━━━━━━━━━━━━━━\n📅 اشتراک 30 روز معتبر است\n✨ از تمام امکانات پریمیوم لذت ببرید!",
+        "ref_congrats_milestone": "🎉 *تبریک! به {milestone} دعوت رسیدید!*\n\n🎁 یک *ویژگی پریمیوم رایگان 1 ماهه* برنده شدید — ویژگی مورد نظر خود را انتخاب کنید:\n\n📅 ویژگی *30 روز* از تاریخ انتخاب فعال می‌ماند.",
+        "ref_all_unlocked": "✅ شما قبلاً تمام ویژگی‌های موجود را باز کرده‌اید!",
+        "ref_choose_feature": "🎁 *یک ویژگی پریمیوم برای باز کردن انتخاب کنید:*\n━━━━━━━━━━━━━━\n📅 ویژگی انتخابی فقط *1 ماه* در دسترس خواهد بود.",
+        "ref_feature_already_expiry": "⚠️ این ویژگی از قبل فعال است و در {days} روز دیگر منقضی می‌شود.",
+        "ref_feature_already": "⚠️ این ویژگی از قبل فعال است.",
+        "ref_feature_unlocked_msg": "✅ *ویژگی با موفقیت باز شد!*\n\n🎁 *{feat_name}*\n\n📅 *مدت:* 1 ماه (تاریخ انقضا {expiry_date})\n\nاکنون می‌توانید از منوی ⭐ پریمیوم استفاده کنید",
+        "ref_premium_only_intro": "⭐ *این ویژگی فقط برای مشترکین پریمیوم است.*\n\n💡 *می‌توانید رایگان دریافت کنید:*",
+        "ref_premium_only_hints": "• دعوت 5 دوست ← ویژگی رایگان 1 ماهه\n• دعوت 10 دوست ← 2 ویژگی رایگان (هر کدام 1 ماه)\n• دعوت 25 دوست ← پریمیوم کامل 1 ماهه!",
+        "ref_premium_progress_remaining": "📊 دعوت‌های شما: `{count}` — نیاز به `{remaining}` دعوت دیگر برای جایزه بعدی",
+        "ref_premium_progress_max": "📊 دعوت‌های شما: `{count}`",
+        "ref_premium_link_hint": "🔗 لینک دعوت شما در *دعوت‌هایم*",
+        "ref_stats_title": "🎁 *سیستم دعوت و جوایز*",
+        "ref_stats_count": "👥 دعوت‌های شما: `{count}` نفر",
+        "ref_stats_link": "🔗 لینک شما:",
+        "ref_premium_full_expiry": "🌟 *پریمیوم کامل:* در {days} روز دیگر منقضی می‌شود",
+        "ref_stats_milestones_header": "📊 *سطوح جوایز:*",
+        "ref_milestone_25_label": "🌟 اشتراک پریمیوم کامل 1 ماهه",
+        "ref_milestone_label": "🎁 ویژگی پریمیوم رایگان (1 ماه)",
+        "ref_milestone_remaining": "🔒 ({remaining} باقیمانده)",
+        "ref_feature_expires": "در {days} روز دیگر منقضی می‌شود",
+        "ref_stats_none": "  هنوز هیچ",
+        "ref_stats_unlocked_header": "🔓 *ویژگی‌های باز شده شما:*",
+        "ref_stats_footer": "💡 لینک خود را به اشتراک بگذارید — بیشتر دعوت = بیشتر جایزه!\n📅 *توجه:* ویژگی‌های باز شده از طریق دعوت بعد از 1 ماه منقضی می‌شوند.",
+        "ref_share_btn": "📤 اشتراک‌گذاری لینک دعوت",
     },
     "हिन्दी 🇮🇳": {
         "no_news": "⚠️ अभी कोई नई खबर नहीं है।",
@@ -4512,6 +4608,31 @@ MSGS = {
         "currency_alert_invalid": "❌ Bir sayı gönderin, örnek: 1600",
         "notif_time_set": "✅ Sabah özeti her gün *{hour}:00*'de gönderilecek.",
         "notif_time_invalid": "❌ 0 ile 23 arasında bir sayı girin (örnek: sabah 8 için 8)",
+        "ref_congrats_25": "🎊 *Tebrikler! 25 davet eşiğine ulaştınız!*\n\n🌟 *1 aylık tam premium abonelik* kazandınız, üstelik ücretsiz!\n━━━━━━━━━━━━━━\n📅 Abonelik 30 gün geçerlidir\n✨ Tüm premium özelliklerden yararlanın!",
+        "ref_congrats_milestone": "🎉 *Tebrikler! {milestone} davet eşiğine ulaştınız!*\n\n🎁 *1 aylık ücretsiz premium özellik* kazandınız — istediğiniz özelliği seçin:\n\n📅 Seçilen özellik, seçim tarihinden itibaren *30 gün* aktif kalacak.",
+        "ref_all_unlocked": "✅ Mevcut tüm özellikleri zaten açtınız!",
+        "ref_choose_feature": "🎁 *Açmak istediğiniz bir premium özellik seçin:*\n━━━━━━━━━━━━━━\n📅 Seçilen özellik yalnızca *1 ay* kullanılabilecek.",
+        "ref_feature_already_expiry": "⚠️ Bu özellik zaten aktif ve {days} gün sonra sona eriyor.",
+        "ref_feature_already": "⚠️ Bu özellik zaten aktif.",
+        "ref_feature_unlocked_msg": "✅ *Özellik başarıyla açıldı!*\n\n🎁 *{feat_name}*\n\n📅 *Süre:* 1 ay (bitiş tarihi {expiry_date})\n\nŞimdi ⭐ Premium menüsünden kullanabilirsiniz",
+        "ref_premium_only_intro": "⭐ *Bu özellik yalnızca premium abonelere yönelik.*\n\n💡 *Ücretsiz alabilirsiniz:*",
+        "ref_premium_only_hints": "• 5 arkadaş davet et ← 1 aylık ücretsiz özellik\n• 10 arkadaş davet et ← 2 ücretsiz özellik (her biri 1 ay)\n• 25 arkadaş davet et ← 1 aylık tam premium!",
+        "ref_premium_progress_remaining": "📊 Davetleriniz: `{count}` — sonraki ödül için `{remaining}` daha gerekiyor",
+        "ref_premium_progress_max": "📊 Davetleriniz: `{count}`",
+        "ref_premium_link_hint": "🔗 Davet linkiniz *Davetlerim* kısmında",
+        "ref_stats_title": "🎁 *Davet ve Ödül Sistemi*",
+        "ref_stats_count": "👥 Davetleriniz: `{count}` kişi",
+        "ref_stats_link": "🔗 Linkiniz:",
+        "ref_premium_full_expiry": "🌟 *Tam Premium:* {days} gün sonra bitiyor",
+        "ref_stats_milestones_header": "📊 *Ödül Seviyeleri:*",
+        "ref_milestone_25_label": "🌟 1 aylık tam premium abonelik",
+        "ref_milestone_label": "🎁 Ücretsiz premium özellik (1 ay)",
+        "ref_milestone_remaining": "🔒 ({remaining} kaldı)",
+        "ref_feature_expires": "{days} gün sonra bitiyor",
+        "ref_stats_none": "  Henüz yok",
+        "ref_stats_unlocked_header": "🔓 *Açık Özellikleriniz:*",
+        "ref_stats_footer": "💡 Linkinizi paylaşın — daha fazla davet = daha fazla ödül!\n📅 *Not:* Davet yoluyla açılan özellikler 1 ay sonra sona erer.",
+        "ref_share_btn": "📤 Davet Linkini Paylaş",
     },
     "اردو 🇵🇰": {
         "no_news": "⚠️ ابھی کوئی نئی خبر نہیں۔",
@@ -5898,30 +6019,30 @@ def send_referral_stats(uid):
     progress_lines = ""
     for milestone in REFERRAL_MILESTONES:
         if milestone == 25:
-            label = "🌟 اشتراك مميز كامل شهر"
+            label = t(lang, "ref_milestone_25_label")
         else:
-            label = "🎁 ميزة مميزة مجانية (لمدة شهر)"
+            label = t(lang, "ref_milestone_label")
         if milestone in rewarded:
             status = "✅"
         elif ref_count >= milestone:
             status = "🔓"
         else:
             remaining = milestone - ref_count
-            status = f"🔒 ({remaining} متبقية)"
-        progress_lines += f"{status} {milestone} دعوة ← {label}\n"
+            status = t(lang, "ref_milestone_remaining").format(remaining=remaining)
+        progress_lines += f"{status} {milestone} ← {label}\n"
 
     expiry_map = user.get("unlocked_features_expiry", {})
     unlocked_lines = []
     for f in unlocked:
-        feat_name = REFERRAL_FEATURES.get(f, f)
+        feat_name = t(lang, f"premium_btn_{f.replace('prem_', '')}")
         expiry_str = expiry_map.get(f, "")
         try:
             expiry_dt = datetime.datetime.fromisoformat(expiry_str)
             days_left = max(0, (expiry_dt - datetime.datetime.now()).days)
-            unlocked_lines.append(f"  ✨ {feat_name} — ينتهي بعد {days_left} يوم")
+            unlocked_lines.append(f"  ✨ {feat_name} — {t(lang, 'ref_feature_expires').format(days=days_left)}")
         except:
             unlocked_lines.append(f"  ✨ {feat_name}")
-    unlocked_names = "\n".join(unlocked_lines) if unlocked_lines else "  لا توجد بعد"
+    unlocked_names = "\n".join(unlocked_lines) if unlocked_lines else t(lang, "ref_stats_none")
 
     expiry_txt = ""
     if ref_premium_expiry:
@@ -5929,25 +6050,24 @@ def send_referral_stats(uid):
             expiry_dt = datetime.datetime.fromisoformat(ref_premium_expiry)
             if datetime.datetime.now() < expiry_dt:
                 days_left = (expiry_dt - datetime.datetime.now()).days
-                expiry_txt = f"\n🌟 *اشتراك مميز كامل:* ينتهي بعد {days_left} يوم\n"
+                expiry_txt = f"\n{t(lang, 'ref_premium_full_expiry').format(days=days_left)}\n"
         except:
             pass
 
     msg = (
-        f"🎁 *نظام الدعوات والمكافآت*\n"
+        f"{t(lang, 'ref_stats_title')}\n"
         f"━━━━━━━━━━━━━━\n"
-        f"👥 دعواتك: `{ref_count}` شخص\n"
-        f"🔗 رابطك:\n`{invite_link}`\n"
+        f"{t(lang, 'ref_stats_count').format(count=ref_count)}\n"
+        f"{t(lang, 'ref_stats_link')}\n`{invite_link}`\n"
         f"{expiry_txt}"
-        f"\n📊 *مستويات المكافآت:*\n{progress_lines}"
-        f"\n🔓 *ميزاتك المفتوحة:*\n{unlocked_names}\n"
+        f"\n{t(lang, 'ref_stats_milestones_header')}\n{progress_lines}"
+        f"\n{t(lang, 'ref_stats_unlocked_header')}\n{unlocked_names}\n"
         f"━━━━━━━━━━━━━━\n"
-        f"💡 شارك رابطك وكلما زادت دعواتك زادت مكافآتك!\n"
-        f"📅 *ملاحظة:* الميزات المفتوحة عبر الدعوات تنتهي بعد شهر واحد."
+        f"{t(lang, 'ref_stats_footer')}"
     )
     markup = types.InlineKeyboardMarkup()
-    share_url = f"https://t.me/share/url?url={invite_link}&text=📱 جرب بوت الأخبار @{BOT_USERNAME}"
-    markup.add(types.InlineKeyboardButton("📤 مشاركة رابط الدعوة", url=share_url))
+    share_url = f"https://t.me/share/url?url={invite_link}&text=@{BOT_USERNAME}"
+    markup.add(types.InlineKeyboardButton(t(lang, "ref_share_btn"), url=share_url))
     bot.send_message(uid, msg, parse_mode="Markdown", reply_markup=markup)
 
 # ======== انشر البوت ========
