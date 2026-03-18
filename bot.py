@@ -1285,7 +1285,7 @@ INTEREST_KEYWORDS = {
     "gesundheit": ["gesundheit", "krankenhaus", "arzt", "behandlung", "krankheit", "impfstoff"],
     "kunst & kultur": ["kunst", "kultur", "film", "musik", "festival"],
     "reisen": ["reisen", "tourismus", "hotel", "flughafen", "visum"],
-    "wissenschaft": ["wissenschaft", "forschung", "entdeckung",� "weltraum", "experiment"],
+    "wissenschaft": ["wissenschaft", "forschung", "entdeckung", "weltraum", "experiment"],
     "unterhaltung": ["unterhaltung", "promi", "viral", "humor"],
 }
 
