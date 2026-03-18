@@ -1682,7 +1682,7 @@ def premium_callbacks(call):
         kws = user_keywords.get(str(uid), [])
         if kws:
             kw_list = "\n".join(f"• {k}" for k in kws)
-            �bot.send_message(uid,
+            bot.send_message(uid,
                 f"🔑 *كلماتك المفتاحية الحالية:*\n{kw_list}\n\n"
                 "أرسل كلمة جديدة لإضافتها أو أرسل 'حذف كلمة' لحذفها:",
                 parse_mode="Markdown"
