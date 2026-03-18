@@ -1501,7 +1501,7 @@ def check_referral_rewards(referrer_id, new_member_name=""):
 def send_feature_choice_menu(uid):
     user = users.get(str(uid), {})
     unlocked = user.get("unlocked_features", [])
-    �markup = types.InlineKeyboardMarkup(row_width=1)
+    markup = types.InlineKeyboardMarkup(row_width=1)
     for feat_key, feat_name in REFERRAL_FEATURES.items():
         if feat_key not in unlocked:
             markup.add(types.InlineKeyboardButton(feat_name, callback_data=f"ref_feature_{feat_key}"))
