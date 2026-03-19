@@ -2609,7 +2609,7 @@ def _nf_label_step(message):
         return
     news_settings["label"] = message.text.strip()
     save_news_settings()
-    bot.send_messa�ge(message.from_user.id, f"✅ تم تغيير عنوان الخبر إلى:\n{news_settings['label']}")
+    bot.send_message(message.from_user.id, f"✅ تم تغيير عنوان الخبر إلى:\n{news_settings['label']}")
 
 def _nf_sep_step(message):
     if not is_admin(message.from_user.id):
