@@ -8972,7 +8972,7 @@ CHART_ASSET_LABELS = {
     "EURUSD=X": "EUR/USD", "GBPUSD=X": "GBP/USD", "USDJPY=X": "USD/JPY",
     "AUDUSD=X": "AUD/USD", "USDCAD=X": "USD/CAD", "USDCHF=X": "USD/CHF",
     "NZDUSD=X": "NZD/USD", "USDTRY=X": "USD/TRY", "USDEGP=X": "USD/EGP",
-    "USDSAR=X": "USD/SAR", "USDKWD=X": "USD/KWD", "USDIQD=X": "USD/IQD",�
+    "USDSAR=X": "USD/SAR", "USDKWD=X": "USD/KWD", "USDIQD=X": "USD/IQD",
     "GC=F": "Gold",     "SI=F": "Silver",     "PL=F": "Platinum",
     "HG=F": "Copper",   "CL=F": "WTI Oil",    "BZ=F": "Brent Oil",
     "NG=F": "Nat. Gas", "ZW=F": "Wheat",      "ZC=F": "Corn",    "CC=F": "Cocoa",
