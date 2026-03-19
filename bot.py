@@ -3018,7 +3018,7 @@ def get_user_info(message):
         is_banned_user = int(target_id) in banned
         is_premium_user = int(target_id) in stats.get("premium_users", [])
         is_admin_user = is_admin(int(target_id))
-�        referrals = user.get("referrals", [])
+        referrals = user.get("referrals", [])
         referred_by = user.get("referred_by", None)
         join_date = user.get("join_date", "غير معروف")
         interests = user.get("interests", [])
