@@ -9367,7 +9367,7 @@ def send_daily_top3(uid):
             for item in feed.entries[:10]:
                 title = getattr(item, 'title', '').strip()
                 link  = getattr(item, 'link', '').strip()
-                summary = getattr(item, 'summary', '') or getattr(item�, 'description', '')
+                summary = getattr(item, 'summary', '') or getattr(item, 'description', '')
                 if title and link:
                     headlines.append((title, link, summary))
             if len(headlines) >= 10:
