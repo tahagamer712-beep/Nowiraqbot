@@ -4165,7 +4165,7 @@ def send_rating_request():
                 continue
             if info.get("rating_sent_today"):
                 continue
-            markup = types.InlineKeyboardMarkup(row_width=�5)
+            markup = types.InlineKeyboardMarkup(row_width=5)
             markup.add(
                 types.InlineKeyboardButton("1⭐", callback_data=f"rate_bot_1_{uid}"),
                 types.InlineKeyboardButton("2⭐", callback_data=f"rate_bot_2_{uid}"),
