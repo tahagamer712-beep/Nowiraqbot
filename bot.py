@@ -3953,7 +3953,7 @@ def _send_welcome_greeting(uid, name, lang="English 🇬🇧"):
         "فارسی 🇮🇷":    f"👋 *خوش آمدید، {name}!*\n\nخوشحالیم که برگشتید! 🌍\n\n",
         "हिन्दी 🇮🇳":   f"👋 *वापस स्वागत है, {name}!*\n\nआपको देखकर खुशी हुई! 🌍\n\n",
         "Português 🇧🇷": f"👋 *Bem-vindo de volta, {name}!*\n\nFeliz em vê-lo novamente! 🌍\n\n",
- �       "Türkçe 🇹🇷":   f"👋 *Tekrar hoş geldiniz, {name}!*\n\nSizi yeniden görmekten mutluyuz! 🌍\n\n",
+        "Türkçe 🇹🇷":   f"👋 *Tekrar hoş geldiniz, {name}!*\n\nSizi yeniden görmekten mutluyuz! 🌍\n\n",
         "اردو 🇵🇰":     f"👋 *خوش آمدید، {name}!*\n\nآپ کو دوبارہ دیکھ کر خوشی ہوئی! 🌍\n\n",
         "Deutsch 🇩🇪":  f"👋 *Willkommen zurück, {name}!*\n\nSchön, Sie wiederzusehen! 🌍\n\n",
         "Українська 🇺🇦": f"👋 *З поверненням, {name}!*\n\nРаді бачити вас знову! 🌍\n\n",
