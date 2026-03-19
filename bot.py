@@ -5371,7 +5371,7 @@ MSGS = {
         "no_results": "⚠️ Aramanız için sonuç bulunamadı.",
         "search_error": "⚠️ Arama sırasında hata oluştu.",
         "no_trending": "⚠️ Şu an trend haber yok, daha sonra deneyin.",
-        "trending_header":� "🔥 *Trend Haberler*\n━━━━━━━━━━━━━━━",
+        "trending_header": "🔥 *Trend Haberler*\n━━━━━━━━━━━━━━━",
         "sports_header": "⚽ *Spor Haberleri*\n━━━━━━━━━━━━━━━",
         "no_sports": "⚠️ Şu an yeni spor haberi yok.",
         "no_sports_source": "⚠️ Bu dil için spor kaynağı yok.",
