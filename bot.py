@@ -5485,7 +5485,7 @@ MSGS = {
         "currency_rate_header": "💱 *USD'ye Karşı Döviz Kurları 🇺🇸*\n\n",
         "currency_local_label": "🏠 {name}",
         "currency_convert_header": "🔄 *{amount} {currency} Dönüşümü*\n━━━━━━━━━━━━━━━\n\n",
-�        "currency_unsupported": "⚠️ Desteklenmeyen para birimi: {currency}",
+        "currency_unsupported": "⚠️ Desteklenmeyen para birimi: {currency}",
         "currency_fetch_error": "⚠️ Döviz kurları alınamıyor.",
         "city_add_success": "✅ Şehir eklendi: *{city}*",
         "currency_alert_set": "✅ Dolar yerel paranızın `{rate}` değerine ulaştığında uyarılacaksınız.",
