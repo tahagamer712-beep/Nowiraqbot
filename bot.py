@@ -4359,7 +4359,7 @@ def handle_selection(m):
             user_states[uid] = "searching"
             bot.send_message(uid, t(lang, "search_prompt"))
         elif text == btn.get("referral"):
-            send_refe�rral_stats(uid)
+            send_referral_stats(uid)
         elif text == btn.get("top_referrers"):
             send_top_referrers(uid)
         elif text == btn.get("sports"):
