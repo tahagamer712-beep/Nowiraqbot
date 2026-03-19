@@ -5707,7 +5707,7 @@ MSGS = {
         "premium_btn_mycities": "📋 Meine gespeicherten Städte",
         "premium_btn_interests": "📌 Meine Interessen",
         "premium_btn_currency_alert": "💱 Währungsalarm",
-        "premium_btn_currency_table": �"📊 Währungstabelle",
+        "premium_btn_currency_table": "📊 Währungstabelle",
         "premium_btn_notif_time": "🕐 Benachrichtigungszeit",
         "premium_btn_weekly": "📰 Wochenübersicht",
         "premium_btn_keywords": "🔑 Schlüsselwörter",
