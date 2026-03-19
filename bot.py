@@ -9575,7 +9575,7 @@ def cb_alert_set(call):
 
 
 @bot.message_handler(commands=["settings"])
-def cmd_sett�ings_private(m):
+def cmd_settings_private(m):
     if m.chat.type != "private":
         return
     uid = m.from_user.id
