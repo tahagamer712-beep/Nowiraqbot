@@ -4914,7 +4914,7 @@ MSGS = {
         "open_bot_btn": "🔗 Открыть бот",
         "public_stats_header": "📊 *Статистика бота*\n━━━━━━━━━━━━━━━\n\n👥 Всего пользователей: *{total}*\n✅ Активных: *{active}*\n🆕 Присоединились сегодня: *{today}*\n⭐ Премиум-подписчиков: *{premium}*\n\n",
         "public_stats_langs": "🌍 *Наиболее используемые языки:*\n",
-        �"public_stats_footer": "\n━━━━━━━━━━━━━━━\n🤖 @{username}",
+        "public_stats_footer": "\n━━━━━━━━━━━━━━━\n🤖 @{username}",
         "my_stats_header": "📈 *Ваша личная статистика*\n━━━━━━━━━━━━━━━\n\n👤 Имя: *{name}*\n🌍 Язык: *{lang}*\n🏙 Город: *{city}*\n📅 Дата регистрации: *{join}*\n\n📰 Получено новостей: *{news}*\n🎁 Отправлено приглашений: *{refs}*\n🔑 Ключевых слов: *{kws}*\n⭐ Премиум: *{prem}*\n🔔 Уведомления: *{notif}*\n",
         "my_stats_prem_yes": "⭐ Да",
         "my_stats_prem_no": "❌ Нет",
