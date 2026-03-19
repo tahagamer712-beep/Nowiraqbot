@@ -3780,7 +3780,7 @@ def send_morning_summary():
         notif_hour = info.get("notif_hour", 8)
         if now_hour != notif_hour:
             continue
-        lang = info.get("lang", �"English 🇬🇧")
+        lang = info.get("lang", "English 🇬🇧")
         feeds = RSS.get(lang, [])
         headlines = []
         for feed_url in feeds:
