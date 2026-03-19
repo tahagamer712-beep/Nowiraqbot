@@ -3580,7 +3580,7 @@ def add_extra_city(uid, city):
     users[str(uid)].setdefault("extra_cities", [])
     if city not in users[str(uid)]["extra_cities"]:
         users[str(uid)]["extra_cities"].append(city)
- �   _db_save_all_users(users)
+    _db_save_all_users(users)
     bot.send_message(uid, f"✅ تمت إضافة مدينة: *{city}*", parse_mode="Markdown")
 
 def send_hourly_weather_forecast(uid):
