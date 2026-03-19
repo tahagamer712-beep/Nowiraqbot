@@ -2071,7 +2071,7 @@ def admin_callbacks(call):
     elif data.startswith("admin_users_list_"):
         page = int(data.split("_")[-1])
         per_page = 10
-        all_uids = list(users.ke�ys())
+        all_uids = list(users.keys())
         total = len(all_uids)
         total_pages = max(1, (total + per_page - 1) // per_page)
         start = page * per_page
