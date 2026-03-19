@@ -3410,7 +3410,7 @@ def send_trending_news(uid):
                         title = getattr(item, 'title', '')
                         link = getattr(item, 'link', '')
                         if title and link:
-                            item_sum = getattr(item, 'summary'�, '') or getattr(item, 'description', '')
+                            item_sum = getattr(item, 'summary', '') or getattr(item, 'description', '')
                             markup = make_news_share_markup(link, title, lang, item_sum)
                             bot.send_message(uid, format_news_item(t(lang, "label_trending"), title, lang), parse_mode="Markdown", reply_markup=markup)
                     return
