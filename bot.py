@@ -1890,7 +1890,7 @@ def ref_feature_callback(call):
 def premium_callbacks(call):
     uid = call.from_user.id
     data = call.data
-    bot.answer_callback_quer�y(call.id)
+    bot.answer_callback_query(call.id)
 
     if data.startswith("req_premium_"):
         requester_id = data.split("_")[-1]
