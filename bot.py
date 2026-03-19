@@ -1302,7 +1302,7 @@ INTEREST_KEYWORDS = {
     "seyahat": ["seyahat", "turizm", "otel", "havalimanı", "vize"],
     "bilim": ["bilim", "araştırma", "keşif", "uzay", "deney"],
     "eğlence": ["eğlence", "ünlü", "viral", "komedi"],
-�    "sport_de": ["sport", "fußball", "spiel", "turnier", "spieler", "mannschaft", "liga"],
+    "sport_de": ["sport", "fußball", "spiel", "turnier", "spieler", "mannschaft", "liga"],
     "wirtschaft": ["wirtschaft", "öl", "dollar", "handel", "bank", "markt", "budget"],
     "technologie": ["technologie", "ki", "internet", "app", "software", "digital"],
     "politik": ["politik", "regierung", "präsident", "minister", "parlament", "wahl"],
