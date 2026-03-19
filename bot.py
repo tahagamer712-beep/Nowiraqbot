@@ -5929,7 +5929,7 @@ MSGS = {
         "share_bot_btn": "📤 Condividi Bot",
         "open_bot_btn": "🔗 Apri Bot",
         "public_stats_header": "📊 *Statistiche del Bot*\n━━━━━━━━━━━━━━━\n\n👥 Utenti totali: *{total}*\n✅ Utenti attivi: *{active}*\n🆕 Iscritti oggi: *{today}*\n⭐ Abbonati premium: *{premium}*\n\n",
-        "public_stats_langs"�: "🌍 *Lingue più usate:*\n",
+        "public_stats_langs": "🌍 *Lingue più usate:*\n",
         "public_stats_footer": "\n━━━━━━━━━━━━━━━\n🤖 @{username}",
         "my_stats_header": "📈 *Le Tue Statistiche Personali*\n━━━━━━━━━━━━━━━\n\n👤 Nome: *{name}*\n🌍 Lingua: *{lang}*\n🏙 Città: *{city}*\n📅 Data iscrizione: *{join}*\n\n📰 Notizie ricevute: *{news}*\n🎁 Referral inviati: *{refs}*\n🔑 Parole chiave: *{kws}*\n⭐ Premium: *{prem}*\n🔔 Notifiche: *{notif}*\n",
         "my_stats_prem_yes": "⭐ Sì",
