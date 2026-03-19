@@ -9162,7 +9162,7 @@ def _build_chart_categories_markup(lang):
         for key, (label, _) in CHART_CATEGORIES.items()
     ]
     for i in range(0, len(cat_buttons), 2):
-        markup.row(*�cat_buttons[i:i+2])
+        markup.row(*cat_buttons[i:i+2])
     custom_label = "🔍 رمز مخصص" if lang == "العربية 🇮🇶" else "🔍 Custom Symbol"
     markup.row(types.InlineKeyboardButton(custom_label, callback_data="chart_cat_custom"))
     return markup
