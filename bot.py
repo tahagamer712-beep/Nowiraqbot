@@ -2426,7 +2426,7 @@ def admin_callbacks(call):
             types.InlineKeyboardButton("➕ إضافة كلمة", callback_data="bl_add"),
             types.InlineKeyboardButton("➖ حذف كلمة", callback_data="bl_remove"),
             types.InlineKeyboardButton("📋 عرض الكل", callback_data="bl_list"),
-            types.I�nlineKeyboardButton("🗑 مسح الكل", callback_data="bl_clear"),
+            types.InlineKeyboardButton("🗑 مسح الكل", callback_data="bl_clear"),
         )
         bot.send_message(uid,
             f"🚫 *القائمة السوداء للكلمات*\n\n"
