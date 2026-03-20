@@ -3270,7 +3270,6 @@ def admin_callbacks(call):
 
     elif data == "admin_full_reset_confirm":
         bot.answer_callback_query(call.id, "⏳ جاري إعادة التعيين الكاملة...")
-        global users, stats, banned, inbox_messages
         # --- مسح بيانات المستخدمين ---
         users.clear()
         save_json(USERS_FILE, {})
