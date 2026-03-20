@@ -2,3 +2,4 @@ pyTelegramBotAPI
 requests
 feedparser
 APScheduler
+beautifulsoup4
