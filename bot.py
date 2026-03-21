@@ -3268,56 +3268,64 @@ def admin_callbacks(call):
             reply_markup=markup
         )
 
-    elif data == "admin_full_reset_confirm":
-        bot.answer_callback_query(call.id, "⏳ جاري إعادة التعيين الكاملة...")
-        global users, stats, banned, inbox_messages
-        # --- مسح بيانات المستخدمين ---
-        users.clear()
-        save_json(USERS_FILE, {})
-        _db_save_all_users({})
-        # --- مسح الإحصائيات ---
-        stats.clear()
-        stats.update({"total_users": 0, "daily_users": {}, "lang_dist": {}, "country_dist": {}})
-        save_json(STATS_FILE, stats)
-        # --- مسح قائمة المحظورين ---
-        banned.clear()
-        save_json(BANNED_FILE, [])
-        # --- مسح صندوق الرسائل ---
-        inbox_messages.clear()
-        save_json(INBOX_FILE, [])
-        # --- مسح التقييمات ---
-        save_json(RATINGS_FILE, {})
-        # --- مسح سجل القراءة ---
-        save_json(READ_STATS_FILE, {"total_opens": 0, "daily": {}})
-        # --- إعادة شكل الخبر للافتراضي ---
-        news_settings["label"] = "🚨 خبر عاجل"
-        news_settings["separator"] = "━━━━━━━━━━━━━━"
-        news_settings["signature"] = "عبر بوت أخبار العالم\n@Iraqnowbot"
-        save_news_settings()
-        # --- مسح سجل الأخبار المُرسلة (global + per-channel) ---
-        with _global_sent_lock:
-            _global_sent_news.clear()
-        _save_global_sent_news()
-        for ch in channels_groups:
-            ch["sent_news"] = []
-        save_channels_groups()
-        bot.send_message(uid,
-            "✅ *تمت إعادة التعيين الكاملة بنجاح*\n\n"
-            "• بيانات المستخدمين: ✅ ممسوحة\n"
-            "• الإحصائيات: ✅ ممسوحة\n"
-            "• قائمة المحظورين: ✅ ممسوحة\n"
-            "• صندوق الرسائل: ✅ ممسوح\n"
-            "• شكل الخبر: ✅ أُعيد للافتراضي\n"
-            "• سجل الأخبار: ✅ ممسوح\n\n"
-            "📡 قائمة الأدمن ومصادر RSS والقنوات محتفظ بها.\n\n"
-            "🚀 البوت جاهز لاستقبال مستخدمين جدد!",
-            parse_mode="Markdown"
-        )
+elif data == "admin_full_reset_confirm":
+    global users, stats, banned, inbox_messages  # ← لازم يكون أول سطر داخل الدالة
+    bot.answer_callback_query(call.id, "⏳ جاري إعادة التعيين الكاملة...")
 
-    elif data == "admin_cancel":
-        bot.answer_callback_query(call.id, "❌ تم الإلغاء")
-        bot.send_message(uid, "❌ تم إلغاء العملية.")
+    # --- مسح بيانات المستخدمين ---
+    users.clear()
+    save_json(USERS_FILE, {})
+    _db_save_all_users({})
 
+    # --- مسح الإحصائيات ---
+    stats.clear()
+    stats.update({"total_users": 0, "daily_users": {}, "lang_dist": {}, "country_dist": {}})
+    save_json(STATS_FILE, stats)
+
+    # --- مسح قائمة المحظورين ---
+    banned.clear()
+    save_json(BANNED_FILE, [])
+
+    # --- مسح صندوق الرسائل ---
+    inbox_messages.clear()
+    save_json(INBOX_FILE, [])
+
+    # --- مسح التقييمات ---
+    save_json(RATINGS_FILE, {})
+
+    # --- مسح سجل القراءة ---
+    save_json(READ_STATS_FILE, {"total_opens": 0, "daily": {}})
+
+    # --- إعادة شكل الخبر للافتراضي ---
+    news_settings["label"] = "🚨 خبر عاجل"
+    news_settings["separator"] = "━━━━━━━━━━━━━━"
+    news_settings["signature"] = "عبر بوت أخبار العالم\n@Iraqnowbot"
+    save_news_settings()
+
+    # --- مسح سجل الأخبار المُرسلة (global + per-channel) ---
+    with _global_sent_lock:
+        _global_sent_news.clear()
+    _save_global_sent_news()
+    for ch in channels_groups:
+        ch["sent_news"] = []
+    save_channels_groups()
+
+    bot.send_message(uid,
+        "✅ *تمت إعادة التعيين الكاملة بنجاح*\n\n"
+        "• بيانات المستخدمين: ✅ ممسوحة\n"
+        "• الإحصائيات: ✅ ممسوحة\n"
+        "• قائمة المحظورين: ✅ ممسوحة\n"
+        "• صندوق الرسائل: ✅ ممسوح\n"
+        "• شكل الخبر: ✅ أُعيد للافتراضي\n"
+        "• سجل الأخبار: ✅ ممسوح\n\n"
+        "📡 قائمة الأدمن ومصادر RSS والقنوات محتفظ بها.\n\n"
+        "🚀 البوت جاهز لاستقبال مستخدمين جدد!",
+        parse_mode="Markdown"
+    )
+
+elif data == "admin_cancel":
+    bot.answer_callback_query(call.id, "❌ تم الإلغاء")
+    bot.send_message(uid, "❌ تم إلغاء العملية.")
 # ======== دوال شكل الخبر ========
 def _validate_news_format(uid, label, separator, signature):
     """
