@@ -3268,14 +3268,17 @@ def admin_callbacks(call):
             reply_markup=markup
         )
 
-elif data == "admin_full_reset_confirm":
+# تأكد هذا كله داخل دالة
+def handle_reset(call, data):
     global users, stats, banned, inbox_messages  # ← لازم يكون أول سطر داخل الدالة
-    bot.answer_callback_query(call.id, "⏳ جاري إعادة التعيين الكاملة...")
 
-    # --- مسح بيانات المستخدمين ---
-    users.clear()
-    save_json(USERS_FILE, {})
-    _db_save_all_users({})
+    if data == "admin_full_reset_confirm":
+        bot.answer_callback_query(call.id, "⏳ جاري إعادة التعيين الكاملة...")
+
+        # --- مسح بيانات المستخدمين ---
+        users.clear()
+        save_json(USERS_FILE, {})
+        _db_save_all_users({})
 
     # --- مسح الإحصائيات ---
     stats.clear()
