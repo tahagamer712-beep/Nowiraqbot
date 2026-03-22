@@ -16261,7 +16261,7 @@ def cb_settings_notif(call):
     uid = call.from_user.id
     if str(uid) not in users:
         return
-    current = users[str(uid)]�.get("notifications", True)
+    current = users[str(uid)].get("notifications", True)
     users[str(uid)]["notifications"] = not current
     _db_save_user(uid, users[str(uid)])
     status = "✅ مفعّلة" if not current else "❌ موقوفة"
