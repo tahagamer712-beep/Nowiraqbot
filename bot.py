@@ -15628,7 +15628,7 @@ def _fetch_ohlc(symbol, yf_interval, range_):
         if not result:
             return None
         quotes = result[0]["indicators"]["quote"][0]
-�        timestamps = result[0].get("timestamp", [])
+        timestamps = result[0].get("timestamp", [])
         opens  = quotes.get("open",  [])
         closes = quotes.get("close", [])
         highs  = quotes.get("high",  [])
