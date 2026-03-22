@@ -15845,7 +15845,7 @@ def chart_back_cats(call):
     uid = call.from_user.id
     user = users.get(str(uid), {})
     lang = user.get("lang", "English 🇬🇧")
-    bot.answer_c�allback_query(call.id)
+    bot.answer_callback_query(call.id)
     _send_chart_categories(uid, lang, edit_msg_id=call.message.message_id)
 
 @bot.callback_query_handler(func=lambda c: c.data.startswith("chart_asset_"))
