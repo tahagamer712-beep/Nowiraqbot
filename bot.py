@@ -15453,7 +15453,7 @@ def cmd_discover(m):
         matched_lang = lang
     status_msg = bot.send_message(uid,
         f"🔍 *أبحث عن مصدر RSS للموقع:*\n`{url}`\n\nانتظر...",
-        p�arse_mode="Markdown"
+        parse_mode="Markdown"
     )
     discovered = _auto_discover_rss(url)
     if not discovered:
