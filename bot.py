@@ -16059,7 +16059,7 @@ def cmd_alerts(m):
     user = users.get(str(uid), {})
     lang = user.get("lang", "English 🇬🇧")
 
-    tracked = tracked_assets.ge�t(str(uid), {}).get("assets", [])
+    tracked = tracked_assets.get(str(uid), {}).get("assets", [])
     current_alert = user.get("currency_alert")
 
     markup = types.InlineKeyboardMarkup(row_width=1)
