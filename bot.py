@@ -16463,7 +16463,7 @@ try:
         BotCommand("summary",     "ملخص يومي لأبرز 3 أحداث"),
         BotCommand("weather",     "طقس المدن التي تتابعها"),
         BotCommand("markets",     "أسعار العملات والأسهم والسلع"),
-        Bo�tCommand("chart",       "رسم بياني تفاعلي"),
+        BotCommand("chart",       "رسم بياني تفاعلي"),
         BotCommand("alerts",      "تنبيهات ذكية عند تغير ±1%"),
         BotCommand("mytrack",     "قائمة الرموز التي تتابعها"),
         BotCommand("addtrack",    "إضافة رمز جديد للتتبع"),
