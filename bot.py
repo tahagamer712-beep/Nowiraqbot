@@ -12822,7 +12822,7 @@ def handle_selection(m):
         return
     user = users.get(str(uid))
     if not user:
-        bot.send_me�ssage(uid, "👋 الرجاء إرسال /start أولاً.")
+        bot.send_message(uid, "👋 الرجاء إرسال /start أولاً.")
         return
     lang = user.get("lang", "English 🇬🇧")
     btn = BUTTONS.get(lang, BUTTONS["English 🇬🇧"])
