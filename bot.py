@@ -12651,7 +12651,7 @@ def cmd_restart(m):
     kept = {
         "name": user.get("name", ""),
         "first_name": user.get("first_name", ""),
-        "last_name": user.�get("last_name", ""),
+        "last_name": user.get("last_name", ""),
         "username": user.get("username", ""),
         "telegram_lang": user.get("telegram_lang", ""),
         "sent_news": user.get("sent_news", set()),
