@@ -16551,7 +16551,7 @@ def send_all_news(uid):
     if not feeds:
         bot.send_message(uid, t(lang, "no_source"))
         return
-    sent = user.setdefault(�"sent_news", set())
+    sent = user.setdefault("sent_news", set())
     count = 0
     for feed_url in feeds:
         try:
