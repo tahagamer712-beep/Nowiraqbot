@@ -16389,7 +16389,7 @@ def make_news_share_markup(link, title="", lang="العربية 🇮🇶", summa
         markup.add(types.InlineKeyboardButton(_L.get("share_news", "📤 Share"), url=bot_link))
 
     # ── زر 2: ملخص الخبر 📄 ────────────────────────────────────────
-    clean_summary = _clean_html(summary) if summary� else ""
+    clean_summary = _clean_html(summary) if summary else ""
     if clean_summary and len(clean_summary) > 20 and link:
         sum_key = _cache_summary(link, clean_summary, title=title)
         markup.add(types.InlineKeyboardButton(_L.get("summary_btn", "📄 Summary"), callback_data=f"sum_{sum_key}"))
