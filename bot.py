@@ -9269,7 +9269,7 @@ def send_alert(message: str, exc: Exception = None, func_name: str = "",
                 tb_short = tb[-800:].replace("`", "'")
                 lines.append(f"🔍 *Traceback:*\n```\n{tb_short}\n```")
 
-    alert_text = "\n".join(�lines)
+    alert_text = "\n".join(lines)
     all_admins = [ADMIN_ID] + extra_admins
 
     # ─── إرسال مع إعادة المحاولة ──────────────────────────────────────────────
