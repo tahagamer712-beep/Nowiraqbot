@@ -12918,7 +12918,7 @@ def _send_live_scores(uid, chat_id, msg_id=None):
                 for m in recent:
                     text += f"  {_format_match_line(m, sport, tz_offset)}\n"
             text += "\n"
-        if not found_any:�
+        if not found_any:
             text += "لا توجد مباريات مباشرة الآن في دورياتك المختارة 📭\n\nاضغط 📅 جدول المباريات لرؤية القادمة"
 
     kb = types.InlineKeyboardMarkup(row_width=2)
