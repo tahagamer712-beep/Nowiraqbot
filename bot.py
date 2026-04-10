@@ -11610,7 +11610,7 @@ _FEATURE_FRIENDLY_NAMES = {
     "news_quiz":      "🧩 اختبار الأخبار",
     "catchup":        "⏩ ماذا فاتني؟",
     "compare":        "🔄 مقارنة المصادر",
-    "audiobriefing": � "🎙 الموجز الإخباري",
+    "audiobriefing":  "🎙 الموجز الإخباري",
     "cross_lang":     "🌍 مقارنة متعددة اللغات",
     "audio_podcast":  "🎧 بودكاست يومي",
     "sleep_mode":     "😴 وضع الصمت الذكي",
@@ -13118,7 +13118,7 @@ def _sports_live_broadcaster():
     """
     global _sports_match_cache
     if _sports_broadcaster_lock.is_set():
-        retu�rn
+        return
     _sports_broadcaster_lock.set()
     _sports_lock_ts[0] = time.time()
     try:
@@ -13450,7 +13450,7 @@ _crisis_keyword_freq = collections.defaultdict(list) # keyword → [timestamps]
 _CRISIS_KEYWORDS = [
     "انفجار", "هجوم", "اغتيال", "اعتقال", "احتجاج", "تظاهر", "عاجل",
     "كارثة", "زلزال", "فيضان", "حريق", "اعلان الطوارئ", "حظر التجول",
-    "explosion", "a�ttack", "assassination", "protest", "emergency",
+    "explosion", "attack", "assassination", "protest", "emergency",
 ]
 _CRISIS_FREQ_THRESHOLD = 5  # عدد المرات خلال 30 دقيقة = أزمة محتملة
 _last_crisis_alert = {}  # keyword → timestamp
@@ -14070,7 +14070,7 @@ def _update_user_interests(uid: str, title: str, source: str):
         prefs["sources"][source] += 1
     prefs["count"] = prefs.get("count", 0) + 1
 
-def _ai_curate_news_for_user(uid: str, cand�idates: list) -> list:
+def _ai_curate_news_for_user(uid: str, candidates: list) -> list:
     """يرتب الأخبار حسب اهتمامات المستخدم"""
     prefs = _user_interests.get(str(uid))
     if not prefs or prefs.get("count", 0) < 5:
@@ -14264,7 +14264,7 @@ def _get_source_rankings() -> list:
     for source, timestamps in _source_speed_log.items():
         recent = [t for t in timestamps if now - t < 24 * 3600]
         if not recent:
-     �       continue
+            continue
         avg_gap = (max(recent) - min(recent)) / max(len(recent) - 1, 1) if len(recent) > 1 else 9999
         rankings.append({
             "source": source,
@@ -14446,7 +14446,7 @@ def _deepsearch_worker(uid: int, topic: str, progress_msg_id: int, chat_id: int)
                   try:
                       _tr = requests.post(
                           "https://api.together.xyz/v1/chat/completions",
-                          headers={"Authorization": f�"Bearer {_tog_key}",
+                          headers={"Authorization": f"Bearer {_tog_key}",
                                    "Content-Type": "application/json"},
                           json={"model": _tm,
                                 "messages": [{"role": "user", "content": prompt}],
@@ -14608,7 +14608,7 @@ def _deepsearch_worker(uid: int, topic: str, progress_msg_id: int, chat_id: int)
                   for art in r.json().get("articles",[]):
                       url_ = art.get("url","")
                       t    = art.get("title","") or ""
-�                      s    = (art.get("description","") or "")[:400]
+                      s    = (art.get("description","") or "")[:400]
                       src  = art.get("source",{}).get("name","NewsAPI")
                       if t:
                           res.append({"title":t,"summary":s,"link":url_,
@@ -15483,7 +15483,7 @@ def handle_disc_button(call):
     cached   = _disc_key_cache.get(disc_key)
     lang     = users.get(str(uid), {}).get("lang", "العربية 🇮🇶")
     if not cached:
-    �    bot.answer_callback_query(call.id,
+        bot.answer_callback_query(call.id,
             _NEW_FEAT_I18N["pred_expired"].get(lang, _NEW_FEAT_I18N["pred_expired"]["العربية 🇮🇶"]),
             show_alert=True)
         return
