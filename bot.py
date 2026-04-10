@@ -7614,7 +7614,7 @@ SPORTS_RSS = {
         "https://www.motorsport.com/rss/f1/news/",
         "https://www.formula1.com/content/fom-website/en/latest/all.xml",
         # NASCAR
-    �    "https://www.motorsport.com/rss/nascar/news/",
+        "https://www.motorsport.com/rss/nascar/news/",
         "https://www.nascar.com/rss/news.xml",
         # MotoGP
         "https://www.motorsport.com/rss/motogp/news/",
