@@ -10546,7 +10546,7 @@ def premium_callbacks(call):
         bot.register_next_step_handler(msg, set_notif_time_step)
 
     elif data == "prem_hourly":
-        send_hourly_weathe�r_forecast(uid)
+        send_hourly_weather_forecast(uid)
 
     elif data == "prem_mycities":
         user = users.get(str(uid), {})
