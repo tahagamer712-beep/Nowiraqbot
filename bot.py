@@ -11808,7 +11808,7 @@ def _feat_set_limits_step(message, key):
         msg = bot.send_message(uid, "حاول مجدداً:")
         bot.register_next_step_handler(msg, lambda m, k=key: _feat_set_limits_step(m, k))
         return
-    _FEATURE_REGISTRY[key][�"free_daily"] = fd
+    _FEATURE_REGISTRY[key]["free_daily"] = fd
     _FEATURE_REGISTRY[key]["prem_daily"] = pd_
     _save_feature_registry()
     fd_s  = str(fd)  if fd  != -1 else "∞"
