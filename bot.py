@@ -12727,7 +12727,7 @@ def _prematch_notifier():
                 # احذف المباريات التي مضى عليها أكثر من 48 ساعة
                 old_keys = [
                     mid for mid, v in nm_dict.items()
-                    if isinstance(v, d�ict) and v.get('ts', now_utc_ts) < now_utc_ts - 172800
+                    if isinstance(v, dict) and v.get('ts', now_utc_ts) < now_utc_ts - 172800
                 ]
                 if old_keys:
                     for k in old_keys:
