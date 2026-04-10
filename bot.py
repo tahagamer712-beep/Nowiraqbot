@@ -12371,7 +12371,7 @@ def _get_league_teams(espn_slug: str) -> list:
         leagues_data = sports_data[0].get('leagues', [])
         if not leagues_data:
             return []
-        teams = [�]
+        teams = []
         for t in leagues_data[0].get('teams', []):
             team = t.get('team', {})
             teams.append({
