@@ -13661,7 +13661,7 @@ def _ai_build_timeline(topic: str) -> str:
     """يبني تسلسل زمني للأحداث المتعلقة بموضوع"""
     if not _AI_MODEL:
         return _ai_friendly_error(Exception("AI غير متاح"), "")
-    try:�
+    try:
         # جمع أخبار متعلقة بالموضوع
         related_news = []
         for lang_feeds in RSS.values():
@@ -13861,7 +13861,7 @@ def _ai_analyze_photo_file(file_bytes: bytes, user_question: str = "") -> str:
             genai.configure(api_key=GEMINI_API_KEY)
             vision_model = genai.GenerativeModel("gemini-1.5-flash")
             img_part = {"mime_type": "image/jpeg", "data": file_bytes}
-            response = vision�_model.generate_content([question, img_part])
+            response = vision_model.generate_content([question, img_part])
             return response.text.strip()[:1000]
     except Exception as e:
         return _ai_friendly_error(e, "vision")
