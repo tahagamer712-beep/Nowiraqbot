@@ -11417,7 +11417,7 @@ def admin_callbacks(call):
 
     elif data == "backup_channels":
         bot.answer_callback_query(call.id, "📺 جاري إرسال القنوات...")
-        _send�_sectioned_backup(uid, "channels")
+        _send_sectioned_backup(uid, "channels")
 
     elif data == "backup_settings":
         bot.answer_callback_query(call.id, "⚙️ جاري إرسال الإعدادات...")
