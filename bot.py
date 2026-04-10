@@ -8716,7 +8716,7 @@ BUTTONS = {
         "public_stats": "📊 Statistiche bot",
         "voice_news": "🎙️ Notizie vocali",
         "audio_podcast": "🎧 Podcast Quotidiano",
-        "notif_on": "🔔 Disattiva notifiche",�
+        "notif_on": "🔔 Disattiva notifiche",
         "notif_off": "🔕 Attiva notifiche",
         "premium": "⭐ Premium",
         "settings": "🔄 Cambia impostazioni",
