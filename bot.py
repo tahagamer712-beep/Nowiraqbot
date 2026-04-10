@@ -7851,7 +7851,7 @@ TELEGRAM_NEWS_CHANNELS = {
         # ===== وكالات عالمية بالعربية =====
         {"handle": "RT_ar",             "name": "RT عربي"},
         {"handle": "aljazeera",         "name": "الجزيرة"},
-�        {"handle": "alarabiya",         "name": "العربية"},
+        {"handle": "alarabiya",         "name": "العربية"},
         {"handle": "bbcarabic",         "name": "بي بي سي عربي"},
         {"handle": "france24_ar",       "name": "فرانس 24 عربي"},
         {"handle": "DWArabic",          "name": "DW عربي"},
