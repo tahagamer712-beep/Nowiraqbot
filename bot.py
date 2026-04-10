@@ -35726,7 +35726,7 @@ def _format_match_365(detail: dict) -> str:
 
 
 def _get_live_matches_with_ids(espn_slug: str) -> list:
-    """يجلب المباريات مع� event_id لكل مباراة"""
+    """يجلب المباريات مع event_id لكل مباراة"""
     try:
         sport, league_slug = espn_slug.split('/', 1)
         url = (f"https://site.api.espn.com/apis/site/v2/sports"
@@ -35933,4 +35933,4 @@ while True:
         except Exception as _exc:
             _log_exc(_exc)
 
-        time.sleep(_wa�it)
+        time.sleep(_wait)
