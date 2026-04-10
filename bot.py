@@ -13284,7 +13284,7 @@ def _sports_live_broadcaster():
                     emoji  = _event_to_emoji(ptype, sport_type)
                     if emoji == '•':   # حدث عادي بدون إيموجي خاص — تجاهله
                         continue
-                    clock  = play.get(�'clock', '')
+                    clock  = play.get('clock', '')
                     player = play.get('player', '')
                     hs     = play.get('home_score', '')
                     as_    = play.get('away_score', '')
