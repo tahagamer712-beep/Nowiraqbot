@@ -10379,7 +10379,7 @@ def help_cmd_callback(call):
                 "हिन्दी 🇮🇳":    "एसेट सिंबल भेजें, जैसे: `BTC` या `AAPL`",
                 "Português 🇧🇷": "Envie o símbolo do ativo, ex.: `BTC` ou `AAPL`",
                 "Türkçe 🇹🇷":    "Eklemek için varlık sembolünü gönderin, ör.: `BTC` veya `AAPL`",
-       �         "اردو 🇵🇰":      "اثاثہ علامت بھیجیں، مثال: `BTC` یا `AAPL`",
+                "اردو 🇵🇰":      "اثاثہ علامت بھیجیں، مثال: `BTC` یا `AAPL`",
                 "Deutsch 🇩🇪":   "Sende das Asset-Symbol zum Hinzufügen, z.B.: `BTC` oder `AAPL`",
                 "Українська 🇺🇦":"Надішліть символ активу, напр.: `BTC` або `AAPL`",
                 "Italiano 🇮🇹":  "Invia il simbolo dell'asset, es.: `BTC` o `AAPL`",
