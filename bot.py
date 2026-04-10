@@ -10714,7 +10714,7 @@ def admin_callbacks(call):
             nav_markup.add(*nav_btns)
         nav_markup.add(types.InlineKeyboardButton("🔙 رجوع", callback_data="admin_users"))
         try:
-            bot.edit_message_text(msg, uid, call.m�essage.message_id, parse_mode="Markdown", reply_markup=nav_markup)
+            bot.edit_message_text(msg, uid, call.message.message_id, parse_mode="Markdown", reply_markup=nav_markup)
         except Exception:
             bot.send_message(uid, msg, parse_mode="Markdown", reply_markup=nav_markup)
 
