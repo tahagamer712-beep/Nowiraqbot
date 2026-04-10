@@ -12001,7 +12001,7 @@ def _admin_reply_step(message, target_uid):
         bot.send_message(message.from_user.id, f"⚠️ فشل الإرسال: {e}")
 
 # ======== إدارة القنوات والمجموعات ========
-def handle_admin_channels(uid�, call):
+def handle_admin_channels(uid, call):
     markup = types.InlineKeyboardMarkup(row_width=2)
     markup.add(
         types.InlineKeyboardButton("➕ إضافة قناة/مجموعة", callback_data="ch_add"),
