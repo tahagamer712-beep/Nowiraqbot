@@ -14781,7 +14781,7 @@ def _deepsearch_worker(uid: int, topic: str, progress_msg_id: int, chat_id: int)
           ai_report = None
           ai_mode   = "ai"
 
-          _any_ai = _AI_AVAILABLE or bool(_DS_GROQ_KEY) or bool(_D�S_OPENROUTER_KEY) or bool(_DS_TOGETHER_KEY)
+          _any_ai = _AI_AVAILABLE or bool(_DS_GROQ_KEY) or bool(_DS_OPENROUTER_KEY) or bool(_DS_TOGETHER_KEY)
           if _any_ai and quality:
               # Build structured knowledge text
               parts = []
