@@ -12545,7 +12545,7 @@ def _event_to_emoji(ev_type: str, sport: str) -> str:
 _prematch_lock = threading.Event()
 _prematch_lock_ts = [0.0]
 
-def _prematch_watch�dog():
+def _prematch_watchdog():
     while True:
         time.sleep(60)
         try:
