@@ -20,11 +20,6 @@ import os
 # على عمل البوت دون تعديل. يُنصح بشدة بنقلها إلى متغيرات بيئة وحذف
 # القيم الافتراضية بعد توليد توكن جديد من @BotFather.
 
-BOT_TOKEN   = os.environ.get("BOT_TOKEN",
-                             "8606492099:AAGAh8TFt4FexlnqNcH2IB_GP8DERvOjhJU")
-WEATHER_KEY = os.environ.get("WEATHER_KEY", "18a7801721693e772bbada4687d03e43")
-NEWS_KEY    = os.environ.get("NEWS_KEY",    "98b2295d1a034076913e0c0e2aa64fa4")
-ADMIN_ID    = int(os.environ.get("ADMIN_ID", "5149213983"))
 
 # ════════════════════════════════════════════════════════════════════
 # مفاتيح الذكاء الاصطناعي (متعددة المزودين)
